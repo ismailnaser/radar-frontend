@@ -1,0 +1,602 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { MapPin, Maximize2, Star } from 'lucide-react';
+import L from 'leaflet';
+import { MapContainer, Marker, Popup, Tooltip, useMap, useMapEvents } from 'react-leaflet';
+import '../../components/maps/leafletIconFix';
+import BasemapLayersControl from './BasemapLayersControl';
+import LeafletInvalidateOnLayout from './LeafletInvalidateOnLayout';
+import { getStorePinDisplay } from './storePinDefaults';
+import { communityPointLatLng } from '../../utils/communityPointCoords';
+import './ShopperMap.css';
+
+function leafletIconForStoreDisplay(display) {
+  if (display.type === 'image') {
+    return L.icon({
+      iconUrl: display.url,
+      iconSize: [46, 46],
+      iconAnchor: [23, 46],
+      popupAnchor: [0, -42],
+      className: 'store-map-pin-img',
+    });
+  }
+  return L.divIcon({
+    className: 'store-map-pin-divicon',
+    html: `<div class="store-map-pin-emoji-inner" style="background:${display.bg}">${display.emoji}</div>`,
+    iconSize: [46, 46],
+    iconAnchor: [23, 46],
+    popupAnchor: [0, -40],
+  });
+}
+
+/** مركز تقريبي لقطاع غزة — نفس منطقة محاكاة التطبيق */
+const DEFAULT_CENTER = [31.5, 34.4];
+const DEFAULT_ZOOM = 13;
+
+function MapPopupStoreRating({ store }) {
+  const avgRaw = store?.rating_average != null ? Number(store.rating_average) : null;
+  const n = store?.rating_count != null ? Number(store.rating_count) : 0;
+  const avg = avgRaw != null && Number.isFinite(avgRaw) ? avgRaw : null;
+
+  if (!n || avg == null) {
+    return (
+      <div style={{ fontSize: '0.82rem', color: '#666', marginBottom: 8, lineHeight: 1.4 }}>
+        لا يوجد تقييم بعد
+      </div>
+    );
+  }
+
+  const filledThrough = Math.min(5, Math.max(0, Math.round(avg)));
+  return (
+    <div
+      dir="ltr"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 8,
+        flexWrap: 'wrap',
+      }}
+    >
+      <span style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }} aria-hidden>
+        {[1, 2, 3, 4, 5].map((lvl) => (
+          <Star
+            key={lvl}
+            size={16}
+            color="#f5c000"
+            fill={lvl <= filledThrough ? '#f5c000' : 'none'}
+            strokeWidth={lvl <= filledThrough ? 0 : 1.5}
+          />
+        ))}
+      </span>
+      <span style={{ fontSize: '0.84rem', color: '#333', fontWeight: 800 }}>
+        {avg.toFixed(1)}
+        <span style={{ fontWeight: 600, color: '#666' }}> · {n} تقييم</span>
+      </span>
+    </div>
+  );
+}
+
+function cameraStateSignature(userLocation, stores, communityPoints, locationFocusNonce, focusOnResults, focusKind) {
+  const u =
+    userLocation?.length === 2
+      ? `${Number(userLocation[0]).toFixed(5)},${Number(userLocation[1]).toFixed(5)}`
+      : 'none';
+  const storePts = (stores || [])
+    .map((s) => {
+      const la = Number(s.latitude);
+      const ln = Number(s.longitude);
+      if (!Number.isFinite(la) || !Number.isFinite(ln)) return null;
+      return `s:${s.id}:${la.toFixed(5)}:${ln.toFixed(5)}`;
+    })
+    .filter(Boolean);
+  const commPts = (communityPoints || [])
+    .map((p) => {
+      const ll = communityPointLatLng(p);
+      if (!ll) return null;
+      return `c:${p.id}:${ll[0].toFixed(5)}:${ll[1].toFixed(5)}`;
+    })
+    .filter(Boolean);
+
+  const pts =
+    focusKind === 'community'
+      ? commPts
+      : focusKind === 'both'
+        ? [...storePts, ...commPts]
+        : storePts;
+
+  return `${u}#${pts.sort().join('|')}#${locationFocusNonce}#${focusOnResults ? 'R' : 'U'}#${focusKind || 'stores'}`;
+}
+
+/**
+ * مع موقع المستخدم: دائماً تمركز وسط الخريطة على **نفس إحداثيات المستخدم** (بدون flyToBounds مع
+ * المتاجر — ذلك كان يزحزح المركز عن «موقعي»). زوم أوضح بعد ضغط «موقعي الحالي» على الخريطة.
+ * بدون موقع المستخدم: يملأ الإطار بالمتاجر الظاهرة.
+ */
+function AdaptiveCamera({ userLocation, stores, communityPoints, locationFocusNonce, focusOnResults, focusKind }) {
+  const map = useMap();
+  const lastCamSig = useRef('');
+
+  useEffect(() => {
+    const sig = cameraStateSignature(
+      userLocation,
+      stores,
+      communityPoints,
+      locationFocusNonce,
+      focusOnResults,
+      focusKind
+    );
+    if (sig === lastCamSig.current) return;
+    lastCamSig.current = sig;
+
+    const storePts = (stores || [])
+      .map((s) => {
+        const lat = Number(s.latitude);
+        const lng = Number(s.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return [lat, lng];
+      })
+      .filter(Boolean);
+
+    const communityPts = (communityPoints || [])
+      .map((p) => communityPointLatLng(p))
+      .filter(Boolean);
+
+    const resultPts =
+      focusKind === 'community'
+        ? communityPts
+        : focusKind === 'both'
+          ? [...storePts, ...communityPts]
+          : storePts;
+
+    if (focusOnResults) {
+      if (resultPts.length === 0) {
+        if (userLocation?.length === 2) {
+          const lat = Number(userLocation[0]);
+          const lng = Number(userLocation[1]);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            map.flyTo([lat, lng], 17, { duration: 0.55, animate: true });
+          }
+        }
+        return;
+      }
+      if (resultPts.length === 1) {
+        map.setView(resultPts[0], 17, { animate: true });
+        return;
+      }
+      map.fitBounds(L.latLngBounds(resultPts), { padding: [40, 40], maxZoom: 17, animate: true });
+      return;
+    }
+
+    if (userLocation?.length === 2) {
+      const lat = Number(userLocation[0]);
+      const lng = Number(userLocation[1]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+      const fromHeaderBtn = locationFocusNonce > 0;
+      const zoom = fromHeaderBtn ? 18 : 17;
+      const duration = fromHeaderBtn ? 0.9 : 0.55;
+      map.flyTo([lat, lng], zoom, { duration, animate: true });
+      return;
+    }
+
+    if (storePts.length === 0) return;
+    if (storePts.length === 1) {
+      map.setView(storePts[0], 15, { animate: true });
+      return;
+    }
+    map.fitBounds(L.latLngBounds(storePts), { padding: [40, 40], maxZoom: 17, animate: true });
+  }, [map, userLocation, stores, communityPoints, locationFocusNonce, focusOnResults, focusKind]);
+
+  return null;
+}
+
+export function MapClickPicker({ onPick }) {
+  useMapEvents({
+    click(e) {
+      if (typeof onPick === 'function') {
+        onPick(e.latlng.lat, e.latlng.lng);
+      }
+    },
+  });
+  return null;
+}
+
+/** يطبّق cursor على حاوية Leaflet لأن MapContainer لا يحدّث className بعد الإنشاء */
+function PickModeCursor({ active }) {
+  const map = useMap();
+  useEffect(() => {
+    const el = map.getContainer();
+    const cls = 'leaflet-pick-cursor';
+    if (active) el.classList.add(cls);
+    else el.classList.remove(cls);
+    return () => el.classList.remove(cls);
+  }, [map, active]);
+  return null;
+}
+
+const COMMUNITY_SLUG_EMOJI = {
+  medical: '🏥',
+  education: '📚',
+  food: '🍲',
+  water: '💧',
+  institution: '🤝',
+};
+
+function communityServiceIcon(slug) {
+  const emoji = COMMUNITY_SLUG_EMOJI[slug] || '📍';
+  return L.divIcon({
+    className: 'community-map-pin-wrap',
+    html: `<div class="community-map-pin-inner community-map-pin-inner--pin"><span class="community-pin-emoji">${emoji}</span></div>`,
+    iconSize: [38, 38],
+    iconAnchor: [19, 38],
+    popupAnchor: [0, -34],
+  });
+}
+
+const ShopperMap = ({
+  stores,
+  communityPoints = [],
+  userLocation,
+  locationFocusNonce = 0,
+  onManualLocationPick,
+  categories,
+  showGpsOnMap = false,
+  gpsLocating = false,
+  onGpsClick,
+  mapHeight = 'clamp(260px, 52dvh, 420px)',
+  gpsLabel = 'موقعي الحالي',
+  gpsLocatingLabel = 'جاري الموقع… (حتى ~20ث)',
+  wrapperClassName = '',
+  gpsFabAlignStart = false,
+  gpsInline = false,
+  topControls = null,
+  focusOnResults = false,
+  focusKind = 'stores',
+  focusStoreId = null,
+  focusCommunityPointId = null,
+  onExpandClick,
+  /** يملأ حاوية بارتفاع كامل (عرض شاشة كامل) */
+  isFullscreen = false,
+}) => {
+  const center = useMemo(() => {
+    if (userLocation?.length === 2) return userLocation;
+    const first = (stores || []).find(
+      (s) => Number.isFinite(Number(s.latitude)) && Number.isFinite(Number(s.longitude))
+    );
+    if (first) return [Number(first.latitude), Number(first.longitude)];
+    return DEFAULT_CENTER;
+  }, [stores, userLocation]);
+
+  const storeIcons = useMemo(() => {
+    const m = new Map();
+    for (const s of stores || []) {
+      const id = s?.id;
+      if (id == null) continue;
+      const display = getStorePinDisplay(s, categories);
+      m.set(String(id), leafletIconForStoreDisplay(display));
+    }
+    return m;
+  }, [stores, categories]);
+
+  const [awaitingManualPick, setAwaitingManualPick] = useState(false);
+  const manualPickEnabled = typeof onManualLocationPick === 'function';
+  const storeMarkerRefs = useRef({});
+  const communityMarkerRefs = useRef({});
+  const mapFillsSpace =
+    isFullscreen ||
+    (typeof mapHeight === 'string' &&
+      (mapHeight.includes('100dvh') || mapHeight.includes('100vh') || mapHeight === '100%'));
+
+  const handleManualMapPick = (lat, lng) => {
+    if (typeof onManualLocationPick === 'function') {
+      onManualLocationPick(lat, lng);
+    }
+    setAwaitingManualPick(false);
+  };
+
+  return (
+    <div
+      className={`radar-map card radar-map--manual-wrap radar-map--market${awaitingManualPick ? ' radar-map--pick-active' : ''}${mapFillsSpace ? ' radar-map--fill' : ''}${isFullscreen ? ' radar-map--fullscreen' : ''}${wrapperClassName ? ` ${wrapperClassName}` : ''}`}
+      style={{
+        padding: 0,
+        overflow: 'hidden',
+        position: isFullscreen ? 'absolute' : 'relative',
+        ...(isFullscreen
+          ? { inset: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }
+          : mapFillsSpace
+            ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }
+            : {}),
+      }}
+    >
+      {manualPickEnabled ? (
+        <div className="shopper-map-manual-bar" role="region" aria-label="تحديد الموقع يدوياً">
+          {awaitingManualPick ? (
+            <>
+              <span className="shopper-map-manual-hint">انقر على الخريطة لتثبيت موقعك</span>
+              <button
+                type="button"
+                className="shopper-map-manual-btn shopper-map-manual-btn-cancel"
+                onClick={() => setAwaitingManualPick(false)}
+              >
+                إلغاء
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="shopper-map-manual-btn shopper-map-manual-btn-primary"
+                onClick={() => setAwaitingManualPick(true)}
+              >
+                تحديد موقعي يدوياً على الخريطة
+              </button>
+              {gpsInline && showGpsOnMap && typeof onGpsClick === 'function' ? (
+                <button
+                  type="button"
+                  className="shopper-map-gps-inline"
+                  onClick={onGpsClick}
+                  disabled={gpsLocating}
+                  title="تحديد موقعي الحالي على الخريطة"
+                  aria-label={gpsLocating ? 'جاري تحديد الموقع' : 'موقعي الحالي'}
+                >
+                  <MapPin size={18} strokeWidth={2.25} aria-hidden />
+                  <span>{gpsLocating ? gpsLocatingLabel : gpsLabel}</span>
+                </button>
+              ) : null}
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {topControls ? (
+        <div className="shopper-map-topbar" role="region" aria-label="بحث وفلاتر الخريطة">
+          {topControls}
+        </div>
+      ) : null}
+      {typeof onExpandClick === 'function' ? (
+        <button
+          type="button"
+          className="shopper-map-expand-btn"
+          onClick={onExpandClick}
+          title="تكبير الخريطة"
+          aria-label="تكبير الخريطة"
+        >
+          <Maximize2 size={20} strokeWidth={2.25} aria-hidden />
+        </button>
+      ) : null}
+      <MapContainer
+        center={center}
+        zoom={DEFAULT_ZOOM}
+        minZoom={10}
+        maxZoom={19}
+        scrollWheelZoom
+        style={
+          mapFillsSpace
+            ? { flex: 1, minHeight: isFullscreen ? 0 : 220, width: '100%' }
+            : { height: mapHeight, width: '100%' }
+        }
+      >
+        <BasemapLayersControl />
+        <LeafletInvalidateOnLayout />
+        <PickModeCursor active={awaitingManualPick} />
+        <AdaptiveCamera
+          userLocation={userLocation}
+          stores={stores}
+          communityPoints={communityPoints}
+          locationFocusNonce={locationFocusNonce}
+          focusOnResults={focusOnResults}
+          focusKind={focusKind}
+        />
+
+        {/* افتح نافذة المتجر تلقائياً عند التركيز عليه */}
+        {focusStoreId != null ? (
+          <AutoOpenStorePopup storeId={focusStoreId} markerRefs={storeMarkerRefs} />
+        ) : null}
+        {focusCommunityPointId != null ? (
+          <AutoOpenCommunityPopup pointId={focusCommunityPointId} markerRefs={communityMarkerRefs} />
+        ) : null}
+
+        {manualPickEnabled && awaitingManualPick ? (
+          <MapClickPicker onPick={handleManualMapPick} />
+        ) : null}
+
+        {userLocation?.length === 2 && (
+          <Marker position={userLocation}>
+            <Popup>
+              <div style={{ maxWidth: 220 }}>
+                <div style={{ fontWeight: 800, marginBottom: 6 }}>موقعك للمقارنة بالمتاجر</div>
+                <div style={{ fontSize: '0.88rem', lineHeight: 1.45, color: '#444' }}>
+                  استخدم «تحديد موقعي يدوياً على الخريطة» ثم انقر المكان، أو زر «موقعي الحالي» على حافة الخريطة
+                  للـ GPS.
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        )}
+
+        {(communityPoints || []).map((p) => {
+          const ll = communityPointLatLng(p);
+          if (!ll) return null;
+          const slug = p.category_slug || '';
+          const icon = communityServiceIcon(slug);
+          const waterNote =
+            slug === 'water' && p.water_is_potable != null
+              ? p.water_is_potable
+                ? 'مياه صالحة للشرب'
+                : 'مياه غير صالحة للشرب'
+              : null;
+          return (
+            <Marker
+              key={`c-${p.id}`}
+              position={ll}
+              icon={icon}
+              ref={(ref) => {
+                const pid = p?.id != null ? String(p.id) : '';
+                if (!pid) return;
+                if (ref) communityMarkerRefs.current[pid] = ref;
+              }}
+            >
+              <Tooltip direction="top" offset={[0, -34]} opacity={0.95} sticky>
+                <div style={{ maxWidth: 260 }}>
+                  <div style={{ fontWeight: 900, marginBottom: 4 }}>{p.title}</div>
+                  {p.detail_description ? (
+                    <div style={{ fontSize: '0.85rem', lineHeight: 1.45, color: '#333' }}>
+                      {String(p.detail_description).slice(0, 180)}
+                      {String(p.detail_description).length > 180 ? '…' : ''}
+                    </div>
+                  ) : null}
+                </div>
+              </Tooltip>
+              <Popup>
+                <div style={{ minWidth: 200, maxWidth: 280 }}>
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>{p.title}</div>
+                  <div style={{ fontSize: '0.82rem', color: '#555', marginBottom: 6 }}>
+                    {p.category_name || 'خدمة مجتمعية'}
+                  </div>
+                  {waterNote ? (
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: 6 }}>{waterNote}</div>
+                  ) : null}
+                  {p.institution_scope_label && p.institution_scope ? (
+                    <div style={{ fontSize: '0.8rem', marginBottom: 6 }}>
+                      النطاق: {p.institution_scope_label}
+                    </div>
+                  ) : null}
+                  <div style={{ fontSize: '0.85rem', lineHeight: 1.45, marginBottom: 8 }}>
+                    {p.detail_description}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#666' }}>{p.address_text}</div>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+
+        {(stores || []).map((s) => {
+          const lat = Number(s.latitude);
+          const lng = Number(s.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          const sid = s.id != null ? String(s.id) : '';
+          const icon = sid ? storeIcons.get(sid) : undefined;
+          return (
+            <Marker
+              key={s.id}
+              position={[lat, lng]}
+              icon={icon}
+              ref={(ref) => {
+                if (!sid) return;
+                if (ref) storeMarkerRefs.current[sid] = ref;
+              }}
+            >
+              <Popup>
+                <div style={{ minWidth: 180 }}>
+                  <div style={{ fontWeight: 900, marginBottom: 4 }}>{s.store_name}</div>
+                  <MapPopupStoreRating store={s} />
+                  <div style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>
+                    {s.category_name || 'متجر'}
+                  </div>
+                  <div style={{ color: 'var(--text-secondary)', marginBottom: 10 }}>
+                    {s.description || 'لا يوجد وصف'}
+                  </div>
+                  <Link
+                    to={`/stores/${s.id}`}
+                    style={{
+                      display: 'inline-block',
+                      fontWeight: 800,
+                      color: 'var(--secondary)',
+                      background: 'var(--primary)',
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      textDecoration: 'none',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    عرض المتجر
+                  </Link>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+      </MapContainer>
+
+      {!gpsInline && showGpsOnMap && typeof onGpsClick === 'function' ? (
+        <button
+          type="button"
+          className={`shopper-map-gps-fab${gpsFabAlignStart ? ' shopper-map-gps-fab--start' : ''}`}
+          onClick={onGpsClick}
+          disabled={gpsLocating}
+          title="تحديد موقعي الحالي على الخريطة"
+          aria-label={gpsLocating ? 'جاري تحديد الموقع' : 'موقعي الحالي'}
+        >
+          <MapPin size={20} strokeWidth={2.25} aria-hidden />
+          <span>{gpsLocating ? gpsLocatingLabel : gpsLabel}</span>
+        </button>
+      ) : null}
+    </div>
+  );
+};
+
+export default ShopperMap;
+
+function AutoOpenStorePopup({ storeId, markerRefs }) {
+  const map = useMap();
+  useEffect(() => {
+    const sid = storeId != null ? String(storeId) : '';
+    if (!sid) return;
+    let cancelled = false;
+    let attempts = 0;
+    const tryOpen = () => {
+      if (cancelled) return;
+      const marker = markerRefs?.current?.[sid];
+      if (marker) {
+        try {
+          marker.openPopup();
+          const ll = marker.getLatLng?.();
+          if (ll) map.panTo(ll, { animate: true });
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+      attempts += 1;
+      if (attempts < 14) window.setTimeout(tryOpen, 100);
+    };
+    window.setTimeout(tryOpen, 60);
+    return () => {
+      cancelled = true;
+    };
+  }, [storeId, markerRefs, map]);
+  return null;
+}
+
+function AutoOpenCommunityPopup({ pointId, markerRefs }) {
+  const map = useMap();
+  useEffect(() => {
+    const pid = pointId != null ? String(pointId) : '';
+    if (!pid) return;
+    let cancelled = false;
+    let attempts = 0;
+    const tryOpen = () => {
+      if (cancelled) return;
+      const marker = markerRefs?.current?.[pid];
+      if (marker) {
+        try {
+          marker.openPopup();
+          const ll = marker.getLatLng?.();
+          if (ll) map.panTo(ll, { animate: true });
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+      attempts += 1;
+      if (attempts < 14) window.setTimeout(tryOpen, 100);
+    };
+    window.setTimeout(tryOpen, 60);
+    return () => {
+      cancelled = true;
+    };
+  }, [pointId, markerRefs, map]);
+  return null;
+}

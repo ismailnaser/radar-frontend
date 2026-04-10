@@ -1,0 +1,351 @@
+/* حصر تكديس Leaflet داخل الخريطة حتى لا تُرسم طبقات فوق الهيدر عند السكرول */
+.radar-map {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+
+.radar-map--market {
+  border-radius: 20px;
+  border: 1px solid rgba(224, 223, 213, 0.95);
+  box-shadow: 0 10px 36px rgba(30, 30, 46, 0.09);
+}
+
+.radar-map--market .leaflet-container {
+  border-radius: 18px;
+}
+
+/* إخفاء زر الطبقات (Layers) */
+.radar-map--market .leaflet-control-layers {
+  display: none !important;
+}
+
+.radar-map--market .leaflet-control-layers-toggle {
+  display: none !important;
+}
+
+.radar-map--market .leaflet-control-layers-expanded {
+  display: none !important;
+}
+
+.radar-map--fullscreen.radar-map--market {
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.radar-map--fullscreen.radar-map--market .leaflet-container {
+  border-radius: 0 !important;
+}
+
+.shopper-map-manual-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.88) 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  pointer-events: auto;
+}
+
+.shopper-map-gps-inline{
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 0.84rem;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(0, 0, 0, 0.10);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--secondary, #2d3436);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.10);
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+.shopper-map-gps-inline:hover:not(:disabled){ filter: brightness(1.03); }
+.shopper-map-gps-inline:active:not(:disabled){ transform: scale(0.98); }
+.shopper-map-gps-inline:disabled{ opacity: 0.75; cursor: wait; }
+
+.shopper-map-topbar{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 58px;
+  z-index: 1000;
+  pointer-events: none;
+}
+.radar-map--manual-wrap .shopper-map-topbar{
+  top: 64px;
+}
+.radar-map--pick-active .shopper-map-topbar{
+  top: 64px;
+}
+
+.radar-map--pick-active .shopper-map-manual-bar {
+  background: linear-gradient(180deg, rgba(30, 190, 165, 0.18) 0%, rgba(255, 255, 255, 0.92) 100%);
+  border-bottom-color: rgba(30, 190, 165, 0.35);
+}
+
+.shopper-map-manual-hint {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--secondary, #2d3436);
+  text-align: center;
+  flex: 1;
+  min-width: min(280px, 100%);
+}
+
+.shopper-map-manual-btn {
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.86rem;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.shopper-map-manual-btn:active {
+  transform: scale(0.98);
+}
+
+.shopper-map-manual-btn-primary {
+  background: linear-gradient(135deg, var(--primary, #f5c000) 0%, var(--primary-hover, #e6b400) 100%);
+  color: var(--secondary, #2d3436);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.shopper-map-manual-btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.shopper-map-manual-btn-cancel {
+  background: var(--surface, #f8f9fa);
+  color: #c0392b;
+  border: 1.5px solid rgba(192, 57, 43, 0.35);
+}
+
+.shopper-map-manual-btn-cancel:hover {
+  background: #fdecea;
+}
+
+.leaflet-container.leaflet-pick-cursor {
+  cursor: crosshair !important;
+}
+
+.shopper-map-gps-fab {
+  position: absolute;
+  bottom: 14px;
+  inset-inline-end: 12px;
+  z-index: 1100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, var(--primary, #f5c000) 0%, var(--primary-hover, #e6b400) 100%);
+  color: var(--secondary, #2d3436);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  max-width: min(280px, calc(100% - 24px));
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.shopper-map-gps-fab:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.shopper-map-gps-fab:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.shopper-map-gps-fab:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.shopper-map-gps-fab span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shopper-map-gps-fab--start {
+  inset-inline-start: 12px;
+  inset-inline-end: auto;
+}
+
+.shopper-map-expand-btn {
+  position: absolute;
+  top: 10px;
+  inset-inline-end: 12px;
+  z-index: 1100;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.96);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--secondary, #1e1e2e);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  transition: filter 0.15s ease, transform 0.12s ease;
+}
+
+.shopper-map-expand-btn:hover {
+  filter: brightness(1.04);
+}
+
+.shopper-map-expand-btn:active {
+  transform: scale(0.97);
+}
+
+.radar-map--manual-wrap .shopper-map-expand-btn {
+  top: 50px;
+}
+
+/* تنسيق أزرار التكبير/التصغير */
+.radar-map--market .leaflet-control-zoom.leaflet-bar {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.radar-map--market .leaflet-control-zoom a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--secondary, #1e1e2e);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  transition: filter 0.15s ease, transform 0.12s ease;
+}
+
+.radar-map--market .leaflet-control-zoom a:hover {
+  filter: brightness(1.04);
+}
+
+.radar-map--market .leaflet-control-zoom a:active {
+  transform: scale(0.97);
+}
+
+.radar-map--market .leaflet-control-zoom a.leaflet-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.radar-map--market .leaflet-control-zoom a:first-child {
+  margin-bottom: 10px;
+}
+
+.radar-map--market .leaflet-control-zoom a,
+.radar-map--market .leaflet-control-zoom a:hover {
+  text-decoration: none;
+}
+
+/* صور الدبابيس الدائرية للمتاجر (L.icon) */
+.leaflet-marker-icon.store-map-pin-img {
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  object-fit: cover;
+}
+
+/* دبابيس إيموجي (L.divIcon) — الخلفية البيضاء الافتراضية لـ Leaflet تُلغى */
+.leaflet-div-icon.store-map-pin-divicon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.store-map-pin-emoji-inner {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+  box-sizing: border-box;
+}
+
+.leaflet-div-icon.community-map-pin-wrap {
+  background: transparent !important;
+  border: none !important;
+}
+
+.community-map-pin-inner {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px 14px 14px 14px;
+  border: 2px solid #1ebea5;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+  box-sizing: border-box;
+}
+
+/* دبوس للخدمات بدل "علامة موقع" */
+.community-map-pin-inner--pin {
+  border-radius: 16px;
+  position: relative;
+}
+.community-map-pin-inner--pin::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 12px solid #1ebea5;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.18));
+}
+.community-map-pin-inner--pin::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid #fff;
+}
+.community-pin-emoji{
+  position: relative;
+  z-index: 1;
+  font-size: 18px;
+}

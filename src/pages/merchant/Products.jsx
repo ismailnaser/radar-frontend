@@ -1,0 +1,263 @@
+import React, { useEffect, useState } from 'react';
+import MainLayout from '../../components/MainLayout';
+import { Plus, Pencil, Archive, Trash2, Image as ImageIcon, Megaphone } from 'lucide-react';
+import ImageCarousel from '../../components/ImageCarousel';
+import { visualImageUrls } from '../../utils/productImages';
+import { deleteMerchantProduct, getMerchantProducts, updateMerchantProduct } from '../../api/data';
+import { Link } from 'react-router-dom';
+
+const MerchantProducts = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const data = await getMerchantProducts();
+      setProducts(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { refresh(); }, []);
+
+  const toggleArchive = async (p) => {
+    await updateMerchantProduct(p.id, { is_archived: !p.is_archived });
+    await refresh();
+  };
+
+  const remove = async (p) => {
+    if (!confirm('متأكد بدك تحذف المنتج نهائياً؟')) return;
+    await deleteMerchantProduct(p.id);
+    await refresh();
+  };
+
+  return (
+    <MainLayout>
+      <div className="merchant-products">
+        <div className="flex-between" style={{ marginBottom: 16 }}>
+          <h1 style={{ fontSize: '1.8rem' }}>منتجاتي</h1>
+          <Link to="/merchant/products/new" className="btn-primary" style={{ width: 'auto', display: 'inline-flex', gap: 10, alignItems: 'center' }}>
+            <Plus size={18} />
+            إضافة منتج
+          </Link>
+        </div>
+
+        <div
+          className="card"
+          style={{
+            marginBottom: 14,
+            padding: '12px 16px',
+            background: 'var(--primary-light)',
+            borderColor: 'rgba(245,192,0,0.45)',
+            fontSize: '0.92rem',
+            lineHeight: 1.55,
+            color: 'var(--text-primary)',
+          }}
+        >
+          <strong>مهم:</strong> المنتجات ذات الحالة «مؤرشف» لا تظهر في صفحة المتجر للمتسوّقين ولا على الخريطة كقائمة منتجات. اضغط أيقونة الأرشيف بجانب المنتج لإلغاء الأرشفة وجعله «نشطاً».
+        </div>
+
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          {loading ? (
+            <div style={{ padding: 18 }}>جاري التحميل...</div>
+          ) : products.length === 0 ? (
+            <div style={{ padding: 18 }}>لا يوجد منتجات بعد.</div>
+          ) : (
+            <div className="table">
+              <div className="row head">
+                <div>المنتج</div>
+                <div>السعر</div>
+                <div>الحالة</div>
+                <div>إجراءات</div>
+              </div>
+              {products.map((p) => (
+                <div className="row product-row" key={p.id}>
+                  <div className="cell productCell">
+                    <div className="product-thumb-wrap">
+                      {visualImageUrls(p).length > 0 ? (
+                        <ImageCarousel images={visualImageUrls(p)} alt={p.name} height={88} borderRadius={14} />
+                      ) : (
+                        <div className="thumb thumb-empty">
+                          <ImageIcon size={18} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="product-text">
+                      <div className="product-name">{p.name}</div>
+                      <div className="product-desc">{p.description || '—'}</div>
+                    </div>
+                  </div>
+                  <div className="product-row-meta">
+                    <div className="cell cell-price" data-label="السعر">
+                      <span className="price-value">{p.price} ₪</span>
+                    </div>
+                    <div className="cell cell-status" data-label="الحالة">
+                      <span className="badge" style={{ background: p.is_archived ? '#eee' : 'var(--primary)', color: 'var(--secondary)' }}>
+                        {p.is_archived ? 'مؤرشف' : 'نشط'}
+                      </span>
+                      {p.is_archived && (
+                        <div className="archived-hint">مخفي عن صفحة المتجر</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="cell actions" data-label="إجراءات">
+                    <Link to={`/merchant/products/${p.id}/edit`} className="iconBtn" title="تعديل">
+                      <Pencil size={18} />
+                    </Link>
+                    {!p.is_archived ? (
+                      <Link
+                        to="/merchant/ads"
+                        state={{
+                          prefillFromProduct: {
+                            id: p.id,
+                            name: p.name || '',
+                            description: (p.description || '').trim(),
+                            price: p.price,
+                            image: p.image || null,
+                            images: visualImageUrls(p),
+                          },
+                        }}
+                        className="iconBtn"
+                        title="إعلان ممول لهذا المنتج"
+                        aria-label="إعلان ممول لهذا المنتج"
+                      >
+                        <Megaphone size={18} />
+                      </Link>
+                    ) : null}
+                    <button type="button" className="iconBtn" onClick={() => toggleArchive(p)} title={p.is_archived ? 'إلغاء الأرشفة' : 'أرشفة'}>
+                      <Archive size={18} />
+                    </button>
+                    <button type="button" className="iconBtn danger" onClick={() => remove(p)} title="حذف">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <style dangerouslySetInnerHTML={{ __html: `
+          .merchant-products{
+            max-width: 1240px;
+            margin-inline: auto;
+            padding-inline: clamp(8px, 2.2vw, 22px);
+            padding-bottom: 32px;
+            box-sizing: border-box;
+          }
+          .merchant-products .table { display: flex; flex-direction: column; }
+          .merchant-products .product-row-meta { display: contents; }
+          .merchant-products .row {
+            display: grid;
+            grid-template-columns: 1.6fr 0.6fr 0.6fr 0.8fr;
+            gap: 12px;
+            padding: 14px 16px;
+            align-items: center;
+            border-top: 1px solid var(--border);
+          }
+          .merchant-products .row.head { background: var(--surface); font-weight: 900; border-top: none; }
+          .merchant-products .productCell { display: flex; gap: 12px; align-items: center; min-width: 0; }
+          .merchant-products .product-text { min-width: 0; }
+          .merchant-products .product-name { font-weight: 900; color: var(--text-primary); }
+          .merchant-products .product-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.45;
+            margin-top: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+          .merchant-products .product-thumb-wrap {
+            flex-shrink: 0;
+            width: 108px;
+            max-width: 36vw;
+          }
+          .merchant-products .thumb-empty {
+            height: 88px;
+            border-radius: 14px;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid rgba(245,192,0,0.25);
+          }
+          .merchant-products .price-value { font-weight: 800; font-variant-numeric: tabular-nums; }
+          .merchant-products .cell-status { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+          .merchant-products .archived-hint { font-size: 0.78rem; color: #c0392b; margin-top: 4px; font-weight: 700; line-height: 1.35; }
+          .merchant-products .actions { display: flex; gap: 10px; justify-content: flex-start; flex-wrap: wrap; }
+          .merchant-products .iconBtn {
+            border: 1px solid var(--border);
+            background: var(--white);
+            padding: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+          }
+          .merchant-products .iconBtn:hover { background: var(--primary-light); }
+          .merchant-products .iconBtn.danger { color: #c0392b; }
+
+          @media (max-width: 900px) {
+            .merchant-products .row.head { display: none; }
+            .merchant-products .table {
+              background: var(--surface);
+              padding: 10px 8px 14px;
+              gap: 0;
+              border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            }
+            .merchant-products .row.product-row {
+              display: flex;
+              flex-direction: column;
+              align-items: stretch;
+              gap: 14px;
+              padding: 16px 14px;
+              margin: 0 4px 12px;
+              border: 1px solid var(--border);
+              border-radius: 14px;
+              background: var(--white);
+              box-shadow: var(--shadow-sm);
+              border-top: 1px solid var(--border);
+            }
+            .merchant-products .row.product-row:last-child { margin-bottom: 4px; }
+            .merchant-products .product-row-meta {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px 14px;
+              align-items: start;
+              width: 100%;
+            }
+            .merchant-products .productCell { align-items: flex-start; }
+            .merchant-products .product-thumb-wrap { width: 120px; max-width: 55vw; }
+            .merchant-products .thumb-empty { height: 100px; border-radius: 16px; }
+            .merchant-products .cell[data-label]::before {
+              content: attr(data-label);
+              display: block;
+              font-size: 0.72rem;
+              font-weight: 800;
+              color: var(--text-secondary);
+              margin-bottom: 6px;
+              text-transform: none;
+              letter-spacing: 0.02em;
+            }
+            .merchant-products .actions { justify-content: flex-end; padding-top: 4px; border-top: 1px dashed var(--border); }
+            .merchant-products .iconBtn { min-width: 44px; min-height: 44px; padding: 10px; }
+          }
+
+          @media (max-width: 380px) {
+            .merchant-products .product-row-meta { grid-template-columns: 1fr; }
+          }
+        `}} />
+      </div>
+    </MainLayout>
+  );
+};
+
+export default MerchantProducts;
+
