@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { MapPin, Maximize2, Star } from 'lucide-react';
 import L from 'leaflet';
@@ -200,6 +201,34 @@ export function MapClickPicker({ onPick }) {
     },
   });
   return null;
+}
+
+/** زر GPS داخل حاوية Leaflet نفسها ليظهر فوق طبقة الخريطة على كل الشاشات */
+function MapGpsFabOnMap({
+  gpsFabAlignStart,
+  gpsLocating,
+  gpsLabel,
+  gpsLocatingLabel,
+  onGpsClick,
+}) {
+  const map = useMap();
+  const container = map.getContainer();
+  return createPortal(
+    <div className="shopper-map-gps-fab-onmap">
+      <button
+        type="button"
+        className={`shopper-map-gps-fab${gpsFabAlignStart ? ' shopper-map-gps-fab--start' : ''}`}
+        onClick={onGpsClick}
+        disabled={gpsLocating}
+        title="تحديد موقعي الحالي على الخريطة"
+        aria-label={gpsLocating ? 'جاري تحديد الموقع' : 'موقعي الحالي'}
+      >
+        <MapPin size={20} strokeWidth={2.25} aria-hidden />
+        <span>{gpsLocating ? gpsLocatingLabel : gpsLabel}</span>
+      </button>
+    </div>,
+    container
+  );
 }
 
 /** يطبّق cursor على حاوية Leaflet لأن MapContainer لا يحدّث className بعد الإنشاء */
@@ -518,21 +547,17 @@ const ShopperMap = ({
             </Marker>
           );
         })}
-      </MapContainer>
 
-      {!gpsInline && showGpsOnMap && typeof onGpsClick === 'function' ? (
-        <button
-          type="button"
-          className={`shopper-map-gps-fab${gpsFabAlignStart ? ' shopper-map-gps-fab--start' : ''}`}
-          onClick={onGpsClick}
-          disabled={gpsLocating}
-          title="تحديد موقعي الحالي على الخريطة"
-          aria-label={gpsLocating ? 'جاري تحديد الموقع' : 'موقعي الحالي'}
-        >
-          <MapPin size={20} strokeWidth={2.25} aria-hidden />
-          <span>{gpsLocating ? gpsLocatingLabel : gpsLabel}</span>
-        </button>
-      ) : null}
+        {!gpsInline && showGpsOnMap && typeof onGpsClick === 'function' ? (
+          <MapGpsFabOnMap
+            gpsFabAlignStart={gpsFabAlignStart}
+            gpsLocating={gpsLocating}
+            gpsLabel={gpsLabel}
+            gpsLocatingLabel={gpsLocatingLabel}
+            onGpsClick={onGpsClick}
+          />
+        ) : null}
+      </MapContainer>
     </div>
   );
 };

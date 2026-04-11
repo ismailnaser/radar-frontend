@@ -243,9 +243,9 @@ export default function MapPage() {
         <style dangerouslySetInnerHTML={{ __html: `
           .map-page {
             width: 100%;
-            max-width: 1240px;
-            margin-inline: auto;
-            padding-inline: clamp(8px, 2.2vw, 22px);
+            max-width: none;
+            margin-inline: 0;
+            padding-inline: 0;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;

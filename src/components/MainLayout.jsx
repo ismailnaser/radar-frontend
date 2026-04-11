@@ -313,7 +313,7 @@ const MainLayout = ({ children }) => {
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} variant={sidebarVariant} />
 
       <main
-        className={`content${pathname === '/' ? ' content--home' : ''}${pathname === '/map' ? ' content--map' : ''}${pathname === '/login' || pathname === '/register' ? ' content--auth' : ''}`}
+        className={`content${pathname === '/' ? ' content--home' : ''}${pathname === '/map' ? ' content--map' : ''}`}
       >
         {showLayoutBack && hideHeaderOnMap ? (
           <div className="layout-back-floating">
@@ -1322,25 +1322,15 @@ const MainLayout = ({ children }) => {
 
         .content {
           flex: 1;
-          padding: clamp(12px, 2.8vw, 20px);
+          padding: 0;
+          padding-inline: env(safe-area-inset-left, 0) env(safe-area-inset-right, 0);
           padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
           background: var(--background);
           min-width: 0;
         }
 
-        .content.content--auth {
-          padding-inline: 0;
-          padding-top: 0;
-        }
-        @media (min-width: 721px) {
-          .content.content--auth {
-            padding-inline: clamp(12px, 2.8vw, 20px);
-            padding-top: clamp(12px, 2.8vw, 20px);
-          }
-        }
-
         .content.content--home {
-          padding: clamp(6px, 1.2vw, 12px);
+          padding: 0;
           padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
         }
 
@@ -1436,10 +1426,10 @@ const MainLayout = ({ children }) => {
             display: inline-flex;
           }
           .content {
-            padding-bottom: clamp(12px, 2.8vw, 20px);
+            padding-bottom: clamp(8px, 1.5vw, 16px);
           }
           .content.content--home {
-            padding-bottom: clamp(12px, 2.8vw, 20px);
+            padding-bottom: clamp(8px, 1.5vw, 16px);
           }
         }
 

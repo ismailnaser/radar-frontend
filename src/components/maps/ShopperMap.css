@@ -162,11 +162,24 @@
   cursor: crosshair !important;
 }
 
+/* حاوية داخل .leaflet-container — الزر فوق بلاط الخريطة على كل أحجام الشاشات */
+.shopper-map-gps-fab-onmap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2000;
+}
+
+.shopper-map-gps-fab-onmap .shopper-map-gps-fab {
+  pointer-events: auto;
+  z-index: 1;
+}
+
 .shopper-map-gps-fab {
   position: absolute;
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   inset-inline-end: 12px;
-  z-index: 5000;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 8px;

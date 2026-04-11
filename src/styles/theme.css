@@ -318,7 +318,12 @@ html {
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
+  font-family: var(--font-family);
+  direction: rtl;
+  background: var(--background);
+  color: var(--text-primary);
 }
 
 body {
