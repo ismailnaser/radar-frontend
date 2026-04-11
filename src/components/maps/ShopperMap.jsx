@@ -203,6 +203,11 @@ export function MapClickPicker({ onPick }) {
   return null;
 }
 
+/** يمنع Leaflet من اعتبار اللمس/الضغط بداية سحب على الخريطة (مهم على الجوال) */
+function stopMapPointerCapture(e) {
+  e.stopPropagation();
+}
+
 /** زر GPS داخل حاوية Leaflet نفسها ليظهر فوق طبقة الخريطة على كل الشاشات */
 function MapGpsFabOnMap({
   gpsFabAlignStart,
@@ -218,13 +223,22 @@ function MapGpsFabOnMap({
       <button
         type="button"
         className={`shopper-map-gps-fab${gpsFabAlignStart ? ' shopper-map-gps-fab--start' : ''}`}
-        onClick={onGpsClick}
+        onPointerDown={stopMapPointerCapture}
+        onPointerUp={stopMapPointerCapture}
+        onTouchStart={stopMapPointerCapture}
+        onMouseDown={stopMapPointerCapture}
+        onClick={(e) => {
+          stopMapPointerCapture(e);
+          if (!gpsLocating && typeof onGpsClick === 'function') {
+            void onGpsClick();
+          }
+        }}
         disabled={gpsLocating}
         title="تحديد موقعي الحالي على الخريطة"
         aria-label={gpsLocating ? 'جاري تحديد الموقع' : 'موقعي الحالي'}
       >
-        <MapPin size={20} strokeWidth={2.25} aria-hidden />
-        <span>{gpsLocating ? gpsLocatingLabel : gpsLabel}</span>
+        <MapPin size={20} strokeWidth={2.25} aria-hidden className="shopper-map-gps-fab__ico" />
+        <span className="shopper-map-gps-fab__txt">{gpsLocating ? gpsLocatingLabel : gpsLabel}</span>
       </button>
     </div>,
     container

@@ -162,39 +162,76 @@
   cursor: crosshair !important;
 }
 
-/* حاوية داخل .leaflet-container — الزر فوق بلاط الخريطة على كل أحجام الشاشات */
+/* حاوية داخل .leaflet-container — فوق طبقات Leaflet (zoom ~1000) */
 .shopper-map-gps-fab-onmap {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 2000;
+  z-index: 6500;
 }
 
 .shopper-map-gps-fab-onmap .shopper-map-gps-fab {
   pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   z-index: 1;
 }
 
 .shopper-map-gps-fab {
   position: absolute;
-  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  inset-inline-end: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  inset-inline-end: max(10px, env(safe-area-inset-inline-end, 0px));
   z-index: 1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 10px 14px;
-  border-radius: 12px;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px 16px;
+  border-radius: 14px;
   border: 1.5px solid rgba(0, 0, 0, 0.1);
   background: linear-gradient(135deg, var(--primary, #f5c000) 0%, var(--primary-hover, #e6b400) 100%);
   color: var(--secondary, #2d3436);
   font-family: inherit;
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: clamp(0.8rem, 2.8vw, 0.88rem);
+  line-height: 1.2;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-  max-width: min(280px, calc(100% - 24px));
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+  max-width: min(300px, calc(100% - 20px));
   transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.shopper-map-gps-fab__ico {
+  flex-shrink: 0;
+}
+
+.shopper-map-gps-fab__txt {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 42vw;
+}
+
+@media (min-width: 900px) {
+  .shopper-map-gps-fab__txt {
+    max-width: 220px;
+  }
+}
+
+@media (max-width: 380px) {
+  .shopper-map-gps-fab {
+    padding: 10px 12px;
+    min-height: 46px;
+    gap: 6px;
+  }
+  .shopper-map-gps-fab__txt {
+    max-width: 36vw;
+    font-size: 0.78rem;
+  }
 }
 
 .shopper-map-gps-fab:hover:not(:disabled) {
@@ -210,14 +247,8 @@
   cursor: wait;
 }
 
-.shopper-map-gps-fab span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .shopper-map-gps-fab--start {
-  inset-inline-start: 12px;
+  inset-inline-start: max(10px, env(safe-area-inset-inline-start, 0px));
   inset-inline-end: auto;
 }
 
