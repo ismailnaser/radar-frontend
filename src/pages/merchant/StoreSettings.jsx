@@ -5,6 +5,7 @@ import CustomInput from '../../components/ui/CustomInput';
 import CustomButton from '../../components/ui/CustomButton';
 import { useAlert } from '../../components/AlertProvider';
 import { getMerchantStoreProfile, updateMerchantStoreProfile } from '../../api/data';
+import { formatApiError } from '../../utils/apiErrors';
 import { Store, FileText, MapPin, Image as ImageIcon, MessageCircle, Clock, Sparkles } from 'lucide-react';
 import MerchantLocationPicker from '../../components/maps/MerchantLocationPicker';
 
@@ -167,14 +168,7 @@ const MerchantStoreSettings = () => {
         navigate(`/stores/${sid}`);
       }
     } catch (err) {
-      const msg =
-        err?.response?.data && typeof err.response.data === 'object'
-          ? Object.values(err.response.data)
-              .flat()
-              .filter(Boolean)
-              .join(' ')
-          : err?.message || '';
-      await showAlert(msg ? String(msg) : 'تعذر حفظ البيانات. حاول مرة أخرى.', 'خطأ');
+      await showAlert(formatApiError(err, 'تعذر حفظ البيانات. حاول مرة أخرى.'), 'خطأ');
     } finally {
       setSaving(false);
     }

@@ -166,6 +166,7 @@ export default function MapPage() {
             userLocation={userMapLocation}
             locationFocusNonce={locationFocusNonce}
             onManualLocationPick={setManualMapLocation}
+            autoFitStoresWhenNoUserLocation={false}
             showGpsOnMap
             gpsLocating={locating}
             onGpsClick={handleGpsClick}

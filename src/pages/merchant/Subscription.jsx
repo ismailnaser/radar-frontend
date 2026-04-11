@@ -2,11 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import MainLayout from '../../components/MainLayout';
 import { getMerchantSubscriptionStatus, getMerchantSubscriptionRenewalRequests, createMerchantSubscriptionRenewalRequest } from '../../api/data';
 import CustomButton from '../../components/ui/CustomButton';
+import { useAlert } from '../../components/AlertProvider';
+import { formatApiError } from '../../utils/apiErrors';
 import { Clock, Image as ImageIcon, Upload } from 'lucide-react';
 
 const MAX_IMAGE_MB = 3;
 
 const MerchantSubscription = () => {
+  const { showAlert } = useAlert();
   const [subscription, setSubscription] = useState(null);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +57,7 @@ const MerchantSubscription = () => {
     if (!file) return;
     const mb = file.size / (1024 * 1024);
     if (mb > MAX_IMAGE_MB) {
-      alert(`حجم الصورة كبير. الحد الأقصى ${MAX_IMAGE_MB}MB`);
+      void showAlert(`حجم الصورة كبير. الحد الأقصى ${MAX_IMAGE_MB}MB`, 'تنبيه');
       return;
     }
     setReceipt(file);
@@ -62,7 +65,10 @@ const MerchantSubscription = () => {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!receipt) return alert('لازم ترفع إشعار الدفع (صورة)');
+    if (!receipt) {
+      await showAlert('لازم ترفع إشعار الدفع (صورة)', 'تنبيه');
+      return;
+    }
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -74,6 +80,9 @@ const MerchantSubscription = () => {
       setReceipt(null);
       setPaymentMethod('balipay_wallet');
       await refresh();
+      await showAlert('تم إرسال طلب التجديد بنجاح. سيتم المراجعة خلال 24 ساعة.', 'تم');
+    } catch (err) {
+      await showAlert(formatApiError(err, 'تعذر إرسال طلب التجديد.'), 'خطأ');
     } finally {
       setSubmitting(false);
     }

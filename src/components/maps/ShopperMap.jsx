@@ -110,11 +110,19 @@ function cameraStateSignature(userLocation, stores, communityPoints, locationFoc
 }
 
 /**
- * مع موقع المستخدم: دائماً تمركز وسط الخريطة على **نفس إحداثيات المستخدم** (بدون flyToBounds مع
- * المتاجر — ذلك كان يزحزح المركز عن «موقعي»). زوم أوضح بعد ضغط «موقعي الحالي» على الخريطة.
- * بدون موقع المستخدم: يملأ الإطار بالمتاجر الظاهرة.
+ * مع موقع المستخدم: تمركز على إحداثيات المستخدم (زوم بعد ضغط «موقعي» أو يدوي).
+ * بدون موقع: إما ملء الإطار بالمتاجر (الافتراضي) أو — مع autoFitStoresWhenNoUserLocation=false —
+ * عدم تحريك الكاميرا تلقائياً حتى يضغط المستخدم «موقعي» (صفحة الاستكشاف).
  */
-function AdaptiveCamera({ userLocation, stores, communityPoints, locationFocusNonce, focusOnResults, focusKind }) {
+function AdaptiveCamera({
+  userLocation,
+  stores,
+  communityPoints,
+  locationFocusNonce,
+  focusOnResults,
+  focusKind,
+  autoFitStoresWhenNoUserLocation = true,
+}) {
   const map = useMap();
   const lastCamSig = useRef('');
 
@@ -181,13 +189,26 @@ function AdaptiveCamera({ userLocation, stores, communityPoints, locationFocusNo
       return;
     }
 
+    if (!autoFitStoresWhenNoUserLocation) {
+      return;
+    }
+
     if (storePts.length === 0) return;
     if (storePts.length === 1) {
       map.setView(storePts[0], 15, { animate: true });
       return;
     }
     map.fitBounds(L.latLngBounds(storePts), { padding: [40, 40], maxZoom: 17, animate: true });
-  }, [map, userLocation, stores, communityPoints, locationFocusNonce, focusOnResults, focusKind]);
+  }, [
+    map,
+    userLocation,
+    stores,
+    communityPoints,
+    locationFocusNonce,
+    focusOnResults,
+    focusKind,
+    autoFitStoresWhenNoUserLocation,
+  ]);
 
   return null;
 }
@@ -301,15 +322,21 @@ const ShopperMap = ({
   onExpandClick,
   /** يملأ حاوية بارتفاع كامل (عرض شاشة كامل) */
   isFullscreen = false,
+  /**
+   * true (افتراضي): بدون GPS تتمركز الخريطة على المتاجر إن وُجدت.
+   * false (صفحة الخريطة): تبقى على المنطقة الافتراضية حتى يضغط المستخدم «موقعي».
+   */
+  autoFitStoresWhenNoUserLocation = true,
 }) => {
   const center = useMemo(() => {
     if (userLocation?.length === 2) return userLocation;
+    if (!autoFitStoresWhenNoUserLocation) return DEFAULT_CENTER;
     const first = (stores || []).find(
       (s) => Number.isFinite(Number(s.latitude)) && Number.isFinite(Number(s.longitude))
     );
     if (first) return [Number(first.latitude), Number(first.longitude)];
     return DEFAULT_CENTER;
-  }, [stores, userLocation]);
+  }, [stores, userLocation, autoFitStoresWhenNoUserLocation]);
 
   const storeIcons = useMemo(() => {
     const m = new Map();
@@ -430,6 +457,7 @@ const ShopperMap = ({
           locationFocusNonce={locationFocusNonce}
           focusOnResults={focusOnResults}
           focusKind={focusKind}
+          autoFitStoresWhenNoUserLocation={autoFitStoresWhenNoUserLocation}
         />
 
         {/* افتح نافذة المتجر تلقائياً عند التركيز عليه */}

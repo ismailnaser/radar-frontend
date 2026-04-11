@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import MainLayout from '../../components/MainLayout';
 import { useNavigate, useParams } from 'react-router-dom';
 import { createMerchantProduct, getMerchantProduct, updateMerchantProduct } from '../../api/data';
+import { useAlert } from '../../components/AlertProvider';
+import { formatApiError } from '../../utils/apiErrors';
 import CustomInput from '../../components/ui/CustomInput';
 import CustomButton from '../../components/ui/CustomButton';
 import ImageCarousel from '../../components/ImageCarousel';
@@ -30,6 +32,7 @@ const MAX_GALLERY = 5;
 const MAX_PRODUCT_FEATURES = 5;
 
 const MerchantProductForm = () => {
+  const { showAlert } = useAlert();
   const { id } = useParams();
   const isEdit = !!id;
   const navigate = useNavigate();
@@ -74,14 +77,15 @@ const MerchantProductForm = () => {
     const arr = Array.from(fileList);
     const oversized = arr.find((f) => f.size / (1024 * 1024) > MAX_IMAGE_MB);
     if (oversized) {
-      alert(`حجم إحدى الصور كبير. الحد الأقصى ${MAX_IMAGE_MB}MB لكل صورة`);
+      void showAlert(`حجم إحدى الصور كبير. الحد الأقصى ${MAX_IMAGE_MB}MB لكل صورة`, 'تنبيه');
       return;
     }
     setReplacementFiles((prev) => {
       const { merged, skippedForCap } = mergeNewGalleryFiles(prev, arr, MAX_GALLERY);
       if (skippedForCap > 0) {
-        alert(
+        void showAlert(
           `وصلت للحد الأقصى ${MAX_GALLERY} صور. لم تُضف ${skippedForCap} ملفاً من هذه الجولة — احذف بـ «إلغاء الصور» أو أرسل ثم عدّل لاحقاً.`,
+          'تنبيه',
         );
       }
       return merged;
@@ -107,6 +111,7 @@ const MerchantProductForm = () => {
           fd.append('images', f);
         }
         await createMerchantProduct(fd);
+        await showAlert('تمت إضافة المنتج بنجاح.', 'تم');
       } else {
         if (replacementFiles.length > 0) {
           for (const f of replacementFiles) {
@@ -114,8 +119,11 @@ const MerchantProductForm = () => {
           }
         }
         await updateMerchantProduct(id, fd);
+        await showAlert('تم حفظ تعديلات المنتج.', 'تم');
       }
       navigate('/merchant/products');
+    } catch (err) {
+      await showAlert(formatApiError(err, isEdit ? 'تعذر حفظ المنتج.' : 'تعذر إضافة المنتج.'), 'خطأ');
     } finally {
       setLoading(false);
     }

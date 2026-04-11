@@ -548,7 +548,32 @@ const Favorites = () => {
         .favorites-grid{
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 20px;
+          gap: 16px;
+        }
+        @media (max-width: 720px) {
+          .favorites-grid{
+            grid-template-columns: 1fr;
+            gap: 12px;
+            justify-items: center;
+            max-width: min(300px, 94vw);
+            margin-inline: auto;
+          }
+          .favorite-card{
+            width: 100%;
+            max-width: min(300px, 94vw);
+            border-radius: 18px;
+          }
+          .favorite-card-media{
+            max-height: 150px;
+            min-height: 100px;
+            aspect-ratio: 16 / 10;
+          }
+          .favorite-card-body{
+            padding: 10px 12px 12px;
+          }
+          .favorite-card--store{
+            padding: 14px;
+          }
         }
         @media (min-width: 960px) {
           .favorites-grid{

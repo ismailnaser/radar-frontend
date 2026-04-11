@@ -6,6 +6,8 @@ import CustomButton from '../../components/ui/CustomButton';
 import CustomInput from '../../components/ui/CustomInput';
 import ImageCarousel from '../../components/ImageCarousel';
 import GalleryThumbRow from '../../components/GalleryThumbRow';
+import { useAlert } from '../../components/AlertProvider';
+import { formatApiError } from '../../utils/apiErrors';
 import { visualImageUrls } from '../../utils/productImages';
 import { mergeNewGalleryFiles } from '../../utils/galleryFiles';
 import { Image as ImageIcon, Megaphone, Upload, Search } from 'lucide-react';
@@ -65,6 +67,7 @@ async function tryFetchImageAsFile(url, nameHint = 'product') {
 }
 
 const MerchantAds = () => {
+  const { showAlert } = useAlert();
   const location = useLocation();
   const navigate = useNavigate();
   const adFormRef = useRef(null);
@@ -192,14 +195,15 @@ const MerchantAds = () => {
     const arr = Array.from(fileList);
     const big = arr.find((f) => f.size / (1024 * 1024) > MAX_IMAGE_MB);
     if (big) {
-      alert(`حجم إحدى الصور كبير. الحد الأقصى ${MAX_IMAGE_MB}MB لكل صورة`);
+      void showAlert(`حجم إحدى الصور كبير. الحد الأقصى ${MAX_IMAGE_MB}MB لكل صورة`, 'تنبيه');
       return;
     }
     setImageFiles((prev) => {
       const { merged, skippedForCap } = mergeNewGalleryFiles(prev, arr, MAX_AD_GALLERY);
       if (skippedForCap > 0) {
-        alert(
+        void showAlert(
           `وصلت للحد الأقصى ${MAX_AD_GALLERY} صور للإعلان. لم تُضف ${skippedForCap} ملفاً من هذه الجولة.`,
+          'تنبيه',
         );
       }
       return merged;
@@ -210,7 +214,7 @@ const MerchantAds = () => {
     if (!file) return;
     const mb = file.size / (1024 * 1024);
     if (mb > MAX_IMAGE_MB) {
-      alert(`حجم الصورة كبير. الحد الأقصى ${MAX_IMAGE_MB}MB`);
+      void showAlert(`حجم الصورة كبير. الحد الأقصى ${MAX_IMAGE_MB}MB`, 'تنبيه');
       return;
     }
     setPaymentReceipt(file);
@@ -219,15 +223,24 @@ const MerchantAds = () => {
   const submit = async (e) => {
     e.preventDefault();
     if (needExplicitAdImage && imageFiles.length === 0) {
-      return alert('اختر صوراً للإعلان، أو اربط الطلب بمنتج له صور في «منتجاتي» لنسخها تلقائياً على السيرفر.');
+      await showAlert(
+        'اختر صوراً للإعلان، أو اربط الطلب بمنتج له صور في «منتجاتي» لنسخها تلقائياً على السيرفر.',
+        'تنبيه',
+      );
+      return;
     }
     if (strictAdImageAndDesc && !description.trim()) {
-      return alert('يرجى إدخال تفاصيل الإعلان.');
+      await showAlert('يرجى إدخال تفاصيل الإعلان.', 'تنبيه');
+      return;
     }
-    if (!paymentReceipt) return alert('لازم ترفع إشعار دفع الإعلان');
+    if (!paymentReceipt) {
+      await showAlert('لازم ترفع إشعار دفع الإعلان', 'تنبيه');
+      return;
+    }
     const priceNum = parseFloat(String(productPrice).replace(',', '.'));
     if (!Number.isFinite(priceNum) || priceNum <= 0) {
-      return alert('أدخل سعر المنتج المعروض في الإعلان (رقم أكبر من صفر)');
+      await showAlert('أدخل سعر المنتج المعروض في الإعلان (رقم أكبر من صفر)', 'تنبيه');
+      return;
     }
     setSubmitting(true);
     try {
@@ -250,6 +263,9 @@ const MerchantAds = () => {
       setPaymentMethod(PAY_BALIPAY);
       setImageFiles([]);
       setPaymentReceipt(null);
+      await showAlert('تم إرسال الطلب بنجاح. سيتم المراجعة خلال 24 ساعة.', 'تم');
+    } catch (err) {
+      await showAlert(formatApiError(err, 'تعذر إرسال الطلب. تحقق من الاتصال والبيانات.'), 'خطأ');
     } finally {
       setSubmitting(false);
     }

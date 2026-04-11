@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { changeMyPassword, changeMyUsername } from '../api/data';
+import { formatApiError } from '../utils/apiErrors';
 import { useAlert } from '../components/AlertProvider';
 import MainLayout from '../components/MainLayout';
 
@@ -48,11 +49,7 @@ export default function Settings() {
       setUsername(newU);
       showAlert('تم تحديث اسم المستخدم.', 'تم');
     } catch (err) {
-      const msg =
-        err?.response?.data?.username?.[0] ||
-        err?.response?.data?.error ||
-        'تعذر تحديث اسم المستخدم. حاول لاحقاً.';
-      showAlert(String(msg), 'خطأ');
+      showAlert(formatApiError(err, 'تعذر تحديث اسم المستخدم. حاول لاحقاً.'), 'خطأ');
     } finally {
       setUsernameSaving(false);
     }
@@ -75,13 +72,7 @@ export default function Settings() {
       setNewPassword('');
       showAlert('تم تغيير كلمة المرور بنجاح.', 'تم');
     } catch (err) {
-      const msg =
-        err?.response?.data?.current_password?.[0] ||
-        err?.response?.data?.new_password?.[0] ||
-        err?.response?.data?.error ||
-        err?.response?.data?.detail ||
-        'تعذر تغيير كلمة المرور. حاول لاحقاً.';
-      showAlert(String(msg), 'خطأ');
+      showAlert(formatApiError(err, 'تعذر تغيير كلمة المرور. تحقق من البيانات وحاول لاحقاً.'), 'خطأ');
     } finally {
       setPasswordSaving(false);
     }

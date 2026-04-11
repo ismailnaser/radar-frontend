@@ -14,6 +14,7 @@ import { MapClickPicker } from '../components/maps/ShopperMap';
 import MapFlyToPosition from '../components/maps/MapFlyToPosition';
 import '../components/maps/leafletIconFix';
 import { getRefinedGeolocationPosition } from '../utils/geolocation';
+import { formatApiError } from '../utils/apiErrors';
 
 const REGISTER_MAP_DEFAULT_CENTER = [31.5, 34.4];
 
@@ -195,14 +196,9 @@ const Register = () => {
       showAlert('تم تسجيل الحساب بنجاح!', 'نجاح');
       navigate('/');
     } catch (err) {
-      if (err.response && err.response.data) {
-        const msg = Object.values(err.response.data).flat().join(' ');
-        setError(msg || 'تعذر إنشاء الحساب، يرجى المحاولة مرة أخرى.');
-        showAlert(msg || 'تعذر إنشاء الحساب، يرجى المحاولة مرة أخرى.');
-      } else {
-        setError('تعذر الاتصال بالخادم، يرجى التأكد من تشغيل الـ Backend.');
-        showAlert('تعذر الاتصال بالخادم، يرجى التأكد من تشغيل الـ Backend.');
-      }
+      const msg = formatApiError(err, 'تعذر إنشاء الحساب. حاول مرة أخرى.');
+      setError(msg);
+      showAlert(msg, 'تنبيه');
       console.error(err);
     } finally {
       setLoading(false);

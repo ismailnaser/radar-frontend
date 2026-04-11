@@ -344,12 +344,24 @@ const Offers = () => {
           @media (max-width: 720px) {
             .offers-grid {
               grid-template-columns: 1fr;
-              gap: 22px;
+              gap: 14px;
               justify-items: center;
             }
             .offers-card {
               width: 100%;
-              max-width: 360px;
+              max-width: min(300px, 92vw);
+              border-radius: 18px;
+            }
+            .offers-card-media {
+              max-height: 168px;
+              min-height: 96px;
+              aspect-ratio: 16 / 10;
+            }
+            .offers-card-body {
+              padding: 12px 12px 14px;
+            }
+            .offers-card-title {
+              font-size: 1rem !important;
             }
           }
           @media (min-width: 960px) {

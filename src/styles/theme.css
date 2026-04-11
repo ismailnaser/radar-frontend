@@ -546,7 +546,7 @@ body {
 
 @media (max-width: 768px) {
   .card {
-    padding: 1.25rem;
+    padding: 1.1rem 0.95rem;
   }
 
   .page-header {
@@ -561,7 +561,8 @@ body {
 
 @media (max-width: 480px) {
   .card {
-    padding: 1.1rem;
+    padding: 0.95rem 0.8rem;
+    border-radius: var(--radius-lg);
   }
 
   .btn-primary {
