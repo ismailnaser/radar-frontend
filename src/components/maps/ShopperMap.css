@@ -75,6 +75,25 @@
 .shopper-map-gps-inline:active:not(:disabled){ transform: scale(0.98); }
 .shopper-map-gps-inline:disabled{ opacity: 0.75; cursor: wait; }
 
+@media (max-width: 520px) {
+  .shopper-map-manual-bar {
+    padding: 8px 6px;
+    gap: 8px;
+    justify-content: center;
+  }
+  .shopper-map-manual-btn-primary {
+    font-size: 0.78rem;
+    padding: 8px 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .shopper-map-gps-inline {
+    font-size: 0.76rem;
+    padding: 7px 10px;
+    flex: 0 0 auto;
+  }
+}
+
 .shopper-map-topbar{
   position: absolute;
   left: 0;
@@ -145,9 +164,9 @@
 
 .shopper-map-gps-fab {
   position: absolute;
-  bottom: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   inset-inline-end: 12px;
-  z-index: 1100;
+  z-index: 5000;
   display: inline-flex;
   align-items: center;
   gap: 8px;

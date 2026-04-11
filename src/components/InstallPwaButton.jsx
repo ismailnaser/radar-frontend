@@ -70,7 +70,7 @@ export default function InstallPwaButton({ className = '' }) {
         <span className="pwa-install__btn-ico" aria-hidden>
           {mode === 'ios' ? <Share2 size={18} strokeWidth={2} /> : <Download size={18} strokeWidth={2} />}
         </span>
-        <span>تثبيت التطبيق</span>
+        <span className="pwa-install__btn-txt">تثبيت التطبيق</span>
       </button>
       {mode === 'ios' && showIOSHelp ? (
         <div className="pwa-install__help">

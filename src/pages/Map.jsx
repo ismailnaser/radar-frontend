@@ -174,7 +174,6 @@ export default function MapPage() {
             gpsLabel="موقعي"
             gpsLocatingLabel="جاري الموقع…"
             gpsFabAlignStart
-            gpsInline
             focusOnResults={focusOnResults}
             focusKind={mode === 'community' ? 'community' : 'stores'}
             focusStoreId={mode === 'stores' ? focusStoreId : null}

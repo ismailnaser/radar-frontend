@@ -116,7 +116,7 @@ const MainLayout = ({ children }) => {
     >
       {!hideMainHeader ? (
       <header
-        className={`main-header main-header--market${shopperMarketChrome ? ' main-header--shopper-market' : ''}`}
+        className={`main-header main-header--market${shopperMarketChrome ? ' main-header--shopper-market' : ''}${pathname === '/' ? ' main-header--home' : ''}`}
       >
         <div className="main-header__primary">
           <div className="header-right">
@@ -312,7 +312,9 @@ const MainLayout = ({ children }) => {
 
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} variant={sidebarVariant} />
 
-      <main className={`content${pathname === '/' ? ' content--home' : ''}${pathname === '/map' ? ' content--map' : ''}`}>
+      <main
+        className={`content${pathname === '/' ? ' content--home' : ''}${pathname === '/map' ? ' content--map' : ''}${pathname === '/login' || pathname === '/register' ? ' content--auth' : ''}`}
+      >
         {showLayoutBack && hideHeaderOnMap ? (
           <div className="layout-back-floating">
             <button
@@ -554,6 +556,46 @@ const MainLayout = ({ children }) => {
           align-items: center;
         }
 
+        /* الصفحة الرئيسية على الجوال: صف ثانٍ كامل لعرض زر التثبيت دون تداخل مع الشعار/الحساب */
+        @media (max-width: 720px) {
+          .main-header--shopper-market.main-header--home .main-header__primary {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-rows: auto auto;
+            gap: 8px 10px;
+            align-items: start;
+          }
+          .main-header--shopper-market.main-header--home .header-right {
+            grid-column: 1;
+            grid-row: 1;
+            min-width: 0;
+          }
+          .main-header--shopper-market.main-header--home .header-left {
+            grid-column: 2;
+            grid-row: 1;
+            padding-inline-end: 0;
+          }
+          .main-header--shopper-market.main-header--home .header-center {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            justify-self: stretch;
+            width: 100%;
+          }
+          .main-header--shopper-market.main-header--home .pwa-install {
+            width: 100%;
+            max-width: none;
+          }
+          .main-header--shopper-market.main-header--home .pwa-install__btn {
+            width: 100%;
+            max-width: none;
+            min-height: 44px;
+            padding: 10px 12px;
+          }
+          .main-header--shopper-market.main-header--home .pwa-install__btn-txt {
+            display: inline;
+          }
+        }
+
         .header-left{
           display: inline-flex;
           align-items: center;
@@ -622,10 +664,17 @@ const MainLayout = ({ children }) => {
             max-width: min(240px, 52vw);
           }
           .pwa-install__btn{
-            max-width: 220px;
-            padding: 9px 10px;
+            max-width: max-content;
+            padding: 8px;
             border-radius: 12px;
-            font-size: 0.9rem;
+          }
+          .pwa-install__btn-txt{
+            display: none;
+          }
+          .pwa-install__btn-ico{
+            margin: 0;
+            width: 28px;
+            height: 28px;
           }
           .header-logout-btn{
             padding: 0 10px;
@@ -647,11 +696,6 @@ const MainLayout = ({ children }) => {
           }
           .header-user-pill__name{
             display: none;
-          }
-          .pwa-install__btn{
-            max-width: 180px;
-            padding: 8px 8px;
-            font-size: 0.86rem;
           }
         }
 
@@ -1282,6 +1326,17 @@ const MainLayout = ({ children }) => {
           padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
           background: var(--background);
           min-width: 0;
+        }
+
+        .content.content--auth {
+          padding-inline: 0;
+          padding-top: 0;
+        }
+        @media (min-width: 721px) {
+          .content.content--auth {
+            padding-inline: clamp(12px, 2.8vw, 20px);
+            padding-top: clamp(12px, 2.8vw, 20px);
+          }
         }
 
         .content.content--home {
