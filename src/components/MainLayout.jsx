@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Menu, MapPin, User, UserPlus, LogIn, LogOut, Home as HomeIcon, Map as MapIcon, Megaphone, Store, SlidersHorizontal, Search as SearchIcon, LayoutDashboard, Users, Tags, ChevronRight, Bell } from 'lucide-react';
@@ -18,6 +19,10 @@ const MainLayout = ({ children }) => {
   const { requestUserLocation, locating, searchQuery, setSearchQuery } = useMapExplore();
   const { showAlert, showConfirm } = useAlert();
   const [announcements, setAnnouncements] = useState([]);
+  const [adminNotifsOpen, setAdminNotifsOpen] = useState(false);
+  const [isNarrowScreen, setIsNarrowScreen] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches,
+  );
   const adminNotifs = useAdminNotifications();
 
   useEffect(() => {
@@ -48,6 +53,27 @@ const MainLayout = ({ children }) => {
     }, 320);
     return () => window.clearTimeout(t);
   }, [isSidebarOpen]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 720px)');
+    const onChange = () => setIsNarrowScreen(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!adminNotifsOpen || !isNarrowScreen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => {
+      if (e.key === 'Escape') setAdminNotifsOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [adminNotifsOpen, isNarrowScreen]);
   /** زائر صريح: لا يُعامل كجلسة عضو حتى لو بقي توكن قديماً في التخزين */
   const isGuestUser = localStorage.getItem('isGuest') === 'true';
   const hasToken = !!localStorage.getItem('token');
@@ -109,6 +135,55 @@ const MainLayout = ({ children }) => {
     navigate('/');
   }, [navigate, pathname]);
 
+  useEffect(() => {
+    setAdminNotifsOpen(false);
+  }, [pathname]);
+
+  const adminNotifsPanelInner = isAdminUser && adminNotifs && (
+    <>
+      <div className="admin-notifs-pop__head">
+        <strong>الإشعارات</strong>
+        <button
+          type="button"
+          className="btn-toggle"
+          onClick={async () => {
+            const ok = await showConfirm('تحديث قائمة إشعارات الإدارة؟', 'تحديث');
+            if (!ok) return;
+            try {
+              await Promise.resolve(adminNotifs.pollOnce?.());
+              await showAlert('تم تحديث القائمة.', 'تم');
+            } catch {
+              await showAlert('تعذر التحديث. حاول لاحقاً.', 'خطأ');
+            }
+          }}
+        >
+          تحديث
+        </button>
+      </div>
+      <div className="admin-notifs-list">
+        {(adminNotifs.items || [])
+          .slice()
+          .reverse()
+          .slice(0, 12)
+          .map((n) => (
+            <div key={n.id} className="admin-notifs-item">
+              <div className="admin-notifs-item__title">{n.title}</div>
+              {n.body ? <div className="admin-notifs-item__body">{n.body}</div> : null}
+              <div className="admin-notifs-item__meta">
+                <span>{n.event_type_label || n.event_type}</span>
+                <span className="muted small">{new Date(n.created_at).toLocaleString('ar')}</span>
+              </div>
+            </div>
+          ))}
+        {!adminNotifs.items || adminNotifs.items.length === 0 ? (
+          <div className="muted small" style={{ padding: 10 }}>
+            لا إشعارات بعد.
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
+
   return (
     <div
       className={`layout-container${isSidebarOpen ? ' sidebar-open' : ''}${pathname === '/map' ? ' layout-container--map' : ''}`}
@@ -155,16 +230,17 @@ const MainLayout = ({ children }) => {
                   className="admin-notifs-btn"
                   aria-label="إشعارات الإدارة"
                   title="إشعارات الإدارة"
-                  onClick={async () => {
+                  aria-expanded={adminNotifsOpen}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAdminNotifsOpen((prev) => {
+                      const next = !prev;
+                      if (next) adminNotifs.markAllRead?.();
+                      return next;
+                    });
                     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-                      try {
-                        await Notification.requestPermission();
-                      } catch {
-                        /* تجاهل */
-                      }
+                      void Notification.requestPermission().catch(() => {});
                     }
-                    const open = document.body.classList.toggle('admin-notifs-open');
-                    if (open) adminNotifs.markAllRead?.();
                   }}
                 >
                   <Bell size={20} strokeWidth={2} aria-hidden />
@@ -174,48 +250,35 @@ const MainLayout = ({ children }) => {
                     </span>
                   ) : null}
                 </button>
-                <div className="admin-notifs-pop">
-                  <div className="admin-notifs-pop__head">
-                    <strong>الإشعارات</strong>
-                    <button
-                      type="button"
-                      className="btn-toggle"
-                      onClick={async () => {
-                        const ok = await showConfirm('تحديث قائمة إشعارات الإدارة؟', 'تحديث');
-                        if (!ok) return;
-                        try {
-                          await Promise.resolve(adminNotifs.pollOnce?.());
-                          await showAlert('تم تحديث القائمة.', 'تم');
-                        } catch {
-                          await showAlert('تعذر التحديث. حاول لاحقاً.', 'خطأ');
-                        }
-                      }}
-                    >
-                      تحديث
-                    </button>
+                {!isNarrowScreen && adminNotifsOpen ? (
+                  <div className="admin-notifs-pop admin-notifs-pop--dropdown" role="dialog" aria-modal="true" aria-label="إشعارات الإدارة">
+                    {adminNotifsPanelInner}
                   </div>
-                  <div className="admin-notifs-list">
-                    {(adminNotifs.items || [])
-                      .slice()
-                      .reverse()
-                      .slice(0, 12)
-                      .map((n) => (
-                        <div key={n.id} className="admin-notifs-item">
-                          <div className="admin-notifs-item__title">{n.title}</div>
-                          {n.body ? <div className="admin-notifs-item__body">{n.body}</div> : null}
-                          <div className="admin-notifs-item__meta">
-                            <span>{n.event_type_label || n.event_type}</span>
-                            <span className="muted small">{new Date(n.created_at).toLocaleString('ar')}</span>
-                          </div>
-                        </div>
-                      ))}
-                    {!adminNotifs.items || adminNotifs.items.length === 0 ? (
-                      <div className="muted small" style={{ padding: 10 }}>
-                        لا إشعارات بعد.
+                ) : null}
+                {isNarrowScreen &&
+                  adminNotifsOpen &&
+                  typeof document !== 'undefined' &&
+                  createPortal(
+                    <>
+                      <button
+                        type="button"
+                        className="admin-notifs-backdrop"
+                        aria-label="إغلاق الإشعارات"
+                        onClick={() => setAdminNotifsOpen(false)}
+                      />
+                      <div
+                        className="admin-notifs-sheet"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="إشعارات الإدارة"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="admin-notifs-sheet__handle" aria-hidden />
+                        {adminNotifsPanelInner}
                       </div>
-                    ) : null}
-                  </div>
-                </div>
+                    </>,
+                    document.body,
+                  )}
               </div>
             ) : null}
 
@@ -436,6 +499,7 @@ const MainLayout = ({ children }) => {
           top: 0;
           z-index: 1100;
           isolation: isolate;
+          overflow: visible;
         }
 
         .site-announcements{
@@ -839,57 +903,67 @@ const MainLayout = ({ children }) => {
           text-align: center;
           border: 2px solid #fff;
         }
-        .admin-notifs-pop{
-          display: none;
+        .admin-notifs-pop--dropdown{
+          display: flex;
+          flex-direction: column;
           position: absolute;
           top: calc(100% + 8px);
           inset-inline-end: 0;
           width: min(420px, calc(100vw - 24px));
-          background: rgba(255,255,255,0.96);
+          max-width: calc(100vw - 20px);
+          background: rgba(255,255,255,0.98);
           border: 1px solid rgba(232, 230, 224, 0.95);
           border-radius: 18px;
-          box-shadow: 0 18px 46px rgba(26, 29, 38, 0.14);
+          box-shadow: 0 18px 46px rgba(26, 29, 38, 0.18);
           overflow: hidden;
-          z-index: 1300;
+          z-index: 5000;
           box-sizing: border-box;
         }
-        body.admin-notifs-open .admin-notifs-pop{
+        .admin-notifs-backdrop{
+          position: fixed;
+          inset: 0;
+          z-index: 8000;
+          border: none;
+          padding: 0;
+          margin: 0;
+          cursor: pointer;
+          background: rgba(14, 16, 22, 0.45);
+          -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
+          touch-action: manipulation;
+        }
+        .admin-notifs-sheet{
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 8010;
           display: flex;
           flex-direction: column;
+          max-height: min(82dvh, 580px);
+          background: rgba(255,255,255,0.98);
+          border-radius: 20px 20px 0 0;
+          box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.22);
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+          box-sizing: border-box;
+          overflow: hidden;
+          touch-action: pan-y;
         }
-        @media (max-width: 720px) {
-          body.admin-notifs-open::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            z-index: 5980;
-            background: rgba(18, 20, 28, 0.42);
-            -webkit-backdrop-filter: blur(3px);
-            backdrop-filter: blur(3px);
-          }
-          body.admin-notifs-open .admin-notifs-pop {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            top: auto;
-            inset-inline-end: auto;
-            width: 100%;
-            max-width: 100%;
-            margin: 0;
-            border-radius: 20px 20px 0 0;
-            max-height: min(78dvh, 560px);
-            z-index: 6000;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-            box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.2);
-          }
-          .admin-notifs-pop__head {
-            flex-shrink: 0;
-          }
-          .admin-notifs-list {
-            max-height: min(52dvh, 400px);
-            -webkit-overflow-scrolling: touch;
-          }
+        .admin-notifs-sheet__handle{
+          width: 40px;
+          height: 5px;
+          border-radius: 999px;
+          background: rgba(26, 29, 38, 0.2);
+          margin: 10px auto 6px;
+          flex-shrink: 0;
+        }
+        .admin-notifs-sheet .admin-notifs-list{
+          flex: 1;
+          min-height: 0;
+          max-height: none;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
         }
         .admin-notifs-pop__head{
           display:flex;
