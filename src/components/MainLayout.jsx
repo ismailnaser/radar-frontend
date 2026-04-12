@@ -147,11 +147,8 @@ const MainLayout = ({ children }) => {
           type="button"
           className="btn-toggle"
           onClick={async () => {
-            const ok = await showConfirm('تحديث قائمة إشعارات الإدارة؟', 'تحديث');
-            if (!ok) return;
             try {
               await Promise.resolve(adminNotifs.pollOnce?.());
-              await showAlert('تم تحديث القائمة.', 'تم');
             } catch {
               await showAlert('تعذر التحديث. حاول لاحقاً.', 'خطأ');
             }
