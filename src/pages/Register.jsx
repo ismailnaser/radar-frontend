@@ -15,6 +15,7 @@ import MapFlyToPosition from '../components/maps/MapFlyToPosition';
 import '../components/maps/leafletIconFix';
 import { getRefinedGeolocationPosition } from '../utils/geolocation';
 import { formatApiError } from '../utils/apiErrors';
+import { loadRememberedLogin, saveRememberedLogin } from '../utils/rememberLogin';
 
 const REGISTER_MAP_DEFAULT_CENTER = [31.5, 34.4];
 
@@ -70,6 +71,7 @@ const Register = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { showAlert } = useAlert();
 
@@ -77,6 +79,15 @@ const Register = () => {
     () => (merchantMapPick && merchantMapPick.length === 2 ? merchantMapPick : REGISTER_MAP_DEFAULT_CENTER),
     [merchantMapPick]
   );
+
+  useEffect(() => {
+    const saved = loadRememberedLogin();
+    if (saved.rememberMe) {
+      setUsername(saved.username);
+      setPassword(saved.password);
+      setRememberMe(true);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -193,8 +204,13 @@ const Register = () => {
         await showAlert(regData.merchant_subscription_notice, 'ملاحظة الاشتراك');
       }
       await login(username.trim(), password);
+      saveRememberedLogin({
+        username: username.trim(),
+        password,
+        rememberMe,
+      });
       await showAlert('تم إنشاء الحساب وتسجيل الدخول بنجاح.', 'تم');
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (err) {
       const msg = formatApiError(err, 'تعذر إنشاء الحساب. حاول مرة أخرى.');
       setError(msg);
@@ -213,7 +229,7 @@ const Register = () => {
     localStorage.removeItem('is_verified');
     localStorage.removeItem('is_primary_admin');
     localStorage.setItem('isGuest', 'true');
-    navigate('/');
+    navigate('/', { replace: true });
     await showAlert('أنت الآن في وضع الزائر.', 'تم');
   };
 
@@ -291,6 +307,18 @@ const Register = () => {
                 {showPassword ? <EyeOff size={18} strokeWidth={2} aria-hidden /> : <Eye size={18} strokeWidth={2} aria-hidden />}
               </button>
             </div>
+
+            <label
+              className="auth-remember"
+              title="حفظ اسم المستخدم وكلمة المرور محلياً على هذا الجهاز بعد إنشاء الحساب"
+            >
+              <span className="auth-remember__txt">تذكرني</span>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+            </label>
 
             {accountType === 'merchant' && (
               <>

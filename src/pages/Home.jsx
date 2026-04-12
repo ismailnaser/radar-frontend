@@ -78,6 +78,7 @@ import {
   Sun,
 } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
+import { HomeBackGuard } from '../components/HomeBackGuard';
 import {
   getCategories,
   getCommunityCategories,
@@ -852,8 +853,8 @@ const Home = () => {
   const isGuestVisitor = localStorage.getItem('isGuest') === 'true';
   const isMerchantOnHome =
     !!localStorage.getItem('token') && !isGuestVisitor && localStorage.getItem('user_type') === 'merchant';
-  const canShopSponsored =
-    !!localStorage.getItem('token') && !isGuestVisitor && localStorage.getItem('user_type') === 'shopper';
+  const canUseOfferFavorites =
+    !!localStorage.getItem('token') && !isGuestVisitor;
 
   useEffect(() => {
     if (filterMode !== 'community' || isMerchantOnHome) return;
@@ -864,7 +865,7 @@ const Home = () => {
   }, [filterMode, selectedCommunityCategoryId, isMerchantOnHome]);
 
   useEffect(() => {
-    if (!canShopSponsored) {
+    if (!canUseOfferFavorites) {
       setSponsoredFavByAdId({});
       return undefined;
     }
@@ -885,7 +886,7 @@ const Home = () => {
     return () => {
       cancelled = true;
     };
-  }, [canShopSponsored]);
+  }, [canUseOfferFavorites]);
 
   const addSponsoredToCart = async (ad) => {
     if (!canUseShoppingCarts()) {
@@ -921,8 +922,8 @@ const Home = () => {
   };
 
   const addSponsoredToFavorites = async (ad) => {
-    if (!canShopSponsored) {
-      await showAlert('سجّل دخول كمتسوق لإضافة المنتج للمفضلة.', 'تنبيه');
+    if (!canUseOfferFavorites) {
+      await showAlert('سجّل الدخول لاستخدام المفضلة. وضع الزائر لا يدعمها.', 'تنبيه');
       return;
     }
     try {
@@ -956,6 +957,7 @@ const Home = () => {
 
   return (
     <MainLayout>
+      <HomeBackGuard />
       <div className="home-container">
         {isMerchantOnHome ? (
           <div

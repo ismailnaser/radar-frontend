@@ -2,12 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Menu, MapPin, User, UserPlus, LogIn, LogOut, Home as HomeIcon, Map as MapIcon, Megaphone, Store, SlidersHorizontal, Search as SearchIcon, LayoutDashboard, Users, Tags, ChevronRight, Bell } from 'lucide-react';
+import { Menu, MapPin, User, UserPlus, Home as HomeIcon, Map as MapIcon, Megaphone, Store, SlidersHorizontal, Search as SearchIcon, LayoutDashboard, Users, Tags, ChevronRight, Bell } from 'lucide-react';
 import { useMapExplore } from '../context/MapExploreContext';
 import { useAdminPendingCounts } from '../context/AdminPendingCountsContext';
 import { useAdminNotifications } from '../context/AdminNotificationsContext';
 import { useAlert } from './AlertProvider';
-import { logout } from '../api/auth';
 import { getPublicAnnouncements } from '../api/data';
 import InstallPwaButton from './InstallPwaButton';
 
@@ -17,7 +16,7 @@ const MainLayout = ({ children }) => {
   const [urlSearchParams] = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { requestUserLocation, locating, searchQuery, setSearchQuery } = useMapExplore();
-  const { showAlert, showConfirm } = useAlert();
+  const { showAlert } = useAlert();
   const [announcements, setAnnouncements] = useState([]);
   const [adminNotifsOpen, setAdminNotifsOpen] = useState(false);
   const [isNarrowScreen, setIsNarrowScreen] = useState(
@@ -208,11 +207,6 @@ const MainLayout = ({ children }) => {
             <Link to="/" className="brand-block brand-block--toolbar" title="رادار — الرئيسية">
               <img className="brand-block-logo brand-block-logo--toolbar" src="/logo.png" alt="رادار" />
             </Link>
-
-            <div className="header-user-pill" title={isAuthenticated ? displayName : 'زائر'} aria-label="حالة المستخدم">
-              <User size={18} strokeWidth={1.85} aria-hidden />
-              <span className="header-user-pill__name">{isAuthenticated ? displayName : 'زائر'}</span>
-            </div>
           </div>
 
           <div className="header-center">
@@ -280,27 +274,23 @@ const MainLayout = ({ children }) => {
             ) : null}
 
             {isAuthenticated ? (
-              <button
-                type="button"
-                className="header-logout-btn"
-                aria-label="تسجيل الخروج"
-                title="تسجيل الخروج"
-                onClick={async () => {
-                  const ok = await showConfirm('تأكيد تسجيل الخروج من الحساب؟', 'تسجيل الخروج');
-                  if (!ok) return;
-                  localStorage.removeItem('isGuest');
-                  logout();
-                  navigate('/login');
-                  await showAlert('تم تسجيل الخروج بنجاح.', 'تم');
-                }}
+              <div
+                className="header-user-pill header-user-pill--member"
+                title={displayName || 'حسابي'}
+                aria-label={`المستخدم: ${displayName || 'حسابي'}`}
               >
-                <LogOut size={20} strokeWidth={2} aria-hidden />
-                <span className="header-logout-btn__txt">خروج</span>
-              </button>
+                <User size={18} strokeWidth={1.85} aria-hidden className="header-user-pill__ico" />
+                <span className="header-user-pill__name">{displayName || 'حسابي'}</span>
+              </div>
             ) : (
-              <Link to="/login" className="header-logout-btn header-logout-btn--login" aria-label="تسجيل الدخول" title="تسجيل الدخول">
-                <LogIn size={20} strokeWidth={2} aria-hidden />
-                <span className="header-logout-btn__txt">دخول</span>
+              <Link
+                to="/register"
+                className="header-register-btn"
+                aria-label="إنشاء حساب — تسجيل"
+                title="تسجيل"
+              >
+                <UserPlus size={18} strokeWidth={2} aria-hidden />
+                <span className="header-register-btn__txt">+ تسجيل</span>
               </Link>
             )}
           </div>
@@ -706,8 +696,15 @@ const MainLayout = ({ children }) => {
           background: rgba(255, 255, 255, 0.92);
           box-shadow: var(--shadow-sm);
           color: var(--secondary);
-          max-width: 320px;
+          max-width: min(320px, 42vw);
           min-width: 0;
+          flex: 0 1 auto;
+        }
+        .header-user-pill--member {
+          max-width: min(340px, 46vw);
+        }
+        .header-user-pill__ico{
+          flex-shrink: 0;
         }
         .header-user-pill__name{
           font-weight: 950;
@@ -716,13 +713,44 @@ const MainLayout = ({ children }) => {
           text-overflow: ellipsis;
           white-space: nowrap;
           min-width: 0;
+          flex: 1 1 auto;
+        }
+        .header-register-btn{
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          min-height: 40px;
+          padding: 8px 12px;
+          border-radius: 999px;
+          font-size: 0.88rem;
+          font-weight: 950;
+          text-decoration: none;
+          color: var(--secondary);
+          background: rgba(255, 255, 255, 0.92);
+          border: 1px solid var(--border);
+          box-shadow: var(--shadow-sm);
+          white-space: nowrap;
+          flex-shrink: 0;
+          transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .header-register-btn:hover{
+          border-color: rgba(255, 204, 0, 0.55);
+          box-shadow: var(--shadow-sm);
+          background: var(--white);
+        }
+        .header-register-btn__txt{
+          letter-spacing: -0.02em;
         }
 
         /* تخطيط الهيدر: يمين/وسط/يسار */
 
         @media (max-width: 720px){
           .header-user-pill{
-            max-width: 100%;
+            max-width: min(280px, 52vw);
+          }
+          .header-user-pill--member{
+            max-width: min(300px, 58vw);
           }
           img.brand-block-logo.brand-block-logo--toolbar{
             max-width: min(320px, 72vw);
@@ -742,10 +770,18 @@ const MainLayout = ({ children }) => {
           }
           .header-user-pill{
             padding: 6px 10px;
-            max-width: 44vw;
+            max-width: min(200px, 48vw);
+          }
+          .header-user-pill--member{
+            max-width: min(220px, 52vw);
           }
           .header-user-pill__name{
-            max-width: 22vw;
+            max-width: min(160px, 38vw);
+          }
+          .header-register-btn{
+            padding: 6px 10px;
+            font-size: 0.82rem;
+            min-height: 38px;
           }
           img.brand-block-logo.brand-block-logo--toolbar{
             height: 64px;
@@ -764,15 +800,9 @@ const MainLayout = ({ children }) => {
             width: 28px;
             height: 28px;
           }
-          .header-logout-btn{
-            padding: 0 10px;
-          }
-          .header-logout-btn__txt{
-            display: none;
-          }
         }
 
-        /* أصغر الشاشات جداً: امنع التداخل بإخفاء اسم المستخدم وتقليل اللوغو والزر */
+        /* أصغر الشاشات: اقتطاع اسم المستخدم مع الإبقاء على أيقونة + عنوان كامل في title */
         @media (max-width: 360px){
           img.brand-block-logo.brand-block-logo--toolbar{
             height: 56px;
@@ -780,10 +810,24 @@ const MainLayout = ({ children }) => {
           }
           .header-user-pill{
             padding: 6px 8px;
-            max-width: 36vw;
+            max-width: min(140px, 42vw);
+          }
+          .header-user-pill--member{
+            max-width: min(150px, 44vw);
           }
           .header-user-pill__name{
-            display: none;
+            max-width: min(100px, 30vw);
+            font-size: 0.78rem;
+          }
+          .header-register-btn{
+            padding: 6px 8px;
+            font-size: 0.75rem;
+            gap: 4px;
+          }
+          .header-register-btn__txt{
+            max-width: 72px;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
         }
 
@@ -832,34 +876,6 @@ const MainLayout = ({ children }) => {
           background: rgba(255, 204, 0, 0.16);
           border-color: rgba(255, 204, 0, 0.5);
           color: var(--secondary);
-        }
-
-        .header-logout-btn{
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          height: 44px;
-          padding: 0 12px;
-          border-radius: 999px;
-          border: 1px solid rgba(232, 230, 224, 0.95);
-          background: rgba(255,255,255,0.92);
-          cursor: pointer;
-          font-family: inherit;
-          color: var(--secondary);
-          text-decoration: none;
-          box-shadow: var(--shadow-sm);
-          font-weight: 900;
-        }
-        .header-logout-btn:hover{
-          border-color: rgba(245, 192, 0, 0.45);
-          box-shadow: var(--shadow-gold);
-        }
-        .header-logout-btn__txt{
-          font-size: 0.84rem;
-          color: var(--text-secondary);
-          font-weight: 900;
-          line-height: 1;
         }
 
         .admin-notifs{

@@ -72,6 +72,7 @@ const StoreProfile = () => {
   const isGuest = localStorage.getItem('isGuest') === 'true';
   const authed = !!localStorage.getItem('token') && !isGuest;
   const canUseCarts = canUseShoppingCarts();
+  /** تقييم المتجر: متسوّق فقط */
   const canShopSponsored =
     authed && localStorage.getItem('user_type') === 'shopper';
 
@@ -245,7 +246,6 @@ const StoreProfile = () => {
       showAlert(
         'ميزة السلال للأعضاء المسجّلين فقط (متسوّق، تاجر، أو مدير) وليست لوضع الزائر. سجّل الدخول ثم أعد المحاولة.',
       );
-      navigate('/login');
       return;
     }
     setAddingId(sponsoredCartBusyKey(ad));
@@ -316,9 +316,8 @@ const StoreProfile = () => {
   };
 
   const addSponsoredAdToFavorites = async (ad) => {
-    if (!canShopSponsored) {
-      showAlert('سجّل دخولك كمتسوّق للمفضلة.');
-      navigate('/login');
+    if (!authed) {
+      showAlert('سجّل الدخول لاستخدام المفضلة. وضع الزائر لا يدعمها.');
       return;
     }
     if (favBusy) return;
@@ -353,8 +352,7 @@ const StoreProfile = () => {
 
   const toggleStoreFavorite = async () => {
     if (!authed) {
-      showAlert('سجّل دخولك كمتسوّق لاستخدام المفضلة');
-      navigate('/login');
+      showAlert('سجّل الدخول لاستخدام المفضلة.');
       return;
     }
     if (store.is_owner) return;
@@ -380,8 +378,7 @@ const StoreProfile = () => {
 
   const toggleProductFavorite = async (p) => {
     if (!authed) {
-      showAlert('سجّل دخولك كمتسوّق لاستخدام المفضلة');
-      navigate('/login');
+      showAlert('سجّل الدخول لاستخدام المفضلة.');
       return;
     }
     if (store.is_owner) return;
@@ -443,7 +440,6 @@ const StoreProfile = () => {
       showAlert(
         'ميزة السلال للأعضاء المسجّلين فقط (متسوّق، تاجر، أو مدير) وليست لوضع الزائر. سجّل الدخول ثم أعد المحاولة.',
       );
-      navigate('/login');
       return;
     }
     const qty = quantities[product.id] ?? 1;
@@ -761,6 +757,55 @@ const StoreProfile = () => {
                       {visualImageUrls(ad).length > 0 ? (
                         <div className="store-profile-sponsored-media">
                           <ImageCarousel images={visualImageUrls(ad)} height={100} borderRadius={12} />
+                          {!store.is_owner ? (
+                            <>
+                              <button
+                                type="button"
+                                className={`store-profile-sponsored-fab store-profile-sponsored-fab--cart${
+                                  canUseCarts ? '' : ' store-profile-sponsored-fab--muted'
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addSponsoredAdToCart(ad);
+                                }}
+                                disabled={addingId === sponsoredCartBusyKey(ad)}
+                                title="إضافة إلى السلة"
+                                aria-label="إضافة إلى السلة"
+                                style={{ cursor: addingId === sponsoredCartBusyKey(ad) ? 'wait' : 'pointer' }}
+                              >
+                                <ShoppingCart size={16} strokeWidth={2} aria-hidden />
+                              </button>
+                              <button
+                                type="button"
+                                className={`store-profile-sponsored-fab store-profile-sponsored-fab--fav${
+                                  authed ? '' : ' store-profile-sponsored-fab--muted'
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addSponsoredAdToFavorites(ad);
+                                }}
+                                disabled={favBusy}
+                                title={ad.product ? 'مفضلة' : 'مفضلة — يُزال عند انتهاء الإعلان'}
+                                aria-label="مفضلة"
+                                style={{ cursor: favBusy ? 'wait' : 'pointer' }}
+                              >
+                                <Heart
+                                  size={16}
+                                  color="#e91e63"
+                                  fill={
+                                    ad.product
+                                      ? productFavByProductId[ad.product]
+                                        ? '#e91e63'
+                                        : 'none'
+                                      : sponsoredFavByAdId[ad.id]
+                                        ? '#e91e63'
+                                        : 'none'
+                                  }
+                                  aria-hidden
+                                />
+                              </button>
+                            </>
+                          ) : null}
                         </div>
                       ) : null}
                       <div className="store-profile-sponsored-title">{ad.title}</div>
@@ -784,59 +829,6 @@ const StoreProfile = () => {
                       <div className="store-profile-sponsored-desc">
                         {ad.description}
                       </div>
-                      {!store.is_owner && (canUseCarts || canShopSponsored) ? (
-                        <div className="store-profile-sponsored-actions">
-                          {canUseCarts ? (
-                            <button
-                              type="button"
-                              className="btn-primary"
-                              style={{
-                                flex: 1,
-                                fontSize: '0.85rem',
-                                padding: '8px 10px',
-                                border: 'none',
-                                cursor: addingId === sponsoredCartBusyKey(ad) ? 'wait' : 'pointer',
-                                borderRadius: 10,
-                                fontWeight: 800,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 6,
-                              }}
-                              disabled={addingId === sponsoredCartBusyKey(ad)}
-                              onClick={() => addSponsoredAdToCart(ad)}
-                            >
-                              <ShoppingCart size={16} />
-                              سلة
-                            </button>
-                          ) : null}
-                          {canShopSponsored ? (
-                            <button
-                              type="button"
-                              className="store-profile-sponsored-favbtn"
-                              style={{ cursor: favBusy ? 'wait' : undefined, flex: 1, fontSize: '0.85rem', padding: '8px 10px' }}
-                              disabled={favBusy}
-                              onClick={() => addSponsoredAdToFavorites(ad)}
-                              title={ad.product ? 'مفضلة' : 'مفضلة — يُزال عند انتهاء الإعلان'}
-                            >
-                              <Heart
-                                size={16}
-                                color="#e91e63"
-                                fill={
-                                  ad.product
-                                    ? productFavByProductId[ad.product]
-                                      ? '#e91e63'
-                                      : 'none'
-                                    : sponsoredFavByAdId[ad.id]
-                                      ? '#e91e63'
-                                      : 'none'
-                                }
-                              />
-                              مفضلة
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -865,24 +857,24 @@ const StoreProfile = () => {
                         data-store-product-id={p.id}
                         data-flash={flashProductId != null && String(flashProductId) === String(p.id) ? 'true' : 'false'}
                       >
-                        {authed && !store.is_owner ? (
-                          <button
-                            type="button"
-                            onClick={() => toggleProductFavorite(p)}
-                            disabled={favBusy}
-                            title={productFavByProductId[p.id] ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
-                            aria-label="مفضلة المنتج"
-                            className="store-profile-product-favbtn"
-                            style={{ cursor: favBusy ? 'wait' : undefined }}
-                          >
-                            <Heart
-                              size={18}
-                              color="#e91e63"
-                              fill={productFavByProductId[p.id] ? '#e91e63' : 'none'}
-                            />
-                          </button>
-                        ) : null}
                         <div className="store-profile-product-media">
+                          {authed && !store.is_owner ? (
+                            <button
+                              type="button"
+                              onClick={() => toggleProductFavorite(p)}
+                              disabled={favBusy}
+                              title={productFavByProductId[p.id] ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
+                              aria-label="مفضلة المنتج"
+                              className="store-profile-product-favbtn"
+                              style={{ cursor: favBusy ? 'wait' : 'pointer' }}
+                            >
+                              <Heart
+                                size={18}
+                                color="#e91e63"
+                                fill={productFavByProductId[p.id] ? '#e91e63' : 'none'}
+                              />
+                            </button>
+                          ) : null}
                           {visualImageUrls(p).length > 0 ? (
                             <div className="store-profile-product-media-inner">
                               <ImageCarousel
@@ -899,14 +891,16 @@ const StoreProfile = () => {
                             <div className="store-profile-product-media-name">{p.name}</div>
                             <div className="store-profile-product-media-price">{p.price} ₪</div>
                           </div>
-                          {canUseCarts && !store.is_owner ? (
+                          {!store.is_owner ? (
                             <button
                               type="button"
-                              className="store-profile-product-media-cartbtn"
+                              className={`store-profile-product-media-cartbtn${
+                                canUseCarts ? '' : ' store-profile-product-media-cartbtn--muted'
+                              }`}
                               onClick={() => handleAddToCart(p)}
                               disabled={addingId === p.id}
-                              title="إضافة إلى السلال"
-                              aria-label="إضافة إلى السلال"
+                              title="إضافة إلى السلة"
+                              aria-label="إضافة إلى السلة"
                               style={{ cursor: addingId === p.id ? 'wait' : 'pointer' }}
                             >
                               <ShoppingCart size={18} />
@@ -967,16 +961,6 @@ const StoreProfile = () => {
                             </button>
                           </div>
 
-                          {canUseCarts && !store.is_owner ? (
-                            <button
-                              type="button"
-                              className="btn-primary store-profile-add-btn"
-                              disabled={addingId === p.id}
-                              onClick={() => handleAddToCart(p)}
-                            >
-                              {addingId === p.id ? '...' : 'أضف للسلة'}
-                            </button>
-                          ) : null}
                         </div>
                       </article>
                     );
@@ -1367,7 +1351,50 @@ const StoreProfile = () => {
           padding: 10px;
           flex-shrink: 0;
         }
-        .store-profile-sponsored-media{ margin-bottom: 8px; }
+        .store-profile-sponsored-media{
+          position: relative;
+          margin-bottom: 8px;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+        .store-profile-sponsored-fab{
+          position: absolute;
+          top: 8px;
+          z-index: 4;
+          width: 34px;
+          height: 34px;
+          border-radius: 12px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          margin: 0;
+          cursor: pointer;
+          background: rgba(255,255,255,0.94);
+          box-shadow: 0 4px 14px rgba(26,29,38,0.14);
+          transition: transform 0.12s ease, filter 0.15s ease;
+        }
+        .store-profile-sponsored-fab--cart{
+          inset-inline-start: 8px;
+          border: 1px solid rgba(245,192,0,0.5);
+          color: var(--secondary);
+        }
+        .store-profile-sponsored-fab--fav{
+          inset-inline-end: 8px;
+          border: 1px solid rgba(233, 30, 99, 0.35);
+          background: rgba(255,255,255,0.96);
+        }
+        .store-profile-sponsored-fab:hover:not(:disabled){
+          transform: translateY(-1px);
+          filter: brightness(1.02);
+        }
+        .store-profile-sponsored-fab:disabled{
+          opacity: 0.65;
+          cursor: wait !important;
+        }
+        .store-profile-sponsored-fab--muted{
+          opacity: 0.88;
+        }
         .store-profile-sponsored-title{ font-weight: 900; color: var(--secondary); }
         .store-profile-sponsored-price-row{
           margin-top: 6px;
@@ -1400,23 +1427,6 @@ const StoreProfile = () => {
           margin-top: 4px;
           line-height: 1.55;
         }
-        .store-profile-sponsored-actions{
-          display: flex;
-          gap: 8px;
-          margin-top: 10px;
-        }
-        .store-profile-sponsored-favbtn{
-          border: 1.5px solid var(--border);
-          background: var(--white);
-          border-radius: 10px;
-          font-weight: 900;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-        }
-        .store-profile-sponsored-favbtn:hover{ background: var(--primary-light); border-color: rgba(245,192,0,0.35); }
-
         .store-profile-products-grid{
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(min(136px, 100%), 1fr));
@@ -1436,8 +1446,8 @@ const StoreProfile = () => {
         .store-profile-product-favbtn{
           position: absolute;
           top: 8px;
-          inset-inline-start: 8px;
-          z-index: 2;
+          inset-inline-end: 8px;
+          z-index: 4;
           border: none;
           border-radius: 999px;
           width: 36px;
@@ -1478,8 +1488,8 @@ const StoreProfile = () => {
         .store-profile-product-media-cartbtn{
           position: absolute;
           top: 10px;
-          inset-inline-end: 10px;
-          z-index: 3;
+          inset-inline-start: 10px;
+          z-index: 4;
           width: 40px;
           height: 40px;
           border-radius: 14px;
@@ -1502,6 +1512,15 @@ const StoreProfile = () => {
         }
         .store-profile-product-media-cartbtn:disabled{
           opacity: 0.65;
+        }
+        .store-profile-product-media-cartbtn--muted{
+          opacity: 0.88;
+        }
+        .store-profile-product-media:has(.store-profile-product-favbtn) .store-profile-product-media-overlay{
+          padding-inline-end: 44px;
+        }
+        .store-profile-product-media:has(.store-profile-product-media-cartbtn) .store-profile-product-media-overlay{
+          padding-inline-start: 48px;
         }
         .store-profile-product-media-name{
           font-weight: 950;
@@ -1575,13 +1594,6 @@ const StoreProfile = () => {
           margin-top: auto;
         }
 
-        .store-profile-add-btn{
-          padding: 10px;
-          font-size: 0.92rem;
-          margin-top: 4px;
-          width: 100%;
-          border-radius: 14px;
-        }
       `}</style>
 
       {/* اختيار السلة يتم عبر showSelect في AlertProvider */}

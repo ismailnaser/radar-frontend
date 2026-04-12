@@ -431,6 +431,36 @@ body {
   margin-bottom: 1.25rem;
 }
 
+.auth-remember {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin: 4px 0 12px;
+  width: 100%;
+  box-sizing: border-box;
+  direction: rtl;
+  text-align: right;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.auth-remember__txt {
+  flex: 0 1 auto;
+}
+
+.auth-remember input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .auth-footer-link {
   margin-top: 1.25rem;
   font-size: 0.9rem;

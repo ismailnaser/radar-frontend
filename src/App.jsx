@@ -1,5 +1,12 @@
 import React, { useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import {
+  createBrowserRouter,
+  createRoutesFromElements,
+  RouterProvider,
+  Route,
+  Navigate,
+  Outlet,
+} from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Home from './pages/Home'
@@ -40,6 +47,7 @@ import AdminAnnouncements from './pages/admin/AdminAnnouncements'
 import AdminCategoryManagement from './pages/admin/AdminCategoryManagement'
 import SettingsPage from './pages/Settings'
 import { AlertProvider } from './components/AlertProvider'
+import { UnauthorizedSessionBridge } from './components/UnauthorizedSessionBridge'
 import { MapExploreProvider } from './context/MapExploreContext'
 import { AdminPendingCountsProvider } from './context/AdminPendingCountsContext'
 import { AdminNotificationsProvider } from './context/AdminNotificationsContext'
@@ -99,19 +107,28 @@ const ShopperOrMerchantRoute = ({ children }) => {
   return children;
 };
 
-function App() {
+function AppLayout() {
   useEffect(() => {
-    // عداد بسيط: كل تحميل للتطبيق يسجل فتح
     pingAppOpen().catch(() => {});
   }, []);
 
   return (
-    <Router>
-      <MapExploreProvider>
+    <MapExploreProvider>
       <AlertProvider>
+        <UnauthorizedSessionBridge />
         <AdminPendingCountsProvider>
         <AdminNotificationsProvider>
-        <Routes>
+        <Outlet />
+        </AdminNotificationsProvider>
+        </AdminPendingCountsProvider>
+      </AlertProvider>
+    </MapExploreProvider>
+  );
+}
+
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<AppLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/share/cart/:shareToken" element={<SharedCart />} />
           <Route path="/register" element={<Register />} />
@@ -398,13 +415,12 @@ function App() {
           
           {/* Catch-all route to redirect broken/old links to Home */}
           <Route path="*" element={<Home />} />
-        </Routes>
-        </AdminNotificationsProvider>
-        </AdminPendingCountsProvider>
-      </AlertProvider>
-      </MapExploreProvider>
-    </Router>
+    </Route>
   )
+);
+
+function App() {
+  return <RouterProvider router={router} />;
 }
 
 export default App

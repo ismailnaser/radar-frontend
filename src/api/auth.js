@@ -14,6 +14,14 @@ const api = axios.create({
   baseURL: resolveApiBaseURL(),
 });
 
+/** يُعرَّف من UnauthorizedSessionBridge عبر showConfirm — قبلها قد يكون null */
+let unauthorizedLogoutConfirm = null;
+let sessionExpiredPromptInFlight = false;
+
+export function registerUnauthorizedLogoutConfirm(fn) {
+  unauthorizedLogoutConfirm = typeof fn === 'function' ? fn : null;
+}
+
 // Add Interceptor for authentication token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -26,15 +34,39 @@ api.interceptors.request.use((config) => {
 // Add Response Interceptor to handle global errors (like 401 Unauthorized)
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // If we have a 401 error and it's NOT from the login endpoint itself
+  async (error) => {
     if (error.response && error.response.status === 401) {
-      const isLoginPage = window.location.pathname === '/login';
-      if (!isLoginPage) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refresh');
-        localStorage.removeItem('is_primary_admin');
-        window.location.href = '/login'; 
+      const path = window.location.pathname;
+      const reqUrl = String(error.config?.url || '');
+      // صفحات الدخول/التسجيل: لا نُفرغ الجلسة عند فشل كلمة المرور وغيره
+      if (path === '/login' || path === '/register') {
+        return Promise.reject(error);
+      }
+      if (reqUrl.includes('/users/login/') || reqUrl.includes('/users/register/')) {
+        return Promise.reject(error);
+      }
+
+      if (sessionExpiredPromptInFlight) {
+        return Promise.reject(error);
+      }
+      sessionExpiredPromptInFlight = true;
+      try {
+        let proceed = true;
+        if (unauthorizedLogoutConfirm) {
+          proceed = await unauthorizedLogoutConfirm();
+        } else {
+          proceed = window.confirm(
+            'تم قطع الجلسة أو انتهت صلاحية الدخول. الانتقال إلى صفحة تسجيل الدخول؟'
+          );
+        }
+        if (proceed) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh');
+          localStorage.removeItem('is_primary_admin');
+          window.location.href = '/login';
+        }
+      } finally {
+        sessionExpiredPromptInFlight = false;
       }
     }
     return Promise.reject(error);

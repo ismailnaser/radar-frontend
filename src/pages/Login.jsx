@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../api/auth';
@@ -7,15 +7,26 @@ import CustomInput from '../components/ui/CustomInput';
 import CustomButton from '../components/ui/CustomButton';
 import { useAlert } from '../components/AlertProvider';
 import { formatApiError } from '../utils/apiErrors';
+import { loadRememberedLogin, saveRememberedLogin } from '../utils/rememberLogin';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { showAlert } = useAlert();
+
+  useEffect(() => {
+    const saved = loadRememberedLogin();
+    if (saved.rememberMe) {
+      setUsername(saved.username);
+      setPassword(saved.password);
+      setRememberMe(true);
+    }
+  }, []);
 
   const continueAsGuest = async () => {
     localStorage.removeItem('token');
@@ -24,7 +35,7 @@ const Login = () => {
     localStorage.removeItem('user_name');
     localStorage.removeItem('is_verified');
     localStorage.setItem('isGuest', 'true');
-    navigate('/');
+    navigate('/', { replace: true });
     await showAlert('أنت الآن في وضع الزائر.', 'تم');
   };
 
@@ -35,8 +46,13 @@ const Login = () => {
 
     try {
       await login(username.trim(), password);
+      saveRememberedLogin({
+        username: username.trim(),
+        password,
+        rememberMe,
+      });
       await showAlert('تم تسجيل الدخول بنجاح.', 'تم');
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (err) {
       console.error('Login error:', err);
       const status = err?.response?.status;
@@ -100,10 +116,22 @@ const Login = () => {
               </button>
             </div>
 
+            <label
+              className="auth-remember"
+              title="حفظ اسم المستخدم وكلمة المرور محلياً على هذا الجهاز لتعبئتهما تلقائياً لاحقاً"
+            >
+              <span className="auth-remember__txt">تذكرني</span>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+            </label>
+
             <CustomButton
               type="submit"
               loading={loading}
-              style={{ width: '100%', marginTop: '8px' }}
+              style={{ width: '100%', marginTop: '4px' }}
               confirm={false}
               showErrorAlert={false}
             >

@@ -1,41 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
-import {
-  getOffers,
-  getCarts,
-  addToCart,
-  createCart,
-  addFavorite,
-  getFavorites,
-  removeFavorite,
-  updateCart,
-} from '../api/data';
+import { getOffers, addFavorite, getFavorites, removeFavorite, getCarts, addToCart, createCart } from '../api/data';
 import { useAlert } from '../components/AlertProvider';
-import { ensureCartNamed } from '../utils/cartNaming';
-import { Tag, ShoppingCart, Heart } from 'lucide-react';
+import { Tag, Heart, ShoppingCart } from 'lucide-react';
+import { canUseShoppingCarts } from '../utils/cartAccess';
 import ImageCarousel from '../components/ImageCarousel';
 import { visualImageUrls } from '../utils/productImages';
 // اختيار السلة عبر النافذة المنبثقة العامة (CustomModal)
 import { formatApiError } from '../utils/apiErrors';
-import { canUseShoppingCarts } from '../utils/cartAccess';
-
 const Offers = () => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { showAlert, showPrompt, showSelect } = useAlert();
+  const { showAlert, showSelect, showPrompt } = useAlert();
 
   const isGuestVisitor = localStorage.getItem('isGuest') === 'true';
+  /** أي عضو مسجّل (متسوّق، تاجر، مدير…) — المفضلة غير متاحة لوضع الزائر فقط */
+  const canUseOfferFavorites = !!localStorage.getItem('token') && !isGuestVisitor;
   const canUseCarts = canUseShoppingCarts();
-  const canShopSponsored =
-    !!localStorage.getItem('token') && !isGuestVisitor && localStorage.getItem('user_type') === 'shopper';
 
   const [sponsoredFavByAdId, setSponsoredFavByAdId] = useState({});
+  const [productFavByProductId, setProductFavByProductId] = useState({});
   const [pendingCartAdd, setPendingCartAdd] = useState(null);
 
   useEffect(() => {
-    if (!canShopSponsored) {
+    if (!canUseOfferFavorites) {
       setSponsoredFavByAdId({});
+      setProductFavByProductId({});
       return undefined;
     }
     let cancelled = false;
@@ -44,18 +35,27 @@ const Offers = () => {
         const list = await getFavorites();
         if (cancelled) return;
         const sm = {};
+        const pm = {};
         for (const f of list || []) {
-          if ((f.product == null || f.product === '') && f.sponsored_ad != null) sm[f.sponsored_ad] = f.id;
+          if (f.product != null && f.product !== '') {
+            pm[String(f.product)] = f.id;
+          } else if (f.sponsored_ad != null) {
+            sm[f.sponsored_ad] = f.id;
+          }
         }
         setSponsoredFavByAdId(sm);
+        setProductFavByProductId(pm);
       } catch {
-        if (!cancelled) setSponsoredFavByAdId({});
+        if (!cancelled) {
+          setSponsoredFavByAdId({});
+          setProductFavByProductId({});
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [canShopSponsored]);
+  }, [canUseOfferFavorites]);
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -71,8 +71,62 @@ const Offers = () => {
     fetchOffers();
   }, []);
 
+  const addSponsoredToFavorites = async (ad) => {
+    if (!canUseOfferFavorites) {
+      await showAlert('سجّل الدخول لاستخدام المفضلة. وضع الزائر لا يدعمها.', 'تنبيه');
+      return;
+    }
+    try {
+      if (!ad.product) {
+        const existing = sponsoredFavByAdId[ad.id];
+        if (existing) {
+          await removeFavorite(existing);
+          setSponsoredFavByAdId((prev) => {
+            const n = { ...prev };
+            delete n[ad.id];
+            return n;
+          });
+          await showAlert('أُزيل العرض المستقل من المفضلة.', 'تم');
+        } else {
+          await addFavorite(null, ad.id);
+          const list = await getFavorites();
+          const row = (list || []).find(
+            (f) => f.sponsored_ad === ad.id && (f.product == null || f.product === ''),
+          );
+          if (row) setSponsoredFavByAdId((prev) => ({ ...prev, [ad.id]: row.id }));
+          await showAlert('تمت إضافة عرض الإعلان — يُزال تلقائياً عند انتهاء الإعلان.', 'تم');
+        }
+        return;
+      }
+      const pid = String(ad.product);
+      const existingPid = productFavByProductId[pid];
+      if (existingPid) {
+        await removeFavorite(existingPid);
+        setProductFavByProductId((prev) => {
+          const n = { ...prev };
+          delete n[pid];
+          return n;
+        });
+        await showAlert('أُزيل المنتج من المفضلة.', 'تم');
+      } else {
+        await addFavorite(ad.product, ad.id);
+        const list = await getFavorites();
+        const row = (list || []).find((f) => f.product != null && String(f.product) === pid);
+        if (row) setProductFavByProductId((prev) => ({ ...prev, [pid]: row.id }));
+        await showAlert('تمت إضافة المنتج للمفضلة.', 'تم');
+      }
+    } catch (e) {
+      await showAlert(formatApiError(e, 'تعذرت الإضافة للمفضلة.'), 'خطأ');
+    }
+  };
+
+  const offerIsFavorite = (offer) =>
+    offer.product
+      ? !!productFavByProductId[String(offer.product)]
+      : !!sponsoredFavByAdId[offer.id];
+
   const openCartPickerFor = async (payload) => {
-    if (!canUseCarts) {
+    if (!canUseShoppingCarts()) {
       await showAlert(
         'ميزة السلال للأعضاء المسجّلين فقط (متسوّق، تاجر، أو مدير) وليست لوضع الزائر. سجّل الدخول ثم أعد المحاولة.',
         'تنبيه'
@@ -143,40 +197,6 @@ const Offers = () => {
     }
   };
 
-  const addSponsoredToFavorites = async (ad) => {
-    if (!canShopSponsored) {
-      await showAlert('سجّل دخول كمتسوق لإضافة المنتج للمفضلة.', 'تنبيه');
-      return;
-    }
-    try {
-      if (!ad.product) {
-        const existing = sponsoredFavByAdId[ad.id];
-        if (existing) {
-          await removeFavorite(existing);
-          setSponsoredFavByAdId((prev) => {
-            const n = { ...prev };
-            delete n[ad.id];
-            return n;
-          });
-          await showAlert('أُزيل العرض المستقل من المفضلة.', 'تم');
-        } else {
-          await addFavorite(null, ad.id);
-          const list = await getFavorites();
-          const row = (list || []).find(
-            (f) => f.sponsored_ad === ad.id && (f.product == null || f.product === ''),
-          );
-          if (row) setSponsoredFavByAdId((prev) => ({ ...prev, [ad.id]: row.id }));
-          await showAlert('تمت إضافة عرض الإعلان — يُزال تلقائياً عند انتهاء الإعلان.', 'تم');
-        }
-        return;
-      }
-      await addFavorite(ad.product, ad.id);
-      await showAlert('تمت إضافة المنتج للمفضلة.', 'تم');
-    } catch (e) {
-      await showAlert(formatApiError(e, 'تعذرت الإضافة للمفضلة.'), 'خطأ');
-    }
-  };
-
   return (
     <MainLayout>
       <div className="offers-page-wrap">
@@ -210,17 +230,37 @@ const Offers = () => {
                       </div>
                     ) : null}
                   </div>
-                  {canUseCarts ? (
-                    <button
-                      type="button"
-                      className="offers-card-media-cartbtn"
-                      onClick={() => addSponsoredToCart(offer)}
-                      title="إضافة إلى السلة"
-                      aria-label="إضافة إلى السلة"
-                    >
-                      <ShoppingCart size={18} />
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    className={`offers-card-media-cartbtn${canUseCarts ? '' : ' offers-card-media-cartbtn--muted'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addSponsoredToCart(offer);
+                    }}
+                    title="إضافة إلى السلة"
+                    aria-label="إضافة إلى السلة"
+                  >
+                    <ShoppingCart size={18} strokeWidth={2} aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className={`offers-card-media-favbtn${canUseOfferFavorites ? '' : ' offers-card-media-favbtn--muted'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addSponsoredToFavorites(offer);
+                    }}
+                    title={
+                      offer.product ? '' : 'يُزال من المفضلة عند انتهاء الإعلان'
+                    }
+                    aria-label={offerIsFavorite(offer) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
+                  >
+                    <Heart
+                      size={20}
+                      strokeWidth={2}
+                      color="#e91e63"
+                      fill={offerIsFavorite(offer) ? '#e91e63' : 'none'}
+                    />
+                  </button>
                 </div>
                 <div className="offers-card-body">
                   <span className="offers-card-store">{offer.store_name}</span>
@@ -249,37 +289,6 @@ const Offers = () => {
                   ) : null}
                   {offer.description ? (
                     <p className="offers-card-desc">{offer.description}</p>
-                  ) : null}
-                  {canUseCarts || canShopSponsored ? (
-                    <div className="offers-card-actions">
-                      {canUseCarts ? (
-                        <button
-                          type="button"
-                          className="offers-btn offers-btn--primary"
-                          onClick={() => addSponsoredToCart(offer)}
-                        >
-                          <ShoppingCart size={18} />
-                          إضافة للسلة
-                        </button>
-                      ) : null}
-                      {canShopSponsored ? (
-                        <button
-                          type="button"
-                          className="offers-btn offers-btn--ghost"
-                          onClick={() => addSponsoredToFavorites(offer)}
-                          title={offer.product ? '' : 'يُزال من المفضلة عند انتهاء الإعلان'}
-                        >
-                          <Heart
-                            size={18}
-                            color="#e91e63"
-                            fill={
-                              offer.product ? 'none' : sponsoredFavByAdId[offer.id] ? '#e91e63' : 'none'
-                            }
-                          />
-                          مفضلة
-                        </button>
-                      ) : null}
-                    </div>
                   ) : null}
                   <Link to={`/stores/${offer.store}`} className="offers-btn offers-btn--block">
                     عرض المتجر
@@ -392,18 +401,32 @@ const Offers = () => {
               width: 32px;
               height: 32px;
               top: 6px;
-              inset-inline-end: 6px;
+              inset-inline-start: 6px;
               border-radius: 11px;
             }
             .offers-card-media-cartbtn svg {
               width: 15px;
               height: 15px;
             }
+            .offers-card-media-favbtn {
+              width: 32px;
+              height: 32px;
+              top: 6px;
+              inset-inline-end: 6px;
+              border-radius: 11px;
+            }
+            .offers-card-media-favbtn svg {
+              width: 16px;
+              height: 16px;
+            }
             .offers-card-media-overlay {
               padding-block: 6px 5px;
               padding-inline: 7px;
             }
             .offers-card-media:has(.offers-card-media-cartbtn) .offers-card-media-overlay {
+              padding-inline-start: 40px;
+            }
+            .offers-card-media:has(.offers-card-media-favbtn) .offers-card-media-overlay {
               padding-inline-end: 40px;
             }
             .offers-card-media-title {
@@ -448,11 +471,6 @@ const Offers = () => {
               line-height: 1.4;
               margin: 0 0 6px;
               -webkit-line-clamp: 2;
-            }
-            .offers-card-actions {
-              grid-template-columns: 1fr;
-              gap: 5px;
-              margin-bottom: 6px;
             }
             .offers-btn {
               font-size: 0.68rem;
@@ -526,26 +544,59 @@ const Offers = () => {
           .offers-card-media-cartbtn{
             position: absolute;
             top: 10px;
-            inset-inline-end: 10px;
+            inset-inline-start: 10px;
             z-index: 3;
             width: 40px;
             height: 40px;
             border-radius: 14px;
-            border: 1px solid rgba(245,192,0,0.45);
-            background: rgba(255, 255, 255, 0.92);
-            box-shadow: 0 6px 18px rgba(26, 29, 38, 0.14);
+            border: 1px solid rgba(245,192,0,0.5);
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 6px 18px rgba(26, 29, 38, 0.12);
             color: var(--secondary);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: transform 0.12s ease, filter 0.15s ease;
+            transition: transform 0.12s ease, filter 0.15s ease, box-shadow 0.15s ease;
+          }
+          .offers-card-media-cartbtn--muted {
+            opacity: 0.88;
           }
           .offers-card-media-cartbtn:hover{
             transform: translateY(-1px);
             filter: brightness(1.02);
+            box-shadow: 0 8px 22px rgba(245, 192, 0, 0.22);
           }
           .offers-card-media-cartbtn:active{
+            transform: translateY(0);
+          }
+          .offers-card-media-favbtn{
+            position: absolute;
+            top: 10px;
+            inset-inline-end: 10px;
+            z-index: 3;
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            border: 1px solid rgba(233, 30, 99, 0.38);
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 6px 18px rgba(26, 29, 38, 0.12);
+            color: #e91e63;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.12s ease, filter 0.15s ease, box-shadow 0.15s ease;
+          }
+          .offers-card-media-favbtn--muted {
+            opacity: 0.88;
+          }
+          .offers-card-media-favbtn:hover{
+            transform: translateY(-1px);
+            filter: brightness(1.02);
+            box-shadow: 0 8px 22px rgba(233, 30, 99, 0.18);
+          }
+          .offers-card-media-favbtn:active{
             transform: translateY(0);
           }
           .offers-card-media-overlay{
@@ -563,6 +614,9 @@ const Offers = () => {
             pointer-events: none;
           }
           .offers-card-media:has(.offers-card-media-cartbtn) .offers-card-media-overlay {
+            padding-inline-start: 52px;
+          }
+          .offers-card-media:has(.offers-card-media-favbtn) .offers-card-media-overlay {
             padding-inline-end: 52px;
           }
           .offers-card-media-title{
@@ -666,13 +720,6 @@ const Offers = () => {
             -webkit-box-orient: vertical;
             overflow: hidden;
           }
-          .offers-card-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 10px;
-            flex-shrink: 0;
-          }
           .offers-btn {
             font-family: inherit;
             font-weight: 800;
@@ -690,23 +737,6 @@ const Offers = () => {
           }
           .offers-btn:active {
             transform: scale(0.98);
-          }
-          .offers-btn--primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-            color: var(--secondary);
-            box-shadow: var(--shadow-gold);
-          }
-          .offers-btn--primary:hover {
-            filter: brightness(1.05);
-          }
-          .offers-btn--ghost {
-            background: var(--surface);
-            color: var(--secondary);
-            border: 1.5px solid var(--border);
-          }
-          .offers-btn--ghost:hover {
-            background: var(--primary-light);
-            border-color: var(--primary);
           }
           .offers-btn--block {
             width: 100%;
