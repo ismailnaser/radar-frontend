@@ -5,7 +5,7 @@ import { useAlert } from '../components/AlertProvider';
 import MainLayout from '../components/MainLayout';
 
 export default function Settings() {
-  const { showAlert } = useAlert();
+  const { showAlert, showConfirm } = useAlert();
   const isGuest = localStorage.getItem('isGuest') === 'true';
   const hasToken = !!localStorage.getItem('token');
   const isAuthenticated = hasToken && !isGuest;
@@ -41,6 +41,8 @@ export default function Settings() {
       showAlert('أدخل اسم المستخدم.', 'تنبيه');
       return;
     }
+    const okName = await showConfirm('تأكيد حفظ اسم المستخدم الجديد؟', 'تأكيد');
+    if (!okName) return;
     setUsernameSaving(true);
     try {
       const res = await changeMyUsername(v);
@@ -65,6 +67,8 @@ export default function Settings() {
       showAlert('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل.', 'تنبيه');
       return;
     }
+    const okPass = await showConfirm('تأكيد تغيير كلمة المرور؟', 'تأكيد');
+    if (!okPass) return;
     setPasswordSaving(true);
     try {
       await changeMyPassword({ current_password: currentPassword, new_password: newPassword });

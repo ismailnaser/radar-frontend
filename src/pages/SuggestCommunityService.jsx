@@ -108,7 +108,7 @@ const SuggestCommunityService = () => {
       }
       navigate('/services');
     } catch (err) {
-      await showAlert(formatApiError(err, 'تعذر إرسال الطلب.'), 'خطأ');
+      await showAlert(formatApiError(err, 'تعذر إرسال الطلب.'), 'فشل');
     } finally {
       setSubmitting(false);
     }
@@ -279,6 +279,8 @@ const SuggestCommunityService = () => {
                 loading={locating}
                 onClick={useMyLocationOnMap}
                 style={{ width: 'auto' }}
+                confirm={false}
+                showErrorAlert={false}
               >
                 موقعي الحالي
               </CustomButton>
@@ -440,7 +442,13 @@ const SuggestCommunityService = () => {
               </div>
             ) : null}
 
-            <CustomButton type="submit" loading={submitting} style={{ width: '100%' }}>
+            <CustomButton
+              type="submit"
+              loading={submitting}
+              style={{ width: '100%' }}
+              confirm={false}
+              showErrorAlert={false}
+            >
               {isAdmin ? 'إضافة النقطة' : 'إرسال الطلب للمراجعة'}
             </CustomButton>
           </form>

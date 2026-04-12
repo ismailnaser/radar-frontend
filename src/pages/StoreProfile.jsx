@@ -250,14 +250,19 @@ const StoreProfile = () => {
     }
     setAddingId(sponsoredCartBusyKey(ad));
     try {
-      setPendingCartAdd({
+      const cartPayload = {
         productId: ad.product ?? null,
         sponsoredAdId: ad.id,
         quantity: 1,
         success: 'تمت إضافة العرض للسلة.',
-      });
+      };
+      setPendingCartAdd(cartPayload);
       const carts = await getCarts();
       const list = Array.isArray(carts) ? carts : [];
+      if (list.length === 0) {
+        await createCartAndAddPending(cartPayload, { isFirstCart: true });
+        return;
+      }
       const opts = list.map((c) => ({
         id: String(c.id),
         label: c.name || `سلة #${c.id}`,
@@ -265,10 +270,10 @@ const StoreProfile = () => {
         badge: Array.isArray(c.items) ? c.items.length : 0,
       }));
       const pick = await showSelect(
-        list.length === 0 ? 'لا يوجد لديك أي سلال.' : 'اختر السلة التي تريد إضافة المنتج إليها:',
+        'اختر السلة التي تريد إضافة المنتج إليها:',
         'إضافة إلى أي سلة؟',
         opts,
-        { primaryActionLabel: list.length === 0 ? 'إنشاء أول سلة' : 'سلة جديدة' }
+        { primaryActionLabel: 'سلة جديدة' }
       );
       if (pick == null) return;
       if (pick === '__primary__') {
@@ -283,12 +288,18 @@ const StoreProfile = () => {
     }
   };
 
-  const createCartAndAddPending = async () => {
-    const name = await showPrompt('اكتب اسم السلة الجديدة:', 'اسم السلة...');
-    if (!name) return;
-    const cart = await createCart(String(name));
-    const p = pendingCartAdd;
+  const createCartAndAddPending = async (payloadOverride, { isFirstCart = false } = {}) => {
+    const p = payloadOverride != null ? payloadOverride : pendingCartAdd;
     if (!p) return;
+    const name = await showPrompt(
+      isFirstCart
+        ? 'لا توجد لديك سلال بعد. اكتب اسماً لسلتك الأولى — يُضاف المنتج إليها مباشرة.'
+        : 'اكتب اسماً للسلة الجديدة ثم يُضاف المنتج إليها.',
+      isFirstCart ? 'مثال: سلة اليوم' : 'اسم السلة...',
+      isFirstCart ? 'إنشاء أول سلة' : 'سلة جديدة'
+    );
+    if (!name || !String(name).trim()) return;
+    const cart = await createCart(String(name).trim());
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await refreshCartQuantities();
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
@@ -438,14 +449,19 @@ const StoreProfile = () => {
     const qty = quantities[product.id] ?? 1;
     setAddingId(product.id);
     try {
-      setPendingCartAdd({
+      const cartPayload = {
         productId: product.id,
         sponsoredAdId: null,
         quantity: qty,
         success: `تمت إضافة «${product.name}» للسلة.`,
-      });
+      };
+      setPendingCartAdd(cartPayload);
       const carts = await getCarts();
       const list = Array.isArray(carts) ? carts : [];
+      if (list.length === 0) {
+        await createCartAndAddPending(cartPayload, { isFirstCart: true });
+        return;
+      }
       const opts = list.map((c) => ({
         id: String(c.id),
         label: c.name || `سلة #${c.id}`,
@@ -453,10 +469,10 @@ const StoreProfile = () => {
         badge: Array.isArray(c.items) ? c.items.length : 0,
       }));
       const pick = await showSelect(
-        list.length === 0 ? 'لا يوجد لديك أي سلال.' : 'اختر السلة التي تريد إضافة المنتج إليها:',
+        'اختر السلة التي تريد إضافة المنتج إليها:',
         'إضافة إلى أي سلة؟',
         opts,
-        { primaryActionLabel: list.length === 0 ? 'إنشاء أول سلة' : 'سلة جديدة' }
+        { primaryActionLabel: 'سلة جديدة' }
       );
       if (pick == null) return;
       if (pick === '__primary__') {
@@ -744,7 +760,7 @@ const StoreProfile = () => {
                     >
                       {visualImageUrls(ad).length > 0 ? (
                         <div className="store-profile-sponsored-media">
-                          <ImageCarousel images={visualImageUrls(ad)} height={120} borderRadius={12} />
+                          <ImageCarousel images={visualImageUrls(ad)} height={100} borderRadius={12} />
                         </div>
                       ) : null}
                       <div className="store-profile-sponsored-title">{ad.title}</div>
@@ -1346,9 +1362,9 @@ const StoreProfile = () => {
         }
         .store-profile-sponsored-rail::-webkit-scrollbar{ height: 0; }
         .store-profile-sponsored-card{
-          min-width: 220px;
-          max-width: 260px;
-          padding: 12px;
+          min-width: 188px;
+          max-width: 228px;
+          padding: 10px;
           flex-shrink: 0;
         }
         .store-profile-sponsored-media{ margin-bottom: 8px; }
@@ -1403,8 +1419,8 @@ const StoreProfile = () => {
 
         .store-profile-products-grid{
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
-          gap: 14px;
+          grid-template-columns: repeat(auto-fill, minmax(min(136px, 100%), 1fr));
+          gap: 12px;
         }
         .store-profile-product-card{
           padding: 0;
@@ -1439,6 +1455,7 @@ const StoreProfile = () => {
 
         .store-profile-product-media{
           aspect-ratio: 1;
+          max-height: 200px;
           background: var(--grey-light);
           display: flex;
           align-items: center;
@@ -1518,7 +1535,7 @@ const StoreProfile = () => {
           flex-direction: column;
         }
         .store-profile-product-body{
-          padding: 12px;
+          padding: 10px;
           flex: 1;
           display: flex;
           flex-direction: column;

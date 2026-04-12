@@ -565,6 +565,10 @@ const Home = () => {
     setPendingCartAdd(payload);
     const carts = await getCarts();
     const list = Array.isArray(carts) ? carts : [];
+    if (list.length === 0) {
+      await createCartAndAddPending(payload, { isFirstCart: true });
+      return;
+    }
     const opts = list.map((c) => ({
       id: String(c.id),
       label: c.name || `سلة #${c.id}`,
@@ -572,10 +576,10 @@ const Home = () => {
       badge: Array.isArray(c.items) ? c.items.length : 0,
     }));
     const pick = await showSelect(
-      list.length === 0 ? 'لا يوجد لديك أي سلال.' : 'اختر السلة التي تريد إضافة المنتج إليها:',
+      'اختر السلة التي تريد إضافة المنتج إليها:',
       'إضافة إلى أي سلة؟',
       opts,
-      { primaryActionLabel: list.length === 0 ? 'إنشاء أول سلة' : 'سلة جديدة' }
+      { primaryActionLabel: 'سلة جديدة' }
     );
     if (pick == null) return;
     if (pick === '__primary__') {
@@ -625,12 +629,18 @@ const Home = () => {
     setSearchParams(next, { replace: true });
   }, [filterMode, communityCatsLoading, communityCategories, showSelect, searchParams, setSearchParams]);
 
-  const createCartAndAddPending = async () => {
-    const name = await showPrompt('اكتب اسم السلة الجديدة:', 'اسم السلة...');
-    if (!name) return;
-    const cart = await createCart(String(name));
-    const p = pendingCartAdd;
+  const createCartAndAddPending = async (payloadOverride, { isFirstCart = false } = {}) => {
+    const p = payloadOverride != null ? payloadOverride : pendingCartAdd;
     if (!p) return;
+    const name = await showPrompt(
+      isFirstCart
+        ? 'لا توجد لديك سلال بعد. اكتب اسماً لسلتك الأولى — يُضاف المنتج إليها مباشرة.'
+        : 'اكتب اسماً للسلة الجديدة ثم يُضاف المنتج إليها.',
+      isFirstCart ? 'مثال: سلة اليوم' : 'اسم السلة...',
+      isFirstCart ? 'إنشاء أول سلة' : 'سلة جديدة'
+    );
+    if (!name || !String(name).trim()) return;
+    const cart = await createCart(String(name).trim());
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await showAlert('تمت إضافة المنتج إلى السلة.');
     setPendingCartAdd(null);
@@ -2094,7 +2104,7 @@ const Home = () => {
           }
           .home-offers-section--split .home-offer-card-visual {
             display: grid;
-            grid-template-rows: 88px 1fr;
+            grid-template-rows: 76px 1fr;
           }
           .home-offers-section--split .home-offer-img {
             border-bottom: 1px solid rgba(232, 230, 224, 0.75);
@@ -2137,9 +2147,9 @@ const Home = () => {
             max-width: 70%;
           }
           .home-offers-section--split .home-offer-body {
-            padding: 10px 12px 11px;
-            gap: 5px;
-            min-height: 102px;
+            padding: 8px 10px 10px;
+            gap: 4px;
+            min-height: 92px;
             position: relative;
             z-index: 1;
             background: transparent;
@@ -2605,30 +2615,37 @@ const Home = () => {
           .home-offers-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 11px;
+            gap: 10px;
             overflow: visible;
           }
           @media (min-width: 640px) {
             .home-offers-grid {
               grid-template-columns: repeat(2, 1fr);
-              gap: 12px;
+              gap: 10px;
             }
           }
           @media (min-width: 900px) {
             .home-offers-grid {
               grid-template-columns: repeat(3, 1fr);
+              gap: 10px;
             }
           }
           @media (min-width: 1100px) {
             .home-offers-grid {
               grid-template-columns: repeat(4, 1fr);
-              gap: 12px;
+              gap: 10px;
+            }
+          }
+          @media (min-width: 1320px) {
+            .home-offers-grid {
+              grid-template-columns: repeat(5, 1fr);
+              gap: 10px;
             }
           }
           .home-offer-card {
             width: 100%;
             min-width: 0;
-            border-radius: 14px;
+            border-radius: 13px;
             border: 1px solid rgba(224, 223, 213, 0.95);
             background: var(--white);
             overflow: hidden;
@@ -2646,7 +2663,7 @@ const Home = () => {
             display: block;
           }
           .home-offer-img {
-            height: 88px;
+            height: 76px;
             background: linear-gradient(180deg, var(--grey-light) 0%, #f3f2ec 100%);
             display: flex;
             align-items: center;
@@ -2660,10 +2677,10 @@ const Home = () => {
           }
           .home-offer-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
           .home-offer-body {
-            padding: 9px 11px 10px;
+            padding: 8px 10px 9px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
           }
           .home-offer-topline {
             display: flex;

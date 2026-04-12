@@ -17,7 +17,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { showAlert } = useAlert();
 
-  const continueAsGuest = () => {
+  const continueAsGuest = async () => {
     localStorage.removeItem('token');
     localStorage.removeItem('refresh');
     localStorage.removeItem('user_type');
@@ -25,6 +25,7 @@ const Login = () => {
     localStorage.removeItem('is_verified');
     localStorage.setItem('isGuest', 'true');
     navigate('/');
+    await showAlert('أنت الآن في وضع الزائر.', 'تم');
   };
 
   const handleLogin = async (e) => {
@@ -34,13 +35,18 @@ const Login = () => {
 
     try {
       await login(username.trim(), password);
+      await showAlert('تم تسجيل الدخول بنجاح.', 'تم');
       navigate('/');
     } catch (err) {
-      setError('اسم المستخدم أو كلمة المرور غير صحيحة.');
-      showAlert('بيانات الدخول غير صحيحة، يرجى التحقق من اسم المستخدم وكلمة المرور.');
       console.error('Login error:', err);
-      if (err?.response?.status >= 500 || err?.message === 'Network Error') {
-        showAlert(formatApiError(err, 'تعذر تسجيل الدخول حالياً. حاول لاحقاً.'), 'خطأ');
+      const status = err?.response?.status;
+      const network = err?.message === 'Network Error' || !err?.response;
+      if (status >= 500 || network) {
+        setError('');
+        await showAlert(formatApiError(err, 'تعذر تسجيل الدخول حالياً. حاول لاحقاً.'), 'خطأ');
+      } else {
+        setError('اسم المستخدم أو كلمة المرور غير صحيحة.');
+        await showAlert('بيانات الدخول غير صحيحة، يرجى التحقق من اسم المستخدم وكلمة المرور.', 'فشل');
       }
     } finally {
       setLoading(false);
@@ -94,7 +100,13 @@ const Login = () => {
               </button>
             </div>
 
-            <CustomButton type="submit" loading={loading} style={{ width: '100%', marginTop: '8px' }}>
+            <CustomButton
+              type="submit"
+              loading={loading}
+              style={{ width: '100%', marginTop: '8px' }}
+              confirm={false}
+              showErrorAlert={false}
+            >
               تسجيل الدخول
             </CustomButton>
           </form>

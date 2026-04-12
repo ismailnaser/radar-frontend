@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Download, Share2 } from 'lucide-react';
+import { useAlert } from './AlertProvider';
 
 function isIOS() {
   if (typeof window === 'undefined') return false;
@@ -18,6 +19,7 @@ function isInStandaloneMode() {
 }
 
 export default function InstallPwaButton({ className = '' }) {
+  const { showConfirm, showAlert } = useAlert();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installed, setInstalled] = useState(false);
   const [showIOSHelp, setShowIOSHelp] = useState(false);
@@ -49,18 +51,30 @@ export default function InstallPwaButton({ className = '' }) {
   if (mode === 'none' || mode === 'installed') return null;
 
   const onInstall = async () => {
+    const ok = await showConfirm(
+      mode === 'ios'
+        ? 'عرض تعليمات إضافة رادار إلى الشاشة الرئيسية على آيفون/آيباد؟'
+        : 'تثبيت تطبيق رادار على هذا الجهاز؟',
+      'تثبيت التطبيق'
+    );
+    if (!ok) return;
     if (mode === 'ios') {
       setShowIOSHelp((v) => !v);
+      await showAlert('اتبع التعليمات أسفل الزر لإضافة الموقع إلى الشاشة الرئيسية.', 'تلميح');
       return;
     }
     try {
       deferredPrompt?.prompt?.();
       const choice = await deferredPrompt?.userChoice;
-      // choice?.outcome: 'accepted'|'dismissed'
       setDeferredPrompt(null);
-      if (choice?.outcome === 'accepted') setInstalled(true);
+      if (choice?.outcome === 'accepted') {
+        setInstalled(true);
+        await showAlert('تمت الموافقة على التثبيت. أكمل الخطوة من نافذة المتصفح إن ظهرت.', 'تم');
+      } else {
+        await showAlert('تم إلغاء طلب التثبيت.', 'تنبيه');
+      }
     } catch {
-      // ignore
+      await showAlert('تعذر إكمال التثبيت. حاول لاحقاً أو من متصفح آخر.', 'خطأ');
     }
   };
 

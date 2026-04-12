@@ -265,7 +265,7 @@ const MerchantAds = () => {
       setPaymentReceipt(null);
       await showAlert('تم إرسال الطلب بنجاح. سيتم المراجعة خلال 24 ساعة.', 'تم');
     } catch (err) {
-      await showAlert(formatApiError(err, 'تعذر إرسال الطلب. تحقق من الاتصال والبيانات.'), 'خطأ');
+      await showAlert(formatApiError(err, 'تعذر إرسال الطلب. تحقق من الاتصال والبيانات.'), 'فشل');
     } finally {
       setSubmitting(false);
     }
@@ -483,7 +483,7 @@ const MerchantAds = () => {
                   {previewUrls.length > 0 ? (
                     <>
                       <GalleryThumbRow urls={previewUrls} max={MAX_AD_GALLERY} />
-                      <ImageCarousel images={previewUrls} height={160} borderRadius={16} />
+                      <ImageCarousel images={previewUrls} height={140} borderRadius={16} />
                     </>
                   ) : (
                     <div className="thumbLg" style={{ width: '100%', maxWidth: 280, height: 120 }}>
@@ -600,7 +600,13 @@ const MerchantAds = () => {
               </div>
             </div>
 
-            <CustomButton type="submit" loading={submitting} style={{ width: '100%' }}>
+            <CustomButton
+              type="submit"
+              loading={submitting}
+              style={{ width: '100%' }}
+              confirm={false}
+              showErrorAlert={false}
+            >
               إرسال الطلب
             </CustomButton>
           </form>

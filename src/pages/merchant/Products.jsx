@@ -77,7 +77,7 @@ const MerchantProducts = () => {
                   <div className="cell productCell">
                     <div className="product-thumb-wrap">
                       {visualImageUrls(p).length > 0 ? (
-                        <ImageCarousel images={visualImageUrls(p)} alt={p.name} height={88} borderRadius={14} />
+                        <ImageCarousel images={visualImageUrls(p)} alt={p.name} height={76} borderRadius={14} />
                       ) : (
                         <div className="thumb thumb-empty">
                           <ImageIcon size={18} />

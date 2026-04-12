@@ -46,18 +46,25 @@ export function MapExploreProvider({ children }) {
     setLocationFocusNonce((n) => n + 1);
   }, []);
 
+  /** إزالة دبوس «موقعي» من الخريطة وإعادة ضبط التمركز */
+  const clearUserMapLocation = useCallback(() => {
+    setUserMapLocation(null);
+    setLocationFocusNonce(0);
+  }, []);
+
   const value = useMemo(
     () => ({
       userMapLocation,
       setUserMapLocation,
       setManualMapLocation,
+      clearUserMapLocation,
       requestUserLocation,
       locating,
       searchQuery,
       setSearchQuery,
       locationFocusNonce,
     }),
-    [userMapLocation, requestUserLocation, setManualMapLocation, locating, searchQuery, locationFocusNonce]
+    [userMapLocation, requestUserLocation, setManualMapLocation, clearUserMapLocation, locating, searchQuery, locationFocusNonce]
   );
 
   return <MapExploreContext.Provider value={value}>{children}</MapExploreContext.Provider>;

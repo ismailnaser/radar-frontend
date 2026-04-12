@@ -193,19 +193,19 @@ const Register = () => {
         await showAlert(regData.merchant_subscription_notice, 'ملاحظة الاشتراك');
       }
       await login(username.trim(), password);
-      showAlert('تم تسجيل الحساب بنجاح!', 'نجاح');
+      await showAlert('تم إنشاء الحساب وتسجيل الدخول بنجاح.', 'تم');
       navigate('/');
     } catch (err) {
       const msg = formatApiError(err, 'تعذر إنشاء الحساب. حاول مرة أخرى.');
       setError(msg);
-      showAlert(msg, 'تنبيه');
+      await showAlert(msg, 'فشل');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGuestMode = () => {
+  const handleGuestMode = async () => {
     localStorage.removeItem('token');
     localStorage.removeItem('refresh');
     localStorage.removeItem('user_type');
@@ -214,6 +214,7 @@ const Register = () => {
     localStorage.removeItem('is_primary_admin');
     localStorage.setItem('isGuest', 'true');
     navigate('/');
+    await showAlert('أنت الآن في وضع الزائر.', 'تم');
   };
 
   const cardMaxWidth = accountType === 'merchant' ? 480 : 420;
@@ -447,7 +448,13 @@ const Register = () => {
               </>
             )}
 
-            <CustomButton type="submit" loading={loading} style={{ width: '100%', marginTop: '10px' }}>
+            <CustomButton
+              type="submit"
+              loading={loading}
+              style={{ width: '100%', marginTop: '10px' }}
+              confirm={false}
+              showErrorAlert={false}
+            >
               سجل الآن
             </CustomButton>
 
@@ -457,7 +464,14 @@ const Register = () => {
               <div style={{ flex: 1, height: '1px', background: '#eee' }} />
             </div>
 
-            <CustomButton variant="secondary" type="button" onClick={handleGuestMode} style={{ width: '100%' }}>
+            <CustomButton
+              variant="secondary"
+              type="button"
+              onClick={handleGuestMode}
+              style={{ width: '100%' }}
+              confirm={false}
+              showErrorAlert={false}
+            >
               تصفح كزائر
             </CustomButton>
           </form>

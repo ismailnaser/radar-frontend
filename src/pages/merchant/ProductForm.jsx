@@ -32,7 +32,7 @@ const MAX_GALLERY = 5;
 const MAX_PRODUCT_FEATURES = 5;
 
 const MerchantProductForm = () => {
-  const { showAlert } = useAlert();
+  const { showAlert, showConfirm } = useAlert();
   const { id } = useParams();
   const isEdit = !!id;
   const navigate = useNavigate();
@@ -123,24 +123,30 @@ const MerchantProductForm = () => {
       }
       navigate('/merchant/products');
     } catch (err) {
-      await showAlert(formatApiError(err, isEdit ? 'تعذر حفظ المنتج.' : 'تعذر إضافة المنتج.'), 'خطأ');
+      await showAlert(formatApiError(err, isEdit ? 'تعذر حفظ المنتج.' : 'تعذر إضافة المنتج.'), 'فشل');
     } finally {
       setLoading(false);
     }
   };
 
-  const addFeatureRow = () => {
+  const addFeatureRow = async () => {
+    const ok = await showConfirm('إضافة سطر تفصيل جديد؟', 'تأكيد');
+    if (!ok) return;
     setFeatures((prev) => {
       if (prev.length >= MAX_PRODUCT_FEATURES) return prev;
       return [...prev, ''];
     });
+    await showAlert('تمت إضافة السطر.', 'تم');
   };
 
-  const removeFeatureRow = (idx) => {
+  const removeFeatureRow = async (idx) => {
+    const ok = await showConfirm('حذف هذا السطر من تفاصيل المنتج؟', 'تأكيد');
+    if (!ok) return;
     setFeatures((prev) => {
       const next = prev.filter((_, i) => i !== idx);
       return next.length ? next : [''];
     });
+    await showAlert('تم حذف السطر.', 'تم');
   };
 
   return (
@@ -262,7 +268,7 @@ const MerchantProductForm = () => {
               {displayUrls.length > 0 ? (
                 <div style={{ marginBottom: 12 }}>
                   <GalleryThumbRow urls={displayUrls} max={MAX_GALLERY} />
-                  <ImageCarousel images={displayUrls} alt="" height={220} borderRadius={14} />
+                  <ImageCarousel images={displayUrls} alt="" height={152} borderRadius={14} />
                 </div>
               ) : (
                 <div
@@ -319,14 +325,25 @@ const MerchantProductForm = () => {
                   type="button"
                   className="iconBtn"
                   style={{ marginInlineStart: 10, background: 'transparent' }}
-                  onClick={() => setReplacementFiles([])}
+                  onClick={async () => {
+                    const ok = await showConfirm('إلغاء الصور الجديدة المختارة للاستبدال؟', 'تأكيد');
+                    if (!ok) return;
+                    setReplacementFiles([]);
+                    await showAlert('تم إلغاء اختيار الصور.', 'تم');
+                  }}
                 >
                   إلغاء الصور المختارة
                 </button>
               ) : null}
             </div>
 
-            <CustomButton type="submit" loading={loading} style={{ width: '100%' }}>
+            <CustomButton
+              type="submit"
+              loading={loading}
+              style={{ width: '100%' }}
+              confirm={false}
+              showErrorAlert={false}
+            >
               {isEdit ? 'حفظ التعديل' : 'إضافة المنتج'}
             </CustomButton>
           </form>

@@ -126,7 +126,7 @@ function AdminAdReview() {
               <h2 style={{ marginTop: 0 }}>صور الإعلان</h2>
               {visualImageUrls(ad).length > 0 ? (
                 <div className="admin-review-receipt-wrap">
-                  <ImageCarousel images={visualImageUrls(ad)} height={320} borderRadius={12} />
+                  <ImageCarousel images={visualImageUrls(ad)} height={260} borderRadius={12} />
                 </div>
               ) : (
                 <p className="muted">لا توجد صور للإعلان.</p>

@@ -14,7 +14,7 @@ const Verification = () => {
     const [resending, setResending] = useState(false);
     const [timer, setTimer] = useState(60);
     const navigate = useNavigate();
-    const { showAlert } = useAlert();
+    const { showAlert, showConfirm } = useAlert();
 
     useEffect(() => {
         let interval;
@@ -41,13 +41,15 @@ const Verification = () => {
     };
 
     const handleResend = async () => {
+        const ok = await showConfirm('إعادة إرسال رمز تحقق جديد إلى واتساب؟', 'إعادة الإرسال');
+        if (!ok) return;
         setResending(true);
         try {
             await resendOTP();
             showAlert('تم إعادة إرسال رمز جديد إلى واتساب الخاص بك.', 'تم الإرسال');
             setTimer(60);
         } catch (err) {
-            showAlert(formatApiError(err, 'فشل في إعادة إرسال الرمز، يرجى المحاولة لاحقاً.'));
+            showAlert(formatApiError(err, 'فشل في إعادة إرسال الرمز، يرجى المحاولة لاحقاً.'), 'خطأ');
         } finally {
             setResending(false);
         }
@@ -88,6 +90,8 @@ const Verification = () => {
                             type="submit" 
                             loading={loading} 
                             style={{ width: '100%', marginTop: '10px', height: '55px', fontSize: '1.1rem' }}
+                            confirm="إرسال رمز التحقق للتحقق من الحساب؟"
+                            showErrorAlert={false}
                         >
                             تأكيد الرمز
                         </CustomButton>

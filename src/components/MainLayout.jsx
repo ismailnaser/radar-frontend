@@ -16,7 +16,7 @@ const MainLayout = ({ children }) => {
   const [urlSearchParams] = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { requestUserLocation, locating, searchQuery, setSearchQuery } = useMapExplore();
-  const { showAlert } = useAlert();
+  const { showAlert, showConfirm } = useAlert();
   const [announcements, setAnnouncements] = useState([]);
   const adminNotifs = useAdminNotifications();
 
@@ -52,7 +52,6 @@ const MainLayout = ({ children }) => {
   const isGuestUser = localStorage.getItem('isGuest') === 'true';
   const hasToken = !!localStorage.getItem('token');
   const isAuthenticated = hasToken && !isGuestUser;
-  const isGuest = isGuestUser;
   const userName = localStorage.getItem('user_name') || '';
   const userType = localStorage.getItem('user_type') || 'shopper';
   const isAdminUser = isAuthenticated && userType === 'admin';
@@ -80,6 +79,8 @@ const MainLayout = ({ children }) => {
   const hideHeaderOnMap = pathname === '/map';
   /** إخفاء الناف العلوي: تسجيل الدخول وإنشاء الحساب فقط — الخريطة تخفي الهيدر على الموبايل بالـ CSS */
   const hideMainHeader = pathname === '/register' || pathname === '/login';
+  /** الشريط السفلي الثابت يغطي أزرار أسفل بطاقة الدخول/التسجيل؛ نخفيه هناك مثل الهيدر */
+  const hideBottomNav = pathname === '/register' || pathname === '/login';
   const hideHeaderLocationButton = pathname === '/';
   const hideHeaderProfileFab = pathname === '/register' || pathname === '/login';
   const storesTabActive = pathname === '/stores';
@@ -169,7 +170,20 @@ const MainLayout = ({ children }) => {
                 <div className="admin-notifs-pop">
                   <div className="admin-notifs-pop__head">
                     <strong>الإشعارات</strong>
-                    <button type="button" className="btn-toggle" onClick={() => adminNotifs.pollOnce?.()}>
+                    <button
+                      type="button"
+                      className="btn-toggle"
+                      onClick={async () => {
+                        const ok = await showConfirm('تحديث قائمة إشعارات الإدارة؟', 'تحديث');
+                        if (!ok) return;
+                        try {
+                          await Promise.resolve(adminNotifs.pollOnce?.());
+                          await showAlert('تم تحديث القائمة.', 'تم');
+                        } catch {
+                          await showAlert('تعذر التحديث. حاول لاحقاً.', 'خطأ');
+                        }
+                      }}
+                    >
                       تحديث
                     </button>
                   </div>
@@ -198,15 +212,19 @@ const MainLayout = ({ children }) => {
               </div>
             ) : null}
 
-            {isAuthenticated || isGuest ? (
+            {isAuthenticated ? (
               <button
                 type="button"
                 className="header-logout-btn"
                 aria-label="تسجيل الخروج"
                 title="تسجيل الخروج"
-                onClick={() => {
+                onClick={async () => {
+                  const ok = await showConfirm('تأكيد تسجيل الخروج من الحساب؟', 'تسجيل الخروج');
+                  if (!ok) return;
+                  localStorage.removeItem('isGuest');
                   logout();
                   navigate('/login');
+                  await showAlert('تم تسجيل الخروج بنجاح.', 'تم');
                 }}
               >
                 <LogOut size={20} strokeWidth={2} aria-hidden />
@@ -313,7 +331,7 @@ const MainLayout = ({ children }) => {
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} variant={sidebarVariant} />
 
       <main
-        className={`content${pathname === '/' ? ' content--home' : ''}${pathname === '/map' ? ' content--map' : ''}`}
+        className={`content${pathname === '/' ? ' content--home' : ''}${pathname === '/map' ? ' content--map' : ''}${hideBottomNav ? ' content--auth' : ''}`}
       >
         {showLayoutBack && hideHeaderOnMap ? (
           <div className="layout-back-floating">
@@ -331,49 +349,51 @@ const MainLayout = ({ children }) => {
         {children}
       </main>
 
-      {!isAdminPanelContext ? (
-        <nav className="bottom-nav" aria-label="شريط التنقل السفلي">
-          <Link to="/" className={`bottom-nav-item${pathname === '/' ? ' bottom-nav-item--active' : ''}`}>
-            <HomeIcon size={22} strokeWidth={2} aria-hidden />
-            <span>الرئيسية</span>
-          </Link>
-          <Link to="/map" className={`bottom-nav-item${pathname === '/map' ? ' bottom-nav-item--active' : ''}`}>
-            <MapIcon size={22} strokeWidth={2} aria-hidden />
-            <span>الخريطة</span>
-          </Link>
-          <Link to="/stores" className={`bottom-nav-item${storesTabActive ? ' bottom-nav-item--active' : ''}`}>
-            <Store size={22} strokeWidth={2} aria-hidden />
-            <span>المتاجر</span>
-          </Link>
-          <button type="button" className="bottom-nav-item" onClick={toggleSidebar} aria-label="القائمة">
-            <Menu size={22} strokeWidth={2} aria-hidden />
-            <span>القائمة</span>
-          </button>
-        </nav>
-      ) : (
-        <nav className="bottom-nav" aria-label="شريط الأدمن السفلي">
-          <Link to="/admin" className={`bottom-nav-item${adminHomeActive ? ' bottom-nav-item--active' : ''}`}>
-            <LayoutDashboard size={22} strokeWidth={2} aria-hidden />
-            <span>لوحة</span>
-          </Link>
-          <Link to="/admin/stores" className={`bottom-nav-item${adminStoresActive ? ' bottom-nav-item--active' : ''}`}>
-            <Store size={22} strokeWidth={2} aria-hidden />
-            <span>متاجر</span>
-          </Link>
-          <Link to="/admin/ads" className={`bottom-nav-item${adminAdsActive ? ' bottom-nav-item--active' : ''}`}>
-            <Tags size={22} strokeWidth={2} aria-hidden />
-            <span>إعلانات</span>
-          </Link>
-          <Link to="/admin/users" className={`bottom-nav-item${adminUsersActive ? ' bottom-nav-item--active' : ''}`}>
-            <Users size={22} strokeWidth={2} aria-hidden />
-            <span>مستخدمون</span>
-          </Link>
-          <button type="button" className="bottom-nav-item" onClick={toggleSidebar} aria-label="القائمة">
-            <Menu size={22} strokeWidth={2} aria-hidden />
-            <span>القائمة</span>
-          </button>
-        </nav>
-      )}
+      {!hideBottomNav ? (
+        !isAdminPanelContext ? (
+          <nav className="bottom-nav" aria-label="شريط التنقل السفلي">
+            <Link to="/" className={`bottom-nav-item${pathname === '/' ? ' bottom-nav-item--active' : ''}`}>
+              <HomeIcon size={22} strokeWidth={2} aria-hidden />
+              <span>الرئيسية</span>
+            </Link>
+            <Link to="/map" className={`bottom-nav-item${pathname === '/map' ? ' bottom-nav-item--active' : ''}`}>
+              <MapIcon size={22} strokeWidth={2} aria-hidden />
+              <span>الخريطة</span>
+            </Link>
+            <Link to="/stores" className={`bottom-nav-item${storesTabActive ? ' bottom-nav-item--active' : ''}`}>
+              <Store size={22} strokeWidth={2} aria-hidden />
+              <span>المتاجر</span>
+            </Link>
+            <button type="button" className="bottom-nav-item" onClick={toggleSidebar} aria-label="القائمة">
+              <Menu size={22} strokeWidth={2} aria-hidden />
+              <span>القائمة</span>
+            </button>
+          </nav>
+        ) : (
+          <nav className="bottom-nav" aria-label="شريط الأدمن السفلي">
+            <Link to="/admin" className={`bottom-nav-item${adminHomeActive ? ' bottom-nav-item--active' : ''}`}>
+              <LayoutDashboard size={22} strokeWidth={2} aria-hidden />
+              <span>لوحة</span>
+            </Link>
+            <Link to="/admin/stores" className={`bottom-nav-item${adminStoresActive ? ' bottom-nav-item--active' : ''}`}>
+              <Store size={22} strokeWidth={2} aria-hidden />
+              <span>متاجر</span>
+            </Link>
+            <Link to="/admin/ads" className={`bottom-nav-item${adminAdsActive ? ' bottom-nav-item--active' : ''}`}>
+              <Tags size={22} strokeWidth={2} aria-hidden />
+              <span>إعلانات</span>
+            </Link>
+            <Link to="/admin/users" className={`bottom-nav-item${adminUsersActive ? ' bottom-nav-item--active' : ''}`}>
+              <Users size={22} strokeWidth={2} aria-hidden />
+              <span>مستخدمون</span>
+            </Link>
+            <button type="button" className="bottom-nav-item" onClick={toggleSidebar} aria-label="القائمة">
+              <Menu size={22} strokeWidth={2} aria-hidden />
+              <span>القائمة</span>
+            </button>
+          </nav>
+        )
+      ) : null}
 
       <style dangerouslySetInnerHTML={{ __html: `
         .layout-container {
@@ -1329,6 +1349,10 @@ const MainLayout = ({ children }) => {
           min-width: 0;
         }
 
+        .content.content--auth {
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
         .content.content--home {
           padding: 0;
           padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
@@ -1429,6 +1453,9 @@ const MainLayout = ({ children }) => {
             padding-bottom: clamp(8px, 1.5vw, 16px);
           }
           .content.content--home {
+            padding-bottom: clamp(8px, 1.5vw, 16px);
+          }
+          .content.content--auth {
             padding-bottom: clamp(8px, 1.5vw, 16px);
           }
         }

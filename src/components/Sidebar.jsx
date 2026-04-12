@@ -34,10 +34,12 @@ function pathIsActive(pathname, path) {
 const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { showAlert } = useAlert();
+  const { showAlert, showConfirm } = useAlert();
   const { pendingAds, pendingRenewals, pendingCommunityPoints, pendingTotal } = useAdminPendingCounts();
-  const isGuest = localStorage.getItem('isGuest') === 'true';
-  const isAuthenticated = !!localStorage.getItem('token');
+  const isGuestUser = localStorage.getItem('isGuest') === 'true';
+  const hasToken = !!localStorage.getItem('token');
+  /** عضو مسجّل فعلياً — الزائر يُعامل كغير مسجّل لواجهة الدخول/الخروج */
+  const isAuthenticated = hasToken && !isGuestUser;
   const userType = localStorage.getItem('user_type') || 'shopper';
 
   const shopperMenuItems = [
@@ -89,7 +91,7 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
   ];
 
   const resolvedVariant =
-    isGuest || !isAuthenticated
+    !isAuthenticated
       ? 'shopper'
       : userType === 'admin'
         ? 'admin'
@@ -106,11 +108,19 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
         ? [...shopperMenuItems, ...merchantMenuExtra]
         : shopperMenuItems;
 
-  const handleAuthAction = () => {
+  const handleAuthAction = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      toggleSidebar();
+      return;
+    }
+    const ok = await showConfirm('تأكيد تسجيل الخروج من الحساب؟', 'تسجيل الخروج');
+    if (!ok) return;
     localStorage.removeItem('isGuest');
     logout();
     navigate('/login');
     toggleSidebar();
+    await showAlert('تم تسجيل الخروج بنجاح.', 'تم');
   };
 
   const pendingCountForPath = (path) => {
@@ -121,7 +131,7 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
   };
 
   const handleProtectedClick = (e, item) => {
-    if (item.protected && (isGuest || !isAuthenticated)) {
+    if (item.protected && !isAuthenticated) {
       e.preventDefault();
       showAlert('عذراً، يجب تسجيل الدخول والتحقق من حسابك لاستخدام هذه الميزة.', 'الوصول محدود');
       navigate('/login');
@@ -186,10 +196,10 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
           <div className="sidebar-footer">
             <button type="button" className="menu-item menu-item--logout" onClick={handleAuthAction}>
               <span className="menu-icon-wrap menu-icon-wrap--muted">
-                {isGuest ? <LogIn size={20} /> : <LogOut size={20} />}
+                {isAuthenticated ? <LogOut size={20} /> : <LogIn size={20} />}
               </span>
-              <span className={`menu-label menu-label--logout${isGuest ? '' : ' menu-label--danger'}`}>
-                {isGuest ? 'تسجيل الدخول' : 'تسجيل الخروج'}
+              <span className={`menu-label menu-label--logout${isAuthenticated ? ' menu-label--danger' : ''}`}>
+                {isAuthenticated ? 'تسجيل الخروج' : 'تسجيل الدخول'}
               </span>
             </button>
           </div>

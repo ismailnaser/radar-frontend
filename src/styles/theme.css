@@ -37,6 +37,10 @@
   --radius-xl: 28px;
   --radius-pill: 9999px;
 
+  /* كروت قوائم (عروض، مفضلة، متاجر): ارتفاع صورة موحّد تقريباً */
+  --card-carousel-height: 152px;
+  --card-media-max-h: 168px;
+
   --font-family: 'Tajawal', 'Cairo', 'Segoe UI', Tahoma, sans-serif;
 }
 
@@ -70,9 +74,9 @@ body {
 /* كروت — حواف ناعمة وظل خفيف كواجهات الطعام */
 .card {
   background: var(--surface-elevated);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   box-shadow: 0 4px 18px rgba(26, 29, 38, 0.06);
-  padding: 1.75rem;
+  padding: 1.25rem 1.35rem;
   border: 1px solid rgba(26, 29, 38, 0.05);
 }
 

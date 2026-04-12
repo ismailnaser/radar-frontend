@@ -8,7 +8,7 @@ export default function ImageCarousel({
   images = [],
   alt = '',
   className = '',
-  height = 200,
+  height = 152,
   borderRadius = 12,
   /** يملأ الحاوية الأب (يحتاج ارتفاعاً محدداً للأب، مثل aspect-ratio) */
   fill = false,

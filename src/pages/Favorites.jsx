@@ -19,6 +19,7 @@ import ImageCarousel from '../components/ImageCarousel';
 import { visualImageUrls } from '../utils/productImages';
 import { ensureCartNamed } from '../utils/cartNaming';
 import { canUseShoppingCarts } from '../utils/cartAccess';
+import { formatApiError } from '../utils/apiErrors';
 // اختيار السلة عبر النافذة المنبثقة العامة (CustomModal)
 
 const Favorites = () => {
@@ -73,6 +74,10 @@ const Favorites = () => {
     setPendingCartAdd(payload);
     const carts = await getCarts();
     const list = Array.isArray(carts) ? carts : [];
+    if (list.length === 0 && allowCreate) {
+      await createCartAndAddPending(payload, { isFirstCart: true });
+      return;
+    }
     const opts = list.map((c) => ({
       id: String(c.id),
       label: c.name || `سلة #${c.id}`,
@@ -80,10 +85,10 @@ const Favorites = () => {
       badge: Array.isArray(c.items) ? c.items.length : 0,
     }));
     const pick = await showSelect(
-      list.length === 0 ? 'لا يوجد لديك أي سلال.' : 'اختر السلة التي تريد إضافة المنتج إليها:',
+      'اختر السلة التي تريد إضافة المنتج إليها:',
       'إضافة إلى أي سلة؟',
       opts,
-      allowCreate ? { primaryActionLabel: list.length === 0 ? 'إنشاء أول سلة' : 'سلة جديدة' } : {}
+      allowCreate ? { primaryActionLabel: 'سلة جديدة' } : {}
     );
     if (pick == null) return;
     if (pick === '__primary__') {
@@ -94,12 +99,18 @@ const Favorites = () => {
     await pickCartAndAddPending({ id: pick });
   };
 
-  const createCartAndAddPending = async () => {
-    const name = await showPrompt('اكتب اسم السلة الجديدة:', 'اسم السلة...');
-    if (!name) return;
-    const cart = await createCart(String(name));
-    const p = pendingCartAdd;
+  const createCartAndAddPending = async (payloadOverride, { isFirstCart = false } = {}) => {
+    const p = payloadOverride != null ? payloadOverride : pendingCartAdd;
     if (!p) return;
+    const name = await showPrompt(
+      isFirstCart
+        ? 'لا توجد لديك سلال بعد. اكتب اسماً لسلتك الأولى — يُضاف المنتج إليها مباشرة.'
+        : 'اكتب اسماً للسلة الجديدة ثم يُضاف المنتج إليها.',
+      isFirstCart ? 'مثال: سلة اليوم' : 'اسم السلة...',
+      isFirstCart ? 'إنشاء أول سلة' : 'سلة جديدة'
+    );
+    if (!name || !String(name).trim()) return;
+    const cart = await createCart(String(name).trim());
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
     setPendingCartAdd(null);
@@ -119,8 +130,9 @@ const Favorites = () => {
     try {
       await removeFavorite(id);
       setProductFavorites((prev) => prev.filter((fav) => fav.id !== id));
-    } catch {
-      showAlert('حدث خطأ أثناء الإزالة.');
+      await showAlert('تمت إزالة المنتج من المفضلة.', 'تم');
+    } catch (e) {
+      await showAlert(formatApiError(e, 'حدث خطأ أثناء الإزالة.'), 'خطأ');
     }
   };
 
@@ -130,8 +142,9 @@ const Favorites = () => {
     try {
       await removeStoreFavorite(id);
       setStoreFavorites((prev) => prev.filter((fav) => fav.id !== id));
-    } catch {
-      showAlert('حدث خطأ أثناء الإزالة.');
+      await showAlert('تمت إزالة المحل من المفضلة.', 'تم');
+    } catch (e) {
+      await showAlert(formatApiError(e, 'حدث خطأ أثناء الإزالة.'), 'خطأ');
     }
   };
 
@@ -150,8 +163,8 @@ const Favorites = () => {
         },
         { allowCreate: true }
       );
-    } catch {
-      showAlert('تعذرت الإضافة للسلة.');
+    } catch (e) {
+      await showAlert(formatApiError(e, 'تعذرت الإضافة للسلة.'), 'خطأ');
     }
   };
 
@@ -163,8 +176,8 @@ const Favorites = () => {
         quantity: 1,
         success: 'تمت إضافة عرض الإعلان المستقل للسلة.',
       });
-    } catch {
-      showAlert('تعذرت الإضافة للسلة.');
+    } catch (e) {
+      await showAlert(formatApiError(e, 'تعذرت الإضافة للسلة.'), 'خطأ');
     }
   };
 
@@ -236,7 +249,7 @@ const Favorites = () => {
                         <div key={fav.id} className="card favorite-card">
                           <div className="favorite-card-media">
                             {urls.length > 0 ? (
-                              <ImageCarousel images={urls} height={220} borderRadius={0} />
+                              <ImageCarousel images={urls} height={152} borderRadius={0} />
                             ) : (
                               <Megaphone size={40} color="var(--text-secondary)" />
                             )}
@@ -332,7 +345,7 @@ const Favorites = () => {
                           title="فتح المنتج داخل المتجر"
                         >
                           {visualImageUrls(p).length > 0 ? (
-                            <ImageCarousel images={visualImageUrls(p)} height={220} borderRadius={0} />
+                            <ImageCarousel images={visualImageUrls(p)} height={152} borderRadius={0} />
                           ) : (
                             <Package size={40} color="var(--text-secondary)" />
                           )}
@@ -340,7 +353,7 @@ const Favorites = () => {
                       ) : (
                         <div className="favorite-card-media">
                           {visualImageUrls(p).length > 0 ? (
-                            <ImageCarousel images={visualImageUrls(p)} height={220} borderRadius={0} />
+                            <ImageCarousel images={visualImageUrls(p)} height={152} borderRadius={0} />
                           ) : (
                             <Package size={40} color="var(--text-secondary)" />
                           )}
@@ -548,28 +561,28 @@ const Favorites = () => {
         .favorites-grid{
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 16px;
+          gap: 12px;
         }
         @media (max-width: 720px) {
           .favorites-grid{
             grid-template-columns: 1fr;
-            gap: 12px;
+            gap: 10px;
             justify-items: center;
-            max-width: min(300px, 94vw);
+            max-width: min(280px, 94vw);
             margin-inline: auto;
           }
           .favorite-card{
             width: 100%;
-            max-width: min(300px, 94vw);
-            border-radius: 18px;
+            max-width: min(280px, 94vw);
+            border-radius: 16px;
           }
           .favorite-card-media{
-            max-height: 150px;
-            min-height: 100px;
-            aspect-ratio: 16 / 10;
+            max-height: 132px;
+            min-height: 88px;
+            aspect-ratio: 3 / 2;
           }
           .favorite-card-body{
-            padding: 10px 12px 12px;
+            padding: 9px 11px 11px;
           }
           .favorite-card--store{
             padding: 14px;
@@ -578,6 +591,13 @@ const Favorites = () => {
         @media (min-width: 960px) {
           .favorites-grid{
             grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+          }
+        }
+        @media (min-width: 1200px) {
+          .favorites-grid{
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
           }
         }
         .favorite-card{
@@ -594,9 +614,9 @@ const Favorites = () => {
         .favorite-card-media{
           flex: 0 0 auto;
           width: 100%;
-          aspect-ratio: 1;
-          max-height: 200px;
-          min-height: 120px;
+          aspect-ratio: 3 / 2;
+          max-height: 168px;
+          min-height: 96px;
           background: var(--grey-light);
           display: flex;
           align-items: center;
@@ -613,7 +633,7 @@ const Favorites = () => {
           min-height: 0;
           display: flex;
           flex-direction: column;
-          padding: 14px 14px 16px;
+          padding: 11px 12px 13px;
           overflow: hidden;
         }
         .favorite-card h3{

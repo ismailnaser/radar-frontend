@@ -85,7 +85,7 @@ function AdminAds() {
                   <div className="admin-card-media">
                     {visualImageUrls(ad).length > 0 ? (
                       <Link to={`/admin/ads/${ad.id}`} title="مراجعة الطلب" style={{ display: 'block' }}>
-                        <ImageCarousel images={visualImageUrls(ad)} height={140} borderRadius={10} />
+                        <ImageCarousel images={visualImageUrls(ad)} height={120} borderRadius={10} />
                       </Link>
                     ) : null}
                     {ad.payment_receipt_image ? (

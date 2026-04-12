@@ -82,6 +82,10 @@ const Offers = () => {
     setPendingCartAdd(payload);
     const carts = await getCarts();
     const list = Array.isArray(carts) ? carts : [];
+    if (list.length === 0) {
+      await createCartAndAddPending(payload, { isFirstCart: true });
+      return;
+    }
     const opts = list.map((c) => ({
       id: String(c.id),
       label: c.name || `سلة #${c.id}`,
@@ -89,10 +93,10 @@ const Offers = () => {
       badge: Array.isArray(c.items) ? c.items.length : 0,
     }));
     const pick = await showSelect(
-      list.length === 0 ? 'لا يوجد لديك أي سلال.' : 'اختر السلة التي تريد إضافة المنتج إليها:',
+      'اختر السلة التي تريد إضافة المنتج إليها:',
       'إضافة إلى أي سلة؟',
       opts,
-      { primaryActionLabel: list.length === 0 ? 'إنشاء أول سلة' : 'سلة جديدة' }
+      { primaryActionLabel: 'سلة جديدة' }
     );
     if (pick == null) return;
     if (pick === '__primary__') {
@@ -102,12 +106,18 @@ const Offers = () => {
     await pickCartAndAddPending({ id: pick });
   };
 
-  const createCartAndAddPending = async () => {
-    const name = await showPrompt('اكتب اسم السلة الجديدة:', 'اسم السلة...');
-    if (!name) return;
-    const cart = await createCart(String(name));
-    const p = pendingCartAdd;
+  const createCartAndAddPending = async (payloadOverride, { isFirstCart = false } = {}) => {
+    const p = payloadOverride != null ? payloadOverride : pendingCartAdd;
     if (!p) return;
+    const name = await showPrompt(
+      isFirstCart
+        ? 'لا توجد لديك سلال بعد. اكتب اسماً لسلتك الأولى — يُضاف المنتج إليها مباشرة.'
+        : 'اكتب اسماً للسلة الجديدة ثم يُضاف المنتج إليها.',
+      isFirstCart ? 'مثال: سلة اليوم' : 'اسم السلة...',
+      isFirstCart ? 'إنشاء أول سلة' : 'سلة جديدة'
+    );
+    if (!name || !String(name).trim()) return;
+    const cart = await createCart(String(name).trim());
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await showAlert('تمت إضافة المنتج إلى السلة.', 'تم');
     setPendingCartAdd(null);
@@ -338,40 +348,143 @@ const Offers = () => {
           .offers-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 20px;
+            gap: 14px;
             align-items: start;
           }
           @media (max-width: 720px) {
+            .offers-page-wrap {
+              padding-inline: clamp(6px, 2vw, 14px);
+            }
+            .offers-hero {
+              padding: 14px 14px;
+              margin-bottom: 16px;
+              border-radius: 16px;
+            }
+            .offers-hero-icon {
+              width: 44px;
+              height: 44px;
+              border-radius: 14px;
+            }
+            .offers-hero-title {
+              font-size: 1.15rem;
+            }
+            .offers-hero-sub {
+              font-size: 0.8rem;
+              margin-top: 6px;
+            }
             .offers-grid {
-              grid-template-columns: 1fr;
-              gap: 14px;
-              justify-items: center;
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 8px;
+              align-items: stretch;
             }
             .offers-card {
               width: 100%;
-              max-width: min(300px, 92vw);
-              border-radius: 18px;
+              max-width: none;
+              border-radius: 14px;
+              min-width: 0;
             }
             .offers-card-media {
-              max-height: 168px;
-              min-height: 96px;
-              aspect-ratio: 16 / 10;
+              aspect-ratio: 4 / 3;
+              min-height: 0;
+              max-height: 112px;
+            }
+            .offers-card-media-cartbtn {
+              width: 32px;
+              height: 32px;
+              top: 6px;
+              inset-inline-end: 6px;
+              border-radius: 11px;
+            }
+            .offers-card-media-cartbtn svg {
+              width: 15px;
+              height: 15px;
+            }
+            .offers-card-media-overlay {
+              padding-block: 6px 5px;
+              padding-inline: 7px;
+            }
+            .offers-card-media:has(.offers-card-media-cartbtn) .offers-card-media-overlay {
+              padding-inline-end: 40px;
+            }
+            .offers-card-media-title {
+              font-size: 0.68rem;
+              -webkit-line-clamp: 2;
+            }
+            .offers-card-media-price {
+              font-size: 0.68rem;
+              padding: 3px 6px;
             }
             .offers-card-body {
-              padding: 12px 12px 14px;
+              padding: 7px 8px 9px;
+              gap: 0;
+            }
+            .offers-card-store {
+              font-size: 0.62rem;
+              padding: 3px 6px;
+              margin-bottom: 4px;
+              border-radius: 6px;
             }
             .offers-card-title {
-              font-size: 1rem !important;
+              font-size: 0.78rem !important;
+              margin: 0 0 4px !important;
+              -webkit-line-clamp: 2;
+            }
+            .offers-card-prices {
+              gap: 4px;
+              margin-bottom: 4px;
+            }
+            .offers-price-old {
+              font-size: 0.68rem;
+            }
+            .offers-price-now {
+              font-size: 0.82rem;
+            }
+            .offers-price-badge {
+              font-size: 0.58rem;
+              padding: 2px 5px;
+            }
+            .offers-card-desc {
+              font-size: 0.68rem;
+              line-height: 1.4;
+              margin: 0 0 6px;
+              -webkit-line-clamp: 2;
+            }
+            .offers-card-actions {
+              grid-template-columns: 1fr;
+              gap: 5px;
+              margin-bottom: 6px;
+            }
+            .offers-btn {
+              font-size: 0.68rem;
+              padding: 7px 8px;
+              border-radius: 10px;
+              gap: 4px;
+            }
+            .offers-btn svg {
+              width: 14px;
+              height: 14px;
+            }
+            .offers-btn--block {
+              min-height: 34px;
+              padding: 6px 8px;
+              font-size: 0.7rem;
+              border-width: 1.5px;
             }
           }
           @media (min-width: 960px) {
             .offers-grid {
               grid-template-columns: repeat(3, 1fr);
-              gap: 24px;
+              gap: 16px;
+            }
+          }
+          @media (min-width: 1200px) {
+            .offers-grid {
+              grid-template-columns: repeat(4, minmax(0, 1fr));
+              gap: 14px;
             }
           }
           .offers-card {
-            border-radius: 22px;
+            border-radius: 18px;
             overflow: hidden;
             background: var(--white);
             border: 1px solid rgba(224, 223, 213, 0.95);
@@ -389,9 +502,9 @@ const Offers = () => {
           .offers-card-media {
             flex: 0 0 auto;
             width: 100%;
-            aspect-ratio: 4 / 3;
-            min-height: 120px;
-            max-height: 240px;
+            aspect-ratio: 3 / 2;
+            min-height: 96px;
+            max-height: 168px;
             background: linear-gradient(180deg, var(--grey-light), #f0efe8);
             position: relative;
             display: flex;
@@ -485,7 +598,7 @@ const Offers = () => {
             font-size: 1.1rem;
           }
           .offers-card-body {
-            padding: 16px 18px 18px;
+            padding: 12px 14px 14px;
             flex: 1 1 auto;
             min-height: 0;
             display: flex;
@@ -503,8 +616,8 @@ const Offers = () => {
             margin-bottom: 8px;
           }
           .offers-card-title {
-            margin: 0 0 10px;
-            font-size: 1.05rem;
+            margin: 0 0 8px;
+            font-size: 0.98rem;
             font-weight: 900;
             color: var(--secondary);
             line-height: 1.35;

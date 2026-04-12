@@ -21,12 +21,16 @@ const GuestAccessPrompt = ({ title, message }) => {
                     onClick={() => navigate('/login')}
                     style={{ flex: 1, height: '50px' }}
                     variant="secondary"
+                    confirm="الانتقال إلى صفحة تسجيل الدخول؟"
+                    showErrorAlert={false}
                 >
                     <LogIn size={18} style={{ marginLeft: '8px' }} /> تسجيل الدخول
                 </CustomButton>
                 <CustomButton 
                     onClick={() => navigate('/register')}
                     style={{ flex: 1, height: '50px' }}
+                    confirm="الانتقال إلى صفحة إنشاء حساب؟"
+                    showErrorAlert={false}
                 >
                     <UserPlus size={18} style={{ marginLeft: '8px' }} /> إنشاء حساب
                 </CustomButton>

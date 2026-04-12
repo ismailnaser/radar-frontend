@@ -46,7 +46,7 @@ function weeklyToApi(lines) {
 
 const MerchantStoreSettings = () => {
   const navigate = useNavigate();
-  const { showAlert } = useAlert();
+  const { showAlert, showConfirm } = useAlert();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -168,24 +168,30 @@ const MerchantStoreSettings = () => {
         navigate(`/stores/${sid}`);
       }
     } catch (err) {
-      await showAlert(formatApiError(err, 'تعذر حفظ البيانات. حاول مرة أخرى.'), 'خطأ');
+      await showAlert(formatApiError(err, 'تعذر حفظ البيانات. حاول مرة أخرى.'), 'فشل');
     } finally {
       setSaving(false);
     }
   };
 
-  const addFeatureRow = () => {
+  const addFeatureRow = async () => {
+    const ok = await showConfirm('إضافة حقل ميزة جديد؟', 'تأكيد');
+    if (!ok) return;
     setFeatures((prev) => {
       if (prev.length >= 10) return prev;
       return [...prev, ''];
     });
+    await showAlert('تمت إضافة حقل جديد.', 'تم');
   };
 
-  const removeFeatureRow = (idx) => {
+  const removeFeatureRow = async (idx) => {
+    const ok = await showConfirm('حذف هذا السطر من مميزات المتجر؟', 'تأكيد');
+    if (!ok) return;
     setFeatures((prev) => {
       const next = prev.filter((_, i) => i !== idx);
       return next.length ? next : [''];
     });
+    await showAlert('تم حذف السطر.', 'تم');
   };
 
   return (
@@ -208,7 +214,12 @@ const MerchantStoreSettings = () => {
           ) : error ? (
             <div>
               <p style={{ color: '#c0392b', fontWeight: 800, marginBottom: 12 }}>{error}</p>
-              <CustomButton onClick={() => window.location.reload()} style={{ width: '100%' }}>
+              <CustomButton
+                onClick={() => window.location.reload()}
+                style={{ width: '100%' }}
+                confirm="إعادة تحميل الصفحة الآن؟"
+                showErrorAlert={false}
+              >
                 إعادة المحاولة
               </CustomButton>
             </div>
@@ -509,7 +520,13 @@ const MerchantStoreSettings = () => {
               </div>
 
               <div style={{ marginTop: 14 }}>
-                <CustomButton type="submit" loading={saving} style={{ width: '100%' }}>
+                <CustomButton
+                  type="submit"
+                  loading={saving}
+                  style={{ width: '100%' }}
+                  confirm={false}
+                  showErrorAlert={false}
+                >
                   حفظ
                 </CustomButton>
               </div>

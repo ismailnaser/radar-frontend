@@ -163,24 +163,42 @@
 }
 
 /* حاوية داخل .leaflet-container — فوق طبقات Leaflet (zoom ~1000) */
-.shopper-map-gps-fab-onmap {
+.shopper-map-gps-fab-onmap,
+.shopper-map-gps-fab-stack {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 6500;
 }
 
-.shopper-map-gps-fab-onmap .shopper-map-gps-fab {
+.shopper-map-gps-fab-onmap .shopper-map-gps-fab,
+.shopper-map-gps-fab-stack .shopper-map-gps-fab {
   pointer-events: auto;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   z-index: 1;
 }
 
+.shopper-map-gps-fab-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding-inline-end: max(10px, env(safe-area-inset-inline-end, 0px));
+  gap: 8px;
+}
+
+.shopper-map-gps-fab-stack--start {
+  align-items: flex-start;
+  padding-inline-end: 0;
+  padding-inline-start: max(10px, env(safe-area-inset-inline-start, 0px));
+}
+
 .shopper-map-gps-fab {
-  position: absolute;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  inset-inline-end: max(10px, env(safe-area-inset-inline-end, 0px));
+  position: relative;
+  bottom: auto;
+  inset-inline-end: auto;
   z-index: 1;
   display: inline-flex;
   align-items: center;
@@ -250,6 +268,17 @@
 .shopper-map-gps-fab--start {
   inset-inline-start: max(10px, env(safe-area-inset-inline-start, 0px));
   inset-inline-end: auto;
+}
+
+.shopper-map-gps-fab--clear {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: var(--secondary, #2d3436) !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.14) !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12) !important;
+}
+
+.shopper-map-gps-fab--clear:hover {
+  filter: brightness(1.02);
 }
 
 .shopper-map-expand-btn {

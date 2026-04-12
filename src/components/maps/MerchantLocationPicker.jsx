@@ -5,6 +5,7 @@ import '../../components/maps/leafletIconFix';
 import BasemapLayersControl from './BasemapLayersControl';
 import LeafletInvalidateOnLayout from './LeafletInvalidateOnLayout';
 import CustomButton from '../ui/CustomButton';
+import { useAlert } from '../AlertProvider';
 
 const DEFAULT_CENTER = [31.5, 34.4];
 
@@ -38,6 +39,7 @@ function FlyToPoint({ point }) {
 
 const MerchantLocationPicker = ({ value, onChange }) => {
   const [busy, setBusy] = useState(false);
+  const { showAlert } = useAlert();
 
   const center = useMemo(() => {
     if (value?.length === 2) return value;
@@ -45,19 +47,29 @@ const MerchantLocationPicker = ({ value, onChange }) => {
   }, [value]);
 
   const useMyLocation = async () => {
-    if (!navigator.geolocation) return alert('المتصفح لا يدعم تحديد الموقع');
+    if (!navigator.geolocation) {
+      await showAlert('المتصفح لا يدعم تحديد الموقع.', 'تنبيه');
+      throw new Error('no-geolocation');
+    }
     setBusy(true);
     try {
       const r = await getRefinedGeolocationPosition({ maxWaitMs: 22000, goodEnoughM: 110 });
       onChange([r.latitude, r.longitude]);
       if (r.accuracy != null && r.accuracy > 1200) {
         const acc = Math.round(r.accuracy);
-        alert(
-          `تم أخذ الموقع بعد عدة قراءات. الدقة لا تزال تقريبية (~${acc} م). على الكمبيوتر غالباً لا يوجد GPS؛ للدقة استخدم الهاتف أو انقر موقع المتجر يدوياً على الخريطة.`
+        await showAlert(
+          `تم أخذ الموقع بعد عدة قراءات. الدقة لا تزال تقريبية (~${acc} م). على الكمبيوتر غالباً لا يوجد GPS؛ للدقة استخدم الهاتف أو انقر موقع المتجر يدوياً على الخريطة.`,
+          'تنبيه'
         );
+      } else {
+        await showAlert('تم ضبط موقع المتجر من موقعك الحالي.', 'تم');
       }
     } catch {
-      alert('لم نتمكن من تحديد موقعك. تأكد من صلاحيات الموقع والموقع الدقيق في إعدادات النظام.');
+      await showAlert(
+        'لم نتمكن من تحديد موقعك. تأكد من صلاحيات الموقع والموقع الدقيق في إعدادات النظام.',
+        'خطأ'
+      );
+      throw new Error('geo-failed');
     } finally {
       setBusy(false);
     }
@@ -67,7 +79,14 @@ const MerchantLocationPicker = ({ value, onChange }) => {
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ fontWeight: 900 }}>حدد موقع المتجر</div>
-        <CustomButton variant="secondary" onClick={useMyLocation} loading={busy} style={{ width: 'auto' }}>
+        <CustomButton
+          variant="secondary"
+          onClick={useMyLocation}
+          loading={busy}
+          style={{ width: 'auto' }}
+          confirm="استخدام موقع جهازك الحالي (GPS) لتحديد المتجر؟"
+          showErrorAlert={false}
+        >
           موقعي الحالي
         </CustomButton>
       </div>

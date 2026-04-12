@@ -129,7 +129,7 @@ export default function MySponsoredAds() {
                   <div className="my-ad-top">
                     <div className="my-ad-media">
                       {imgs.length > 0 ? (
-                        <ImageCarousel images={imgs} height={200} borderRadius={16} />
+                        <ImageCarousel images={imgs} height={152} borderRadius={16} />
                       ) : (
                         <div className="my-ad-media-empty">
                           <ImageIcon size={32} />

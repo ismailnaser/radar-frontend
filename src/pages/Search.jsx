@@ -289,14 +289,14 @@ const SearchPage = () => {
           .search-page-grid {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
           }
           .search-page-card {
             display: flex;
             align-items: stretch;
-            gap: 12px;
-            padding: 16px 18px;
-            border-radius: var(--radius-xl);
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: var(--radius-lg);
             background: var(--white);
             border: 1px solid var(--border);
             box-shadow: 0 6px 20px rgba(30, 30, 46, 0.06);
@@ -347,9 +347,9 @@ const SearchPage = () => {
           }
           .search-page-card-thumb {
             flex-shrink: 0;
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--border);
           }

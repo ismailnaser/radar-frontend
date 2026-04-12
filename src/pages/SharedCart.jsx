@@ -145,7 +145,7 @@ const SharedCart = () => {
                       }}
                     >
                       {visualImageUrls(row).length > 0 ? (
-                        <ImageCarousel images={visualImageUrls(row)} height={72} borderRadius={0} />
+                        <ImageCarousel images={visualImageUrls(row)} height={64} borderRadius={0} />
                       ) : (
                         <div
                           style={{

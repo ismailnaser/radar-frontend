@@ -17,8 +17,16 @@ function parseNumberOrNull(raw) {
 }
 
 export default function MapPage() {
-  const { userMapLocation, setManualMapLocation, requestUserLocation, locating, locationFocusNonce, searchQuery, setSearchQuery } =
-    useMapExplore();
+  const {
+    userMapLocation,
+    setManualMapLocation,
+    clearUserMapLocation,
+    requestUserLocation,
+    locating,
+    locationFocusNonce,
+    searchQuery,
+    setSearchQuery,
+  } = useMapExplore();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -170,6 +178,7 @@ export default function MapPage() {
             showGpsOnMap
             gpsLocating={locating}
             onGpsClick={handleGpsClick}
+            onClearUserLocation={clearUserMapLocation}
             mapHeight={mapHeight}
             isFullscreen
             gpsLabel="موقعي"

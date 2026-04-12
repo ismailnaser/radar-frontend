@@ -82,7 +82,7 @@ const MerchantSubscription = () => {
       await refresh();
       await showAlert('تم إرسال طلب التجديد بنجاح. سيتم المراجعة خلال 24 ساعة.', 'تم');
     } catch (err) {
-      await showAlert(formatApiError(err, 'تعذر إرسال طلب التجديد.'), 'خطأ');
+      await showAlert(formatApiError(err, 'تعذر إرسال طلب التجديد.'), 'فشل');
     } finally {
       setSubmitting(false);
     }
@@ -219,7 +219,13 @@ const MerchantSubscription = () => {
               </div>
             </div>
 
-            <CustomButton type="submit" loading={submitting} style={{ width: '100%' }}>
+            <CustomButton
+              type="submit"
+              loading={submitting}
+              style={{ width: '100%' }}
+              confirm={false}
+              showErrorAlert={false}
+            >
               إرسال طلب التجديد
             </CustomButton>
           </form>

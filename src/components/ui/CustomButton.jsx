@@ -1,32 +1,101 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAlert } from '../AlertProvider';
+import { formatApiError } from '../../utils/apiErrors';
+import { DEFAULT_CONFIRM_MESSAGE } from '../../utils/confirmDefaults';
 
-const CustomButton = ({ 
-  children, 
-  onClick, 
-  type = 'button', 
-  variant = 'primary', // 'primary', 'secondary', 'danger', 'ghost'
-  loading = false, 
-  disabled = false, 
+/**
+ * @param {boolean|string} [confirm] — false لإلغاء التأكيد؛ نص مخصص؛ غير معرّف أو true = رسالة افتراضية
+ * @param {string} [successMessage] — تُعرض بعد نجاح onClick إن وُجدت
+ */
+const CustomButton = ({
+  children,
+  onClick,
+  type = 'button',
+  variant = 'primary',
+  loading = false,
+  disabled = false,
   icon,
   style = {},
-  ...props 
+  confirm,
+  confirmTitle = 'تأكيد',
+  successMessage,
+  successTitle = 'تم',
+  errorFallback = 'تعذرت العملية.',
+  showErrorAlert = true,
+  ...props
 }) => {
+  const { showConfirm, showAlert } = useAlert();
+  const [innerBusy, setInnerBusy] = useState(false);
+  const busy = loading || innerBusy;
+
+  const resolveConfirmMessage = () => {
+    if (confirm === false) return null;
+    if (typeof confirm === 'string' && confirm.trim()) return confirm.trim();
+    return DEFAULT_CONFIRM_MESSAGE;
+  };
+
+  const handleClick = async (e) => {
+    const msg = resolveConfirmMessage();
+
+    if (type === 'submit') {
+      if (msg) {
+        e.preventDefault();
+        const ok = await showConfirm(msg, confirmTitle);
+        if (!ok) return;
+        const form = e.currentTarget?.form;
+        if (form) {
+          if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+            form.reportValidity();
+            return;
+          }
+          if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+          } else {
+            form.submit();
+          }
+        }
+      }
+      return;
+    }
+
+    if (!onClick) return;
+
+    if (msg) {
+      const ok = await showConfirm(msg, confirmTitle);
+      if (!ok) return;
+    }
+
+    setInnerBusy(true);
+    try {
+      await Promise.resolve(onClick(e));
+      if (successMessage) {
+        await showAlert(successMessage, successTitle);
+      }
+    } catch (err) {
+      if (showErrorAlert) {
+        await showAlert(formatApiError(err, errorFallback), 'خطأ');
+      }
+    } finally {
+      setInnerBusy(false);
+    }
+  };
+
   return (
-    <button 
-      type={type} 
-      onClick={onClick} 
-      className={`btn-${variant} ${loading ? 'loading' : ''}`}
-      disabled={disabled || loading}
+    <button
+      type={type}
+      onClick={handleClick}
+      className={`btn-${variant} ${busy ? 'loading' : ''}`}
+      disabled={disabled || busy}
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: '10px',
-        ...style
+        ...style,
       }}
       {...props}
     >
-      {loading ? (
+      {busy ? (
         <span className="spinner"></span>
       ) : (
         <>
@@ -34,7 +103,7 @@ const CustomButton = ({
           {children}
         </>
       )}
-      
+
       <style dangerouslySetInnerHTML={{ __html: `
         .spinner {
           width: 22px;

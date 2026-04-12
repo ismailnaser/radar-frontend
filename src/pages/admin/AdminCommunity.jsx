@@ -394,6 +394,8 @@ function AdminCommunity() {
                   loading={addLocating}
                   onClick={useAddMyLocation}
                   style={{ width: 'auto' }}
+                  confirm="استخدام موقع جهازك الحالي؟"
+                  showErrorAlert={false}
                 >
                   موقعي الحالي
                 </CustomButton>
@@ -424,7 +426,12 @@ function AdminCommunity() {
               </div>
 
               <div style={{ marginTop: 16 }}>
-                <CustomButton type="submit" loading={addBusy}>
+                <CustomButton
+                  type="submit"
+                  loading={addBusy}
+                  confirm="حفظ نقطة الخدمة المجتمعية كمعتمدة؟"
+                  showErrorAlert={false}
+                >
                   حفظ كمعتمد
                 </CustomButton>
               </div>

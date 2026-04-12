@@ -134,7 +134,7 @@ const MerchantProfile = () => {
                 <div key={p.id} className="card" style={{ padding: 14 }}>
                   <div style={{ borderRadius: 16, overflow: 'hidden', marginBottom: 8 }}>
                     {visualImageUrls(p).length > 0 ? (
-                      <ImageCarousel images={visualImageUrls(p)} height={140} borderRadius={0} />
+                      <ImageCarousel images={visualImageUrls(p)} height={120} borderRadius={0} />
                     ) : (
                       <div className="thumbSm" style={{ width: '100%', height: 140, borderRadius: 16 }}>
                         <ImageIcon size={18} />

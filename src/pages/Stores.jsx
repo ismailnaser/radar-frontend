@@ -418,7 +418,7 @@ export default function StoresPage() {
           .stores-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
+            gap: 10px;
           }
           @media (max-width: 420px) {
             .stores-grid { gap: 10px; }
@@ -428,9 +428,9 @@ export default function StoresPage() {
             flex-direction: column;
             align-items: stretch;
             justify-content: space-between;
-            gap: 10px;
-            padding: 12px 12px 14px;
-            border-radius: 20px;
+            gap: 8px;
+            padding: 10px 10px 12px;
+            border-radius: 16px;
             background: rgba(255, 255, 255, 0.92);
             border: 1px solid rgba(232, 230, 224, 0.95);
             text-decoration: none;
@@ -467,9 +467,10 @@ export default function StoresPage() {
           .store-card__thumb {
             order: -1;
             width: 100%;
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 4 / 3;
+            max-height: 140px;
             height: auto;
-            border-radius: 18px;
+            border-radius: 14px;
             overflow: hidden;
             border: 1px solid rgba(232, 230, 224, 0.95);
             background: rgba(255,255,255,0.8);

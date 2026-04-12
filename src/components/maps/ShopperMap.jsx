@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { MapPin, Maximize2, Star } from 'lucide-react';
+import { MapPin, Maximize2, Star, UserX } from 'lucide-react';
 import L from 'leaflet';
 import { MapContainer, Marker, Popup, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import '../../components/maps/leafletIconFix';
@@ -177,17 +177,7 @@ function AdaptiveCamera({
       return;
     }
 
-    if (userLocation?.length === 2) {
-      const lat = Number(userLocation[0]);
-      const lng = Number(userLocation[1]);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-      const fromHeaderBtn = locationFocusNonce > 0;
-      const zoom = fromHeaderBtn ? 18 : 17;
-      const duration = fromHeaderBtn ? 0.9 : 0.55;
-      map.flyTo([lat, lng], zoom, { duration, animate: true });
-      return;
-    }
+    /* التمركز على موقع المستخدم يُدار عبر FlyToUserOnNonce عند كل ضغطة «موقعي» أو تحديد يدوي */
 
     if (!autoFitStoresWhenNoUserLocation) {
       return;
@@ -224,6 +214,27 @@ export function MapClickPicker({ onPick }) {
   return null;
 }
 
+/** بعد ضغط «موقعي» أو تحديد يدوي: زوم وتمركز على آخر إحداثيات (يتفوق على fitBounds للفلاتر) */
+function FlyToUserOnNonce({ userLocation, locationFocusNonce }) {
+  const map = useMap();
+  const prevNonce = useRef(0);
+
+  useEffect(() => {
+    if (!userLocation || userLocation.length !== 2) {
+      prevNonce.current = locationFocusNonce;
+      return;
+    }
+    if (locationFocusNonce <= prevNonce.current) return;
+    const lat = Number(userLocation[0]);
+    const lng = Number(userLocation[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    map.flyTo([lat, lng], 18, { duration: 0.85, animate: true });
+    prevNonce.current = locationFocusNonce;
+  }, [map, userLocation, locationFocusNonce]);
+
+  return null;
+}
+
 /** يمنع Leaflet من اعتبار اللمس/الضغط بداية سحب على الخريطة (مهم على الجوال) */
 function stopMapPointerCapture(e) {
   e.stopPropagation();
@@ -235,15 +246,40 @@ function MapGpsFabOnMap({
   gpsLocating,
   gpsLabel,
   gpsLocatingLabel,
+  clearLabel = 'إلغاء موقعي',
   onGpsClick,
+  onClearUserLocation,
+  showClearUserLocation,
 }) {
   const map = useMap();
   const container = map.getContainer();
+  const showClear = Boolean(showClearUserLocation && typeof onClearUserLocation === 'function');
   return createPortal(
-    <div className="shopper-map-gps-fab-onmap">
+    <div
+      className={`shopper-map-gps-fab-stack${gpsFabAlignStart ? ' shopper-map-gps-fab-stack--start' : ''}`}
+    >
+      {showClear ? (
+        <button
+          type="button"
+          className="shopper-map-gps-fab shopper-map-gps-fab--clear"
+          onPointerDown={stopMapPointerCapture}
+          onPointerUp={stopMapPointerCapture}
+          onTouchStart={stopMapPointerCapture}
+          onMouseDown={stopMapPointerCapture}
+          onClick={(e) => {
+            stopMapPointerCapture(e);
+            onClearUserLocation();
+          }}
+          title="إزالة دبوس موقعك من الخريطة"
+          aria-label="إلغاء موقعي"
+        >
+          <UserX size={18} strokeWidth={2.25} aria-hidden className="shopper-map-gps-fab__ico" />
+          <span className="shopper-map-gps-fab__txt">{clearLabel}</span>
+        </button>
+      ) : null}
       <button
         type="button"
-        className={`shopper-map-gps-fab${gpsFabAlignStart ? ' shopper-map-gps-fab--start' : ''}`}
+        className="shopper-map-gps-fab"
         onPointerDown={stopMapPointerCapture}
         onPointerUp={stopMapPointerCapture}
         onTouchStart={stopMapPointerCapture}
@@ -255,7 +291,7 @@ function MapGpsFabOnMap({
           }
         }}
         disabled={gpsLocating}
-        title="تحديد موقعي الحالي على الخريطة"
+        title="تحديد موقعي الحالي على الخريطة والتمركز عليه"
         aria-label={gpsLocating ? 'جاري تحديد الموقع' : 'موقعي الحالي'}
       >
         <MapPin size={20} strokeWidth={2.25} aria-hidden className="shopper-map-gps-fab__ico" />
@@ -308,6 +344,7 @@ const ShopperMap = ({
   showGpsOnMap = false,
   gpsLocating = false,
   onGpsClick,
+  onClearUserLocation,
   mapHeight = 'clamp(260px, 52dvh, 420px)',
   gpsLabel = 'موقعي الحالي',
   gpsLocatingLabel = 'جاري الموقع… (حتى ~20ث)',
@@ -459,6 +496,7 @@ const ShopperMap = ({
           focusKind={focusKind}
           autoFitStoresWhenNoUserLocation={autoFitStoresWhenNoUserLocation}
         />
+        <FlyToUserOnNonce userLocation={userLocation} locationFocusNonce={locationFocusNonce} />
 
         {/* افتح نافذة المتجر تلقائياً عند التركيز عليه */}
         {focusStoreId != null ? (
@@ -597,6 +635,8 @@ const ShopperMap = ({
             gpsLabel={gpsLabel}
             gpsLocatingLabel={gpsLocatingLabel}
             onGpsClick={onGpsClick}
+            onClearUserLocation={onClearUserLocation}
+            showClearUserLocation={userLocation?.length === 2}
           />
         ) : null}
       </MapContainer>

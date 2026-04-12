@@ -16,11 +16,14 @@ const CustomModal = ({
   onPrimaryAction,
 }) => {
   if (!isOpen) return null;
+  const list = Array.isArray(options) ? options : [];
+  /* على الشاشات الضيقة نخفِ زر «سلة جديدة» فقط عند وجود سلال للاختيار؛ إن لم يوجد أي سلة يجب إبقاء الزر ظاهراً */
   const hidePrimaryOnSmallScreen =
     typeof window !== 'undefined' &&
     type === 'select' &&
     window.matchMedia &&
-    window.matchMedia('(max-width: 520px)').matches;
+    window.matchMedia('(max-width: 520px)').matches &&
+    list.length > 0;
 
   const handleConfirm = () => {
     if (type === 'prompt') {
@@ -34,8 +37,6 @@ const CustomModal = ({
       onClose();
     }
   };
-
-  const list = Array.isArray(options) ? options : [];
 
   return (
     <div className="modal-overlay flex-center">
