@@ -155,7 +155,14 @@ const MainLayout = ({ children }) => {
                   className="admin-notifs-btn"
                   aria-label="إشعارات الإدارة"
                   title="إشعارات الإدارة"
-                  onClick={() => {
+                  onClick={async () => {
+                    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+                      try {
+                        await Notification.requestPermission();
+                      } catch {
+                        /* تجاهل */
+                      }
+                    }
                     const open = document.body.classList.toggle('admin-notifs-open');
                     if (open) adminNotifs.markAllRead?.();
                   }}
@@ -799,6 +806,8 @@ const MainLayout = ({ children }) => {
           display: inline-flex;
           align-items: center;
           margin-inline-start: 0;
+          overflow: visible;
+          z-index: 1350;
         }
         .admin-notifs-btn{
           display: inline-flex;
@@ -842,9 +851,45 @@ const MainLayout = ({ children }) => {
           box-shadow: 0 18px 46px rgba(26, 29, 38, 0.14);
           overflow: hidden;
           z-index: 1300;
+          box-sizing: border-box;
         }
         body.admin-notifs-open .admin-notifs-pop{
-          display: block;
+          display: flex;
+          flex-direction: column;
+        }
+        @media (max-width: 720px) {
+          body.admin-notifs-open::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 5980;
+            background: rgba(18, 20, 28, 0.42);
+            -webkit-backdrop-filter: blur(3px);
+            backdrop-filter: blur(3px);
+          }
+          body.admin-notifs-open .admin-notifs-pop {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            top: auto;
+            inset-inline-end: auto;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            border-radius: 20px 20px 0 0;
+            max-height: min(78dvh, 560px);
+            z-index: 6000;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.2);
+          }
+          .admin-notifs-pop__head {
+            flex-shrink: 0;
+          }
+          .admin-notifs-list {
+            max-height: min(52dvh, 400px);
+            -webkit-overflow-scrolling: touch;
+          }
         }
         .admin-notifs-pop__head{
           display:flex;

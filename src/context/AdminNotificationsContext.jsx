@@ -10,12 +10,51 @@ function isAdminUser() {
 
 const LS_LAST_SEEN = 'admin_notifications_last_seen_id';
 
+/** إشعارات شريط النظام (PWA / Chrome) — لا تعمل في الخلفية بدون Web Push؛ هنا عند وصول دفعات جديدة أثناء فتح التطبيق */
+async function emitAdminSystemNotifications(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return;
+  if (typeof window === 'undefined') return;
+  const icon = '/logo.png';
+  const baseOpts = { icon, badge: icon, lang: 'ar', dir: 'rtl' };
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg?.showNotification) {
+        for (const n of rows) {
+          await reg.showNotification(n.title || 'رادار — إدارة', {
+            body: n.body || '',
+            tag: `admin-notif-${n.id}`,
+            ...baseOpts,
+          });
+        }
+        return;
+      }
+    }
+  } catch {
+    /* يُكمل إلى Notification */
+  }
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  for (const n of rows) {
+    try {
+      new Notification(n.title || 'رادار — إدارة', {
+        body: n.body || '',
+        icon,
+        tag: `admin-notif-${n.id}`,
+      });
+    } catch {
+      /* تجاهل */
+    }
+  }
+}
+
 export function AdminNotificationsProvider({ children }) {
   const { refresh: refreshPending } = useAdminPendingCounts();
   const [items, setItems] = useState([]);
   const [latestId, setLatestId] = useState(0);
   const [polling, setPolling] = useState(false);
   const lastSeenId = useRef(Number(localStorage.getItem(LS_LAST_SEEN) || 0));
+  /** أول استطلاع لا نُظهر عليه إشعارات نظام (تجنب إغراق المستخدم بتاريخ قديم) */
+  const adminPollCountRef = useRef(0);
 
   const unreadCount = useMemo(() => {
     const seen = lastSeenId.current || 0;
@@ -37,6 +76,7 @@ export function AdminNotificationsProvider({ children }) {
       const res = await getAdminNotifications(since);
       const list = Array.isArray(res?.results) ? res.results : [];
       const newLatest = Number(res?.latest_id || 0) || latestId || 0;
+      adminPollCountRef.current += 1;
       if (list.length) {
         setItems((prev) => {
           const merged = [...prev, ...list];
@@ -45,6 +85,9 @@ export function AdminNotificationsProvider({ children }) {
         });
         // تحديث عدادات السايدبار تلقائياً
         refreshPending?.();
+        if (adminPollCountRef.current > 1) {
+          void emitAdminSystemNotifications(list);
+        }
       }
       setLatestId(newLatest);
     } catch {
