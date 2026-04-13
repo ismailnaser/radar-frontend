@@ -44,6 +44,7 @@ import AdminStores from './pages/admin/AdminStores'
 import AdminCommunity from './pages/admin/AdminCommunity'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminFinance from './pages/admin/AdminFinance'
+import AdminPayments from './pages/admin/AdminPayments'
 import AdminAnnouncements from './pages/admin/AdminAnnouncements'
 import AdminCategoryManagement from './pages/admin/AdminCategoryManagement'
 import SettingsPage from './pages/Settings'
@@ -203,6 +204,16 @@ const router = createBrowserRouter(
               <AdminOnlyRoute>
                 <PrimaryAdminOnlyRoute>
                   <AdminFinance />
+                </PrimaryAdminOnlyRoute>
+              </AdminOnlyRoute>
+            </VerificationRoute>
+          } />
+
+          <Route path="/admin/payments" element={
+            <VerificationRoute>
+              <AdminOnlyRoute>
+                <PrimaryAdminOnlyRoute>
+                  <AdminPayments />
                 </PrimaryAdminOnlyRoute>
               </AdminOnlyRoute>
             </VerificationRoute>

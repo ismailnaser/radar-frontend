@@ -64,6 +64,7 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
     { icon: <Users size={20} />, label: 'إدارة المدراء', path: '/admin/accounts' },
     { icon: <Store size={20} />, label: 'المتاجر المشتركة', path: '/admin/stores' },
     { icon: <BarChart3 size={20} />, label: 'الأرباح والتحويلات', path: '/admin/finance' },
+    { icon: <CreditCard size={20} />, label: 'المدفوعات', path: '/admin/payments' },
     { icon: <LayoutGrid size={20} />, label: 'إدارة الأقسام', path: '/admin/categories' },
     { icon: <Megaphone size={20} />, label: 'إدارة الإعلانات الممولة', path: '/admin/ads' },
     { icon: <CreditCard size={20} />, label: 'إدارة الاشتراكات', path: '/admin/subscriptions' },

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import MainLayout from '../../components/MainLayout';
 import { useAlert } from '../../components/AlertProvider';
-import { getAdminFinanceTransfers } from '../../api/data';
+import { deleteAdminFinanceTransfer, getAdminFinanceTransfers } from '../../api/data';
+import { Trash2 } from 'lucide-react';
 
 function formatDt(iso) {
   if (!iso) return '—';
@@ -15,7 +16,7 @@ function formatDt(iso) {
 }
 
 export default function AdminFinance() {
-  const { showAlert } = useAlert();
+  const { showAlert, showConfirm } = useAlert();
 
   const [q, setQ] = useState('');
   const [kind, setKind] = useState('');
@@ -41,6 +42,25 @@ export default function AdminFinance() {
       setLoading(false);
     }
   }, [q, from, to, method, kind, showAlert]);
+
+  const removeTransfer = useCallback(
+    async (row) => {
+      const ok = await showConfirm?.(
+        `هل تريد حذف هذه التحويلة (${row.amount_ils} ₪)؟ هذا الإجراء لا يمكن التراجع عنه.`,
+        'تأكيد الحذف',
+      );
+      if (!ok) return;
+      try {
+        await deleteAdminFinanceTransfer(row.id);
+        await showAlert('تم حذف التحويلة.', 'تم');
+        await loadTransfers();
+      } catch (e) {
+        console.error(e);
+        await showAlert('تعذر حذف التحويلة.', 'خطأ');
+      }
+    },
+    [deleteAdminFinanceTransfer, loadTransfers, showAlert, showConfirm],
+  );
 
   useEffect(() => {
     loadTransfers();
@@ -137,6 +157,7 @@ export default function AdminFinance() {
                       <th>طريقة التحويل</th>
                       <th>المبلغ</th>
                       <th>تاريخ/وقت التحويل</th>
+                      <th>إجراءات</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -173,6 +194,17 @@ export default function AdminFinance() {
                           {r.amount_ils} ₪
                         </td>
                         <td className="fin-dt">{formatDt(r.created_at)}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="fin-del"
+                            onClick={() => removeTransfer(r)}
+                            title="حذف التحويلة"
+                            aria-label="حذف التحويلة"
+                          >
+                            <Trash2 size={16} strokeWidth={2.25} aria-hidden />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -222,6 +254,19 @@ export default function AdminFinance() {
                         <span className="fin-kv__k">التاريخ</span>
                         <span className="fin-kv__v">{formatDt(r.created_at)}</span>
                       </div>
+                    </div>
+
+                    <div className="fin-card__actions">
+                      <button
+                        type="button"
+                        className="fin-del"
+                        onClick={() => removeTransfer(r)}
+                        title="حذف التحويلة"
+                        aria-label="حذف التحويلة"
+                      >
+                        <Trash2 size={16} strokeWidth={2.25} aria-hidden />
+                        حذف
+                      </button>
                     </div>
                   </article>
                 ))}
@@ -447,6 +492,29 @@ export default function AdminFinance() {
               .fin-pill--other{
                 border-color: rgba(99, 110, 114, 0.28);
               }
+
+              .fin-del{
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 8px 10px;
+                border-radius: 12px;
+                border: 1.5px solid rgba(229, 115, 115, 0.35);
+                background: rgba(255, 241, 241, 0.92);
+                color: #c62828;
+                cursor: pointer;
+                font-weight: 900;
+                font-family: inherit;
+                transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+                white-space: nowrap;
+              }
+              .fin-del:hover{
+                background: rgba(255, 227, 227, 0.95);
+                border-color: rgba(198, 40, 40, 0.45);
+              }
+              .fin-del:active{ transform: scale(0.98); }
+              .fin-card__actions{ margin-top: 12px; display: flex; justify-content: flex-end; }
             `,
             }}
           />

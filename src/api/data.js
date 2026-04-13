@@ -252,6 +252,36 @@ export const getAdminFinanceTransfers = async ({ q = '', from = '', to = '', met
   return response.data;
 };
 
+export const deleteAdminFinanceTransfer = async (id) => {
+  await api.delete(`products/admin/finance/transfers/${id}/`);
+};
+
+// مدفوعات الإدارة للتطبيق (للمدير الأساسي)
+export const getAdminAppPayments = async ({ status = '' } = {}) => {
+  const params = {};
+  if (status && String(status).trim() !== '') params.status = String(status).trim();
+  const response = await api.get('products/admin/payments/', { params });
+  return response.data;
+};
+
+export const createAdminAppPayment = async (payload) => {
+  const response = await api.post('products/admin/payments/', payload, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return response.data;
+};
+
+export const patchAdminAppPayment = async (id, payload) => {
+  const response = await api.patch(`products/admin/payments/${id}/`, payload, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return response.data;
+};
+
+export const deleteAdminAppPayment = async (id) => {
+  await api.delete(`products/admin/payments/${id}/`);
+};
+
 export const adminSearchUsers = async (q = '', userType = '') => {
   const params = {};
   if (q != null && String(q).trim() !== '') params.q = String(q).trim();
