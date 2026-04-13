@@ -164,10 +164,6 @@ const CartDetails = () => {
                     <div
                       className="item-row cart-item-row"
                       style={{
-                        display: 'grid',
-                        gridTemplateColumns: '56px minmax(0, 1fr) auto',
-                        gap: 12,
-                        alignItems: 'center',
                         padding: '10px 0 6px',
                         borderRadius: item.is_promotional_line ? 12 : 0,
                         marginInline: item.is_promotional_line ? -4 : 0,
@@ -181,14 +177,14 @@ const CartDetails = () => {
                     >
                       <div className="cart-item-thumb">
                         {cartItemImageUrls(item).length > 0 ? (
-                          <ImageCarousel images={cartItemImageUrls(item)} height={56} borderRadius={12} />
+                          <ImageCarousel images={cartItemImageUrls(item)} height={96} borderRadius={16} />
                         ) : (
                           <span className="cart-item-thumb-placeholder flex-center">
                             <ImageIcon size={20} color="var(--text-light)" />
                           </span>
                         )}
                       </div>
-                      <div style={{ minWidth: 0 }}>
+                      <div className="cart-item-main">
                         {(() => {
                           const sId =
                             item?.product_details?.store ??
@@ -197,69 +193,64 @@ const CartDetails = () => {
                             null;
                           const pId = item?.product ?? item?.product_details?.id ?? null;
                           const label = item.line_title || item.product_details?.name;
+                          if (item.is_expired_line) {
+                            return <div className="cart-item-title cart-item-title--static">{label}</div>;
+                          }
                           if (sId && pId) {
                             return (
                               <Link
                                 to={`/stores/${sId}`}
                                 state={{ scrollToProductId: pId }}
-                                style={{ fontWeight: 900, color: 'var(--secondary)', textDecoration: 'none' }}
+                                className="cart-item-title"
                                 title="فتح المنتج داخل المتجر"
                               >
                                 {label}
                               </Link>
                             );
                           }
-                          return <div style={{ fontWeight: 800 }}>{label}</div>;
+                          return <div className="cart-item-title cart-item-title--static">{label}</div>;
                         })()}
-                        {item.is_promotional_line ? (
-                          <div style={{ fontSize: '0.85rem', marginTop: 6 }}>
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                padding: '3px 10px',
-                                borderRadius: 8,
-                                fontWeight: 900,
-                                color: 'var(--secondary)',
-                                background: 'rgba(245,192,0,0.35)',
-                                border: '1px solid rgba(245,192,0,0.5)',
-                              }}
-                            >
-                              {item.is_standalone_ad_line
-                                ? `عرض ممول مستقل: ${unitEffective(item).toFixed(2)} ₪ للقطعة`
-                                : `عرض ممول: ${unitEffective(item).toFixed(2)} ₪ للقطعة`}
-                            </span>
-                            {!item.is_standalone_ad_line &&
-                            catalogUnit(item) != null &&
-                            Math.abs(unitEffective(item) - catalogUnit(item)) > 1e-9 ? (
-                              <span
-                                style={{
-                                  marginInlineStart: 10,
-                                  textDecoration: 'line-through',
-                                  color: 'var(--text-secondary)',
-                                }}
-                              >
-                                سعر المتجر {catalogUnit(item).toFixed(2)} ₪
+                        <div className="cart-item-meta">
+                          {item.is_expired_line ? (
+                            <div className="cart-item-expired">
+                              {item.expired_message || 'انتهت صلاحية الإعلان.'}
+                            </div>
+                          ) : null}
+                          {item.is_promotional_line ? (
+                            <>
+                              <div className="cart-item-badges">
+                                <span className="cart-item-badge">
+                                  {item.is_standalone_ad_line
+                                    ? `عرض ممول مستقل: ${unitEffective(item).toFixed(2)} ₪ للقطعة`
+                                    : `عرض ممول: ${unitEffective(item).toFixed(2)} ₪ للقطعة`}
+                                </span>
+                                {!item.is_standalone_ad_line &&
+                                catalogUnit(item) != null &&
+                                Math.abs(unitEffective(item) - catalogUnit(item)) > 1e-9 ? (
+                                  <span className="cart-item-strike">سعر المتجر {catalogUnit(item).toFixed(2)} ₪</span>
+                                ) : null}
+                              </div>
+                              <div className="cart-item-pricing">
+                                <span className="cart-item-total">المجموع {linePrice(item).toFixed(2)} ₪</span>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="cart-item-pricing">
+                              <span className="cart-item-unit">
+                                {(catalogUnit(item) != null ? catalogUnit(item) : unitEffective(item)).toFixed(2)} ₪ للقطعة
                               </span>
-                            ) : null}
-                            <span style={{ color: 'var(--text-light)', marginInlineStart: 8 }}>
-                              · المجموع {linePrice(item).toFixed(2)} ₪
-                            </span>
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-                            {(catalogUnit(item) != null ? catalogUnit(item) : unitEffective(item)).toFixed(2)} ₪ للقطعة
-                            <span style={{ color: 'var(--text-light)', marginInlineStart: 8 }}>
-                              · المجموع {linePrice(item).toFixed(2)} ₪
-                            </span>
-                          </div>
-                        )}
+                              <span className="cart-item-dot" aria-hidden>·</span>
+                              <span className="cart-item-total">المجموع {linePrice(item).toFixed(2)} ₪</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="flex-center cart-item-actions">
                         <div className="cart-qty-stepper" dir="ltr">
                           <button
                             type="button"
                             className="cart-qty-stepper__btn cart-qty-stepper__btn--minus"
-                            disabled={savingItemId === item.id}
+                            disabled={savingItemId === item.id || item.is_expired_line}
                             onClick={() => adjustItemQuantity(item, -1)}
                             aria-label="تقليل الكمية"
                           >
@@ -269,7 +260,7 @@ const CartDetails = () => {
                             type="text"
                             inputMode="numeric"
                             className="cart-qty-stepper__input"
-                            disabled={savingItemId === item.id}
+                            disabled={savingItemId === item.id || item.is_expired_line}
                             defaultValue={item.quantity}
                             key={`${item.id}-${item.quantity}`}
                             onBlur={(e) => commitItemQuantity(item, e.target.value)}
@@ -278,7 +269,7 @@ const CartDetails = () => {
                           <button
                             type="button"
                             className="cart-qty-stepper__btn cart-qty-stepper__btn--plus"
-                            disabled={savingItemId === item.id}
+                            disabled={savingItemId === item.id || item.is_expired_line}
                             onClick={() => adjustItemQuantity(item, 1)}
                             aria-label="زيادة الكمية"
                           >
@@ -345,26 +336,115 @@ const CartDetails = () => {
             background: rgba(255,255,255,0.92);
             border: 1px solid rgba(232, 230, 224, 0.95);
             box-shadow: 0 8px 22px rgba(26, 29, 38, 0.06);
+            display: grid;
+            grid-template-columns: 96px minmax(0, 1fr) auto;
+            grid-template-areas: "thumb main actions";
+            gap: 14px;
+            align-items: start;
           }
           .cart-item-row:hover{
             border-color: rgba(245, 192, 0, 0.45);
             box-shadow: 0 14px 34px rgba(245, 192, 0, 0.12);
           }
           .cart-item-thumb{
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
+            grid-area: thumb;
+            width: 96px;
+            height: 96px;
+            border-radius: 16px;
             overflow: hidden;
             background: var(--primary-light);
             border: 1px solid rgba(245,192,0,0.22);
           }
-          @media (max-width: 420px){
+          .cart-item-main{
+            grid-area: main;
+            min-width: 0;
+          }
+          .cart-item-actions{
+            grid-area: actions;
+          }
+          .cart-item-title{
+            display: block;
+            font-weight: 950;
+            color: var(--secondary);
+            text-decoration: none;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+          }
+          .cart-item-title--static{
+            cursor: default;
+          }
+          .cart-item-meta{
+            margin-top: 8px;
+            display: grid;
+            gap: 6px;
+            min-width: 0;
+          }
+          .cart-item-badges{
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            min-width: 0;
+          }
+          .cart-item-badge{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-weight: 950;
+            font-size: 0.82rem;
+            line-height: 1.25;
+            color: var(--secondary);
+            background: rgba(245,192,0,0.35);
+            border: 1px solid rgba(245,192,0,0.5);
+          }
+          .cart-item-strike{
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            text-decoration: line-through;
+            white-space: nowrap;
+          }
+          .cart-item-pricing{
+            font-size: 0.86rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            line-height: 1.35;
+            min-width: 0;
+          }
+          .cart-item-dot{
+            color: var(--text-light);
+          }
+          .cart-item-total{
+            color: var(--text-light);
+            font-weight: 900;
+            white-space: nowrap;
+          }
+          .cart-item-expired{
+            padding: 8px 10px;
+            border-radius: 12px;
+            background: rgba(229, 115, 115, 0.10);
+            border: 1px solid rgba(229, 115, 115, 0.28);
+            color: #8b2b2b;
+            font-weight: 900;
+            font-size: 0.86rem;
+            line-height: 1.35;
+          }
+          @media (max-width: 520px){
             .cart-item-row{
-              grid-template-columns: 48px minmax(0, 1fr) auto !important;
+              grid-template-columns: 1fr auto !important;
+              grid-template-areas:
+                "thumb actions"
+                "main main" !important;
               padding: 10px 10px !important;
               border-radius: 16px !important;
             }
-            .cart-item-thumb{ width: 48px; height: 48px; border-radius: 12px; }
+            .cart-item-thumb{ width: 112px; height: 112px; border-radius: 16px; }
+            .cart-item-meta{ margin-top: 6px; gap: 5px; }
           }
           .cart-details-head{
             display: flex;

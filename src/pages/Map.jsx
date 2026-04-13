@@ -4,6 +4,7 @@ import ShopperMap from '../components/maps/ShopperMap';
 import { getCategories, getCommunityCategories, getCommunityPoints, getNearbyStores } from '../api/data';
 import { useMapExplore } from '../context/MapExploreContext';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import FiltersDropdown from '../components/ui/FiltersDropdown';
 
 const DEFAULT_CENTER = [31.5, 34.4];
 
@@ -14,6 +15,24 @@ function normalizeQ(raw) {
 function parseNumberOrNull(raw) {
   const n = Number(raw);
   return Number.isFinite(n) ? n : null;
+}
+
+function parseCsvIds(raw) {
+  if (raw == null) return [];
+  const s = String(raw).trim();
+  if (!s) return [];
+  const out = [];
+  for (const part of s.split(',')) {
+    const n = Number(String(part).trim());
+    if (Number.isFinite(n)) out.push(n);
+  }
+  return Array.from(new Set(out));
+}
+
+function toggleId(list, id) {
+  const n = Number(id);
+  if (!Number.isFinite(n)) return list;
+  return list.includes(n) ? list.filter((x) => x !== n) : [...list, n];
 }
 
 export default function MapPage() {
@@ -110,29 +129,35 @@ export default function MapPage() {
   );
 
   const mode = (searchParams.get('mode') === 'community') ? 'community' : 'stores';
-  const storeCategoryId = parseNumberOrNull(searchParams.get('category'));
-  const communityCategoryId = parseNumberOrNull(searchParams.get('cc'));
+  const storeCategoryIds = parseCsvIds(searchParams.get('category'));
+  const communityCategoryIds = parseCsvIds(searchParams.get('cc'));
   const qNorm = normalizeQ(searchQuery);
 
   const filteredStores = useMemo(() => {
     const base = Array.isArray(stores) ? stores : [];
-    const byCat = storeCategoryId ? base.filter((s) => Number(s.category) === Number(storeCategoryId)) : base;
+    const byCat =
+      storeCategoryIds.length > 0
+        ? base.filter((s) => storeCategoryIds.includes(Number(s.category)))
+        : base;
     if (!qNorm) return byCat;
     return byCat.filter((s) => {
       const hay = `${s.store_name || ''} ${s.category_name || ''} ${s.description || ''}`.toLowerCase();
       return hay.includes(qNorm);
     });
-  }, [stores, storeCategoryId, qNorm]);
+  }, [stores, storeCategoryIds, qNorm]);
 
   const filteredCommunityPoints = useMemo(() => {
     const base = Array.isArray(communityPoints) ? communityPoints : [];
-    const byCat = communityCategoryId ? base.filter((p) => Number(p.category) === Number(communityCategoryId)) : base;
+    const byCat =
+      communityCategoryIds.length > 0
+        ? base.filter((p) => communityCategoryIds.includes(Number(p.category)))
+        : base;
     if (!qNorm) return byCat;
     return byCat.filter((p) => {
       const hay = `${p.title || ''} ${p.category_name || ''} ${p.detail_description || ''} ${p.address_text || ''}`.toLowerCase();
       return hay.includes(qNorm);
     });
-  }, [communityPoints, communityCategoryId, qNorm]);
+  }, [communityPoints, communityCategoryIds, qNorm]);
 
   /** يضمن ظهور دبوس التركيز حتى لو استبعده البحث/الفلتر (مثلاً اختلاف بسيط في الاسم) */
   const storesForMap = useMemo(() => {
@@ -155,7 +180,9 @@ export default function MapPage() {
     return raw ? [...base, raw] : base;
   }, [mode, filteredCommunityPoints, communityPoints, focusCommunityPointId]);
 
-  const focusOnResults = Boolean(qNorm) || (mode === 'stores' ? storeCategoryId != null : communityCategoryId != null);
+  const focusOnResults =
+    Boolean(qNorm) ||
+    (mode === 'stores' ? storeCategoryIds.length > 0 : communityCategoryIds.length > 0);
 
   const handleGpsClick = useCallback(async () => {
     await requestUserLocation();
@@ -175,6 +202,7 @@ export default function MapPage() {
             locationFocusNonce={locationFocusNonce}
             onManualLocationPick={setManualMapLocation}
             autoFitStoresWhenNoUserLocation={false}
+            allowAutoCamera={false}
             showGpsOnMap
             gpsLocating={locating}
             onGpsClick={handleGpsClick}
@@ -206,31 +234,17 @@ export default function MapPage() {
                     الخدمات
                   </button>
 
-                  {mode === 'stores' ? (
-                    <select
-                      className="map-topbar-select"
-                      value={storeCategoryId ?? 'all'}
-                      onChange={(e) => setParam('category', e.target.value)}
-                      aria-label="فلتر الأقسام"
-                    >
-                      <option value="all">كل الأقسام</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <select
-                      className="map-topbar-select"
-                      value={communityCategoryId ?? 'all'}
-                      onChange={(e) => setParam('cc', e.target.value)}
-                      aria-label="فلتر الخدمات"
-                    >
-                      <option value="all">كل الخدمات</option>
-                      {communityCategories.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
-                  )}
+                  <FiltersDropdown
+                    buttonLabel="فلاتر"
+                    title={mode === 'stores' ? 'فلترة المتاجر حسب الأقسام' : 'فلترة الخدمات حسب الأقسام'}
+                    allLabel="الكل"
+                    options={(mode === 'stores' ? categories : communityCategories).map((c) => ({ id: c.id, label: c.name }))}
+                    selectedIds={mode === 'stores' ? storeCategoryIds : communityCategoryIds}
+                    onChangeSelectedIds={(ids) => {
+                      const key = mode === 'stores' ? 'category' : 'cc';
+                      setParam(key, ids && ids.length ? ids.join(',') : '');
+                    }}
+                  />
                 </div>
 
                 <div className="map-topbar-search">
@@ -313,6 +327,7 @@ export default function MapPage() {
             border-radius: 12px;
             min-width: min(220px, 100%);
           }
+          /* moved filter chips to FiltersDropdown component */
           .map-topbar-search{
             width: 100%;
           }

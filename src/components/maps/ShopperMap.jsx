@@ -33,6 +33,8 @@ function leafletIconForStoreDisplay(display) {
 /** مركز تقريبي لقطاع غزة — نفس منطقة محاكاة التطبيق */
 const DEFAULT_CENTER = [31.5, 34.4];
 const DEFAULT_ZOOM = 13;
+/** حدود قطاع غزة التقريبية (Lat/Lng) لمنع الخروج خارج المنطقة */
+const GAZA_BOUNDS = L.latLngBounds(L.latLng(31.20, 34.20), L.latLng(31.62, 34.62));
 
 function MapPopupStoreRating({ store }) {
   const avgRaw = store?.rating_average != null ? Number(store.rating_average) : null;
@@ -122,6 +124,7 @@ function AdaptiveCamera({
   focusOnResults,
   focusKind,
   autoFitStoresWhenNoUserLocation = true,
+  allowAutoCamera = true,
 }) {
   const map = useMap();
   const lastCamSig = useRef('');
@@ -158,7 +161,7 @@ function AdaptiveCamera({
           ? [...storePts, ...communityPts]
           : storePts;
 
-    if (focusOnResults) {
+    if (allowAutoCamera && focusOnResults) {
       if (resultPts.length === 0) {
         if (userLocation?.length === 2) {
           const lat = Number(userLocation[0]);
@@ -179,7 +182,7 @@ function AdaptiveCamera({
 
     /* التمركز على موقع المستخدم يُدار عبر FlyToUserOnNonce عند كل ضغطة «موقعي» أو تحديد يدوي */
 
-    if (!autoFitStoresWhenNoUserLocation) {
+    if (!allowAutoCamera || !autoFitStoresWhenNoUserLocation) {
       return;
     }
 
@@ -198,6 +201,7 @@ function AdaptiveCamera({
     focusOnResults,
     focusKind,
     autoFitStoresWhenNoUserLocation,
+    allowAutoCamera,
   ]);
 
   return null;
@@ -238,6 +242,16 @@ function FlyToUserOnNonce({ userLocation, locationFocusNonce }) {
 /** يمنع Leaflet من اعتبار اللمس/الضغط بداية سحب على الخريطة (مهم على الجوال) */
 function stopMapPointerCapture(e) {
   e.stopPropagation();
+}
+
+function InitGazaBounds({ onceRef }) {
+  const map = useMap();
+  useEffect(() => {
+    if (onceRef?.current) return;
+    if (onceRef) onceRef.current = true;
+    map.fitBounds(GAZA_BOUNDS, { padding: [18, 18], animate: false });
+  }, [map, onceRef]);
+  return null;
 }
 
 /** زر GPS داخل حاوية Leaflet نفسها ليظهر فوق طبقة الخريطة على كل الشاشات */
@@ -364,6 +378,8 @@ const ShopperMap = ({
    * false (صفحة الخريطة): تبقى على المنطقة الافتراضية حتى يضغط المستخدم «موقعي».
    */
   autoFitStoresWhenNoUserLocation = true,
+  /** لمنع أي تحريك/زوم تلقائي عند فتح الخريطة (إلا عبر GPS/تحديد يدوي/زوم المستخدم) */
+  allowAutoCamera = true,
 }) => {
   const center = useMemo(() => {
     if (userLocation?.length === 2) return userLocation;
@@ -390,6 +406,7 @@ const ShopperMap = ({
   const manualPickEnabled = typeof onManualLocationPick === 'function';
   const storeMarkerRefs = useRef({});
   const communityMarkerRefs = useRef({});
+  const didInitBounds = useRef(false);
   const mapFillsSpace =
     isFullscreen ||
     (typeof mapHeight === 'string' &&
@@ -478,12 +495,15 @@ const ShopperMap = ({
         minZoom={10}
         maxZoom={19}
         scrollWheelZoom
+        maxBounds={GAZA_BOUNDS}
+        maxBoundsViscosity={1.0}
         style={
           mapFillsSpace
             ? { flex: 1, minHeight: isFullscreen ? 0 : 220, width: '100%' }
             : { height: mapHeight, width: '100%' }
         }
       >
+        <InitGazaBounds onceRef={didInitBounds} />
         <BasemapLayersControl />
         <LeafletInvalidateOnLayout />
         <PickModeCursor active={awaitingManualPick} />
@@ -495,6 +515,7 @@ const ShopperMap = ({
           focusOnResults={focusOnResults}
           focusKind={focusKind}
           autoFitStoresWhenNoUserLocation={autoFitStoresWhenNoUserLocation}
+          allowAutoCamera={allowAutoCamera}
         />
         <FlyToUserOnNonce userLocation={userLocation} locationFocusNonce={locationFocusNonce} />
 

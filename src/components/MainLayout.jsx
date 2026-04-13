@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -16,6 +16,8 @@ const MainLayout = ({ children }) => {
   const [urlSearchParams] = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { requestUserLocation, locating, searchQuery, setSearchQuery } = useMapExplore();
+  const mobileSearchInputRef = useRef(null);
+  const mobileSearchNavDebounceRef = useRef(null);
   const { showAlert } = useAlert();
   const [announcements, setAnnouncements] = useState([]);
   const [adminNotifsOpen, setAdminNotifsOpen] = useState(false);
@@ -28,6 +30,15 @@ const MainLayout = ({ children }) => {
     if (pathname !== '/search') return;
     setSearchQuery(urlSearchParams.get('q') ?? '');
   }, [pathname, urlSearchParams, setSearchQuery]);
+
+  useEffect(() => {
+    return () => {
+      if (mobileSearchNavDebounceRef.current) {
+        window.clearTimeout(mobileSearchNavDebounceRef.current);
+        mobileSearchNavDebounceRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -298,21 +309,55 @@ const MainLayout = ({ children }) => {
 
         {/* موبايل: شريط بحث مطابق للصورة (يُخفى في صفحة الخريطة لأن البحث موجود فوق الخريطة) */}
         {!isAdminPanelContext && pathname !== '/map' ? (
-          <div className="header-mobile-search" aria-label="بحث سريع">
+          <div
+            className="header-mobile-search"
+            aria-label="بحث سريع"
+            onClick={() => {
+              mobileSearchInputRef.current?.focus?.();
+            }}
+          >
             <Link to="/categories" className="header-mobile-search__filter" aria-label="فلترة">
               <SlidersHorizontal size={18} strokeWidth={2} aria-hidden />
             </Link>
-            <Link
-              to={searchQuery?.trim() ? `/search?q=${encodeURIComponent(searchQuery.trim())}` : '/search'}
+            <form
               className="header-mobile-search__bar"
-              aria-label="فتح البحث"
-              title="بحث"
+              role="search"
+              aria-label="بحث"
+              onClick={(e) => e.stopPropagation()}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const q = (searchQuery || '').trim();
+                navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
+              }}
             >
-              <span className="header-mobile-search__placeholder">ابحث عن متجر، منتج، أو قسم…</span>
-              <span className="header-mobile-search__ico" aria-hidden>
-                <SearchIcon size={18} strokeWidth={2} />
-              </span>
-            </Link>
+              <input
+                ref={mobileSearchInputRef}
+                className="header-mobile-search__input"
+                type="search"
+                value={searchQuery || ''}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setSearchQuery(next);
+
+                  // Live search: update /search?q=... while typing (debounced, replace history)
+                  if (mobileSearchNavDebounceRef.current) window.clearTimeout(mobileSearchNavDebounceRef.current);
+                  mobileSearchNavDebounceRef.current = window.setTimeout(() => {
+                    const q = String(next || '').trim();
+                    if (pathname !== '/search') {
+                      navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search', { replace: false });
+                      return;
+                    }
+                    navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search', { replace: true });
+                  }, 250);
+                }}
+                placeholder="ابحث عن متجر، منتج، أو قسم…"
+                aria-label="اكتب للبحث"
+                enterKeyHint="search"
+              />
+              <button type="submit" className="header-mobile-search__submit" aria-label="بحث">
+                <SearchIcon size={18} strokeWidth={2} aria-hidden />
+              </button>
+            </form>
           </div>
         ) : null}
 
@@ -689,16 +734,19 @@ const MainLayout = ({ children }) => {
         .header-user-pill{
           display: inline-flex;
           align-items: center;
+          justify-content: center;
           gap: 8px;
-          padding: 8px 12px;
+          padding: 8px 14px;
+          min-height: 40px;
           border-radius: 999px;
           border: 1px solid var(--border);
-          background: rgba(255, 255, 255, 0.92);
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 254, 248, 0.92) 100%);
           box-shadow: var(--shadow-sm);
           color: var(--secondary);
           max-width: min(320px, 42vw);
           min-width: 0;
           flex: 0 1 auto;
+          text-align: center;
         }
         .header-user-pill--member {
           max-width: min(340px, 46vw);
@@ -714,6 +762,7 @@ const MainLayout = ({ children }) => {
           white-space: nowrap;
           min-width: 0;
           flex: 1 1 auto;
+          text-align: center;
         }
         .header-register-btn{
           display: inline-flex;
@@ -1050,6 +1099,10 @@ const MainLayout = ({ children }) => {
           margin-top: 8px;
           margin-inline: calc(-1 * clamp(8px, 2.2vw, 22px));
           padding-inline: clamp(8px, 2.2vw, 22px);
+          position: relative;
+          /* Ensure it's on top and clickable on mobile */
+          z-index: 1205;
+          pointer-events: auto !important;
         }
         @media (min-width: 721px) {
           .main-header--shopper-market .header-mobile-search {
@@ -1072,11 +1125,48 @@ const MainLayout = ({ children }) => {
           justify-content: space-between;
           gap: 10px;
           padding: 0 14px;
-          text-decoration: none;
           color: var(--text-secondary);
           flex-direction: row-reverse;
           width: 100%;
           box-sizing: border-box;
+          position: relative;
+          z-index: 1206;
+          cursor: pointer;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+          pointer-events: auto !important;
+        }
+        .main-header--shopper-market .header-mobile-search__input {
+          flex: 1;
+          min-width: 0;
+          height: 100%;
+          border: none;
+          outline: none;
+          background: transparent;
+          font-family: inherit;
+          font-weight: 800;
+          font-size: 0.92rem;
+          color: var(--secondary);
+          direction: rtl;
+          text-align: right;
+        }
+        .main-header--shopper-market .header-mobile-search__input::placeholder {
+          color: rgba(26, 29, 38, 0.55);
+          font-weight: 800;
+        }
+        .main-header--shopper-market .header-mobile-search__submit {
+          flex: 0 0 auto;
+          width: 34px;
+          height: 34px;
+          border-radius: 12px;
+          border: none;
+          background: transparent;
+          color: rgba(26, 29, 38, 0.5);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          padding: 0;
         }
         .main-header--shopper-market .header-mobile-search__placeholder {
           overflow: hidden;

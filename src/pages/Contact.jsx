@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Mail, MessageSquare } from 'lucide-react';
+import { Mail, MessageSquare, Instagram } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 
 const Contact = () => {
@@ -7,12 +7,24 @@ const Contact = () => {
     {
       icon: <Mail size={24} />,
       title: 'البريد الإلكتروني',
-      detail: 'ismailnaser67@gmail.com',
+      detail: 'radargaza@gmail.com',
       color: '#0984e3',
       action: {
         label: 'تواصل عبر Gmail',
         href:
-          'mailto:ismailnaser67@gmail.com?subject=%D8%AA%D9%88%D8%A7%D8%B5%D9%84%20%D9%85%D8%B9%20%D8%B1%D8%A7%D8%AF%D8%A7%D8%B1',
+          'mailto:radargaza@gmail.com?subject=%D8%AA%D9%88%D8%A7%D8%B5%D9%84%20%D9%85%D8%B9%20%D8%B1%D8%A7%D8%AF%D8%A7%D8%B1',
+      },
+    },
+    {
+      icon: <Instagram size={24} />,
+      title: 'إنستجرام',
+      detail: 'radargaza',
+      color: '#C13584',
+      action: {
+        label: 'فتح إنستجرام',
+        href: 'https://www.instagram.com/radargaza/',
+        target: '_blank',
+        rel: 'noreferrer',
       },
     },
     {

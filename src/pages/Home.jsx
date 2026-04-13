@@ -995,8 +995,7 @@ const Home = () => {
                 إعدادات المتجر
               </strong>
               — افتح <strong>القائمة الجانبية</strong> من زر القائمة{' '}
-              <span style={{ whiteSpace: 'nowrap' }}>(☰ أسفل الصفحة)</span>؛ من هناك تتحكم بكل خيارات المتجر، وليس
-              من روابط المتسوقين في هذه الصفحة.
+              <span style={{ whiteSpace: 'nowrap' }}>(☰ أسفل الصفحة)</span>.
             </div>
           </div>
         ) : null}
@@ -1084,6 +1083,9 @@ const Home = () => {
                         <div className="home-exclusive-meta">
                           <div className="home-exclusive-ad-title">{ad.title}</div>
                           <div className="home-exclusive-store">{ad.store_name}</div>
+                          {Number(ad.product_price) > 0 ? (
+                            <div className="home-exclusive-price">{Number(ad.product_price).toFixed(2)} ₪</div>
+                          ) : null}
                         </div>
                       </Link>
                     );
@@ -1651,8 +1653,7 @@ const Home = () => {
           .home-exclusive-card {
             position: relative;
             flex: 0 0 auto;
-            width: 250px;
-            height: 120px;
+            width: 230px;
             border-radius: 18px;
             overflow: hidden;
             text-decoration: none;
@@ -1661,6 +1662,8 @@ const Home = () => {
             border: 1px solid rgba(232, 230, 224, 0.95);
             box-shadow: 0 6px 20px rgba(26, 29, 38, 0.08);
             background: #fff;
+            display: flex;
+            flex-direction: column;
           }
           .home-exclusive-card:hover {
             border-color: rgba(245, 192, 0, 0.5);
@@ -1668,18 +1671,12 @@ const Home = () => {
             transform: translateY(-1px);
           }
           .home-exclusive-cover {
-            position: absolute;
-            inset: 0;
+            position: relative;
+            width: 100%;
+            height: 130px;
             background-size: cover;
             background-position: center;
-            background-image: linear-gradient(135deg, rgba(26, 29, 38, 0.06), rgba(26, 29, 38, 0.02));
-            filter: saturate(1.05);
-          }
-          .home-exclusive-cover::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, rgba(0, 0, 0, 0.58) 0%, rgba(0, 0, 0, 0.1) 55%, rgba(0, 0, 0, 0) 100%);
+            background-color: rgba(26, 29, 38, 0.04);
           }
           .home-exclusive-badge {
             position: absolute;
@@ -1692,18 +1689,19 @@ const Home = () => {
             color: #111;
             background: rgba(255, 204, 0, 0.92);
             border: 1px solid rgba(255, 255, 255, 0.35);
+            z-index: 2;
           }
           .home-exclusive-meta {
-            position: absolute;
-            inset-inline-start: 12px;
-            bottom: 12px;
-            z-index: 1;
-            max-width: 80%;
+            padding: 10px 12px 12px;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
           }
           .home-exclusive-ad-title {
             font-weight: 900;
             font-size: 0.92rem;
-            color: #fff;
+            color: var(--secondary);
             line-height: 1.25;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -1711,18 +1709,29 @@ const Home = () => {
             overflow: hidden;
           }
           .home-exclusive-store {
-            margin-top: 4px;
             font-size: 0.75rem;
             font-weight: 700;
-            color: rgba(255, 255, 255, 0.86);
+            color: var(--text-secondary);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
           }
+          .home-exclusive-price {
+            margin-top: 2px;
+            align-self: flex-start;
+            font-weight: 950;
+            font-size: 0.82rem;
+            color: var(--secondary);
+            background: var(--primary-light);
+            border: 1px solid rgba(245, 192, 0, 0.35);
+            padding: 5px 9px;
+            border-radius: 999px;
+            white-space: nowrap;
+          }
           .home-exclusive-skel {
             flex: 0 0 auto;
-            width: 250px;
-            height: 120px;
+            width: 230px;
+            height: 172px;
             border-radius: 18px;
             background: linear-gradient(90deg, rgba(232, 230, 224, 0.65), rgba(245, 243, 238, 0.8), rgba(232, 230, 224, 0.65));
             background-size: 220% 100%;
@@ -1746,8 +1755,10 @@ const Home = () => {
             .home-exclusive-card,
             .home-exclusive-skel {
               width: 220px;
-              height: 110px;
               border-radius: 16px;
+            }
+            .home-exclusive-cover {
+              height: 118px;
             }
             .home-exclusive-badge {
               font-size: 0.68rem;

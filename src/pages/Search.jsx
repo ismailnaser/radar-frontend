@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search as SearchIcon } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import { getNearbyStores, getCategories } from '../api/data';
 import { useMapExplore } from '../context/MapExploreContext';
 import { getStorePinDisplay } from '../components/maps/storePinDefaults';
 import { storeHasWeeklyHoursSchedule } from '../utils/storeHours';
+import FiltersDropdown from '../components/ui/FiltersDropdown';
 
 function haversineKm(a, b) {
   const R = 6371;
@@ -27,12 +28,32 @@ function hasMappableCoords(s) {
 
 const STORES_PER_PAGE = 12;
 
+function parseCsvIds(raw) {
+  if (raw == null) return [];
+  const s = String(raw).trim();
+  if (!s) return [];
+  const out = [];
+  for (const part of s.split(',')) {
+    const n = Number(String(part).trim());
+    if (Number.isFinite(n)) out.push(n);
+  }
+  return Array.from(new Set(out));
+}
+
+function toggleId(list, id) {
+  const n = Number(id);
+  if (!Number.isFinite(n)) return list;
+  return list.includes(n) ? list.filter((x) => x !== n) : [...list, n];
+}
+
 const SearchPage = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const qRaw = searchParams.get('q') || '';
   const q = qRaw.trim();
   const ql = q.toLowerCase();
   const { userMapLocation, setSearchQuery } = useMapExplore();
+  const selectedCategoryIds = useMemo(() => parseCsvIds(searchParams.get('category')), [searchParams]);
 
   const [stores, setStores] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -104,13 +125,17 @@ const SearchPage = () => {
   }, [userMapLocation]);
 
   const filtered = useMemo(() => {
-    if (!ql) return stores;
-    return (stores || []).filter((s) => {
+    let base = Array.isArray(stores) ? stores : [];
+    if (selectedCategoryIds.length > 0) {
+      base = base.filter((s) => selectedCategoryIds.includes(Number(s.category)));
+    }
+    if (!ql) return base;
+    return base.filter((s) => {
       const name = (s.store_name || '').toLowerCase();
       const cat = (s.category_name || '').toLowerCase();
       return name.includes(ql) || cat.includes(ql);
     });
-  }, [stores, ql]);
+  }, [stores, ql, selectedCategoryIds]);
 
   const sorted = useMemo(() => {
     if (!userLocation) return filtered;
@@ -153,6 +178,22 @@ const SearchPage = () => {
             )}
           </div>
         </header>
+
+        <div className="search-page-filter">
+          <FiltersDropdown
+            buttonLabel="فلاتر"
+            title="فلترة حسب الأقسام"
+            allLabel="كل الأقسام"
+            options={(categories || []).map((c) => ({ id: c.id, label: c.name }))}
+            selectedIds={selectedCategoryIds}
+            onChangeSelectedIds={(ids) => {
+              const next = new URLSearchParams(searchParams);
+              if (ids && ids.length) next.set('category', ids.join(','));
+              else next.delete('category');
+              setSearchParams(next, { replace: true });
+            }}
+          />
+        </div>
 
         {error ? <p className="search-page-error">{error}</p> : null}
 
@@ -250,6 +291,12 @@ const SearchPage = () => {
           .search-page-head {
             margin: 0;
           }
+          .search-page-filter{
+            display:flex;
+            justify-content: flex-start;
+            margin: -8px 0 14px;
+          }
+          /* moved filters UI to FiltersDropdown component */
           .search-page-title {
             margin: 0 0 8px;
             font-size: 1.45rem;

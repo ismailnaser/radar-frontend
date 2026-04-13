@@ -4,10 +4,11 @@ import MainLayout from '../../components/MainLayout';
 import CustomInput from '../../components/ui/CustomInput';
 import CustomButton from '../../components/ui/CustomButton';
 import { useAlert } from '../../components/AlertProvider';
-import { getMerchantStoreProfile, updateMerchantStoreProfile } from '../../api/data';
+import { getCategories, getMerchantStoreProfile, updateMerchantStoreProfile } from '../../api/data';
 import { formatApiError } from '../../utils/apiErrors';
 import { Store, FileText, MapPin, Image as ImageIcon, MessageCircle, Clock, Sparkles } from 'lucide-react';
 import MerchantLocationPicker from '../../components/maps/MerchantLocationPicker';
+import FiltersDropdown from '../../components/ui/FiltersDropdown';
 
 const WEEKDAY_LABELS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
@@ -51,6 +52,8 @@ const MerchantStoreSettings = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [storeId, setStoreId] = useState(null);
+  const [allCategories, setAllCategories] = useState([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
 
   const [storeName, setStoreName] = useState('');
   const [description, setDescription] = useState('');
@@ -72,7 +75,8 @@ const MerchantStoreSettings = () => {
       setError('');
       setLoading(true);
       try {
-        const p = await getMerchantStoreProfile();
+        const [p, cats] = await Promise.all([getMerchantStoreProfile(), getCategories().catch(() => [])]);
+        setAllCategories(Array.isArray(cats) ? cats : []);
         setStoreId(p.id != null ? p.id : null);
         setStoreName(p.store_name || '');
         setDescription(p.description || '');
@@ -87,6 +91,13 @@ const MerchantStoreSettings = () => {
         setBusinessHoursNote(p.business_hours_note || '');
         setWeeklyLines(weeklyFromApi(p.business_hours_weekly));
         setStoreTimezone((p.store_timezone || 'Asia/Gaza').trim() || 'Asia/Gaza');
+        const ids =
+          Array.isArray(p.categories) && p.categories.length
+            ? p.categories.map((x) => Number(x)).filter((x) => Number.isFinite(x))
+            : p.category != null
+              ? [Number(p.category)].filter((x) => Number.isFinite(x))
+              : [];
+        setSelectedCategoryIds(Array.from(new Set(ids)));
         if (Number.isFinite(Number(p.latitude)) && Number.isFinite(Number(p.longitude))) {
           setPickedLocation([Number(p.latitude), Number(p.longitude)]);
         }
@@ -112,6 +123,7 @@ const MerchantStoreSettings = () => {
     return {
       store_name: storeName,
       description,
+      categories: selectedCategoryIds,
       location_address: locationAddress || '',
       latitude: latToSave,
       longitude: lngToSave,
@@ -136,6 +148,7 @@ const MerchantStoreSettings = () => {
         const fd = new FormData();
         fd.append('store_name', common.store_name);
         fd.append('description', common.description || '');
+        fd.append('categories', JSON.stringify(common.categories || []));
         fd.append('location_address', common.location_address);
         fd.append('contact_whatsapp', common.contact_whatsapp);
         fd.append('business_hours_note', common.business_hours_note);
@@ -232,6 +245,23 @@ const MerchantStoreSettings = () => {
                 onChange={(e) => setStoreName(e.target.value)}
                 required
               />
+
+              <div className="card" style={{ padding: 12, marginBottom: 12, background: 'rgba(255,255,255,0.65)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div style={{ fontWeight: 950, color: 'var(--secondary)' }}>أقسام المتجر</div>
+                  <FiltersDropdown
+                    buttonLabel="فلاتر"
+                    title="اختر أقسام متجرك (يمكن أكثر من قسم)"
+                    allLabel="بدون فلترة"
+                    options={(allCategories || []).map((c) => ({ id: c.id, label: c.name }))}
+                    selectedIds={selectedCategoryIds}
+                    onChangeSelectedIds={(ids) => setSelectedCategoryIds(Array.isArray(ids) ? ids : [])}
+                  />
+                </div>
+                <div style={{ marginTop: 8, fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                  اختر أكثر من قسم ليظهر متجرك ضمن أكثر من فلتر في البحث والخريطة.
+                </div>
+              </div>
 
               <div className="input-group">
                 <div className="input-icon">

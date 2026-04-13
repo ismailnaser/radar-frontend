@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import { getCategories, getNearbyStores } from '../api/data';
 import { useMapExplore } from '../context/MapExploreContext';
 import { Map, SlidersHorizontal, X } from 'lucide-react';
 import { getStorePinDisplay } from '../components/maps/storePinDefaults';
-import { useAlert } from '../components/AlertProvider';
+import FiltersDropdown from '../components/ui/FiltersDropdown';
 
 const DEFAULT_CENTER = [31.5, 34.4];
 const STORES_PER_PAGE = 12;
@@ -29,14 +29,13 @@ function haversineKm(a, b) {
 export default function StoresPage() {
   const { userMapLocation, setManualMapLocation, requestUserLocation, locating, locationFocusNonce } = useMapExplore();
   const userLocation = userMapLocation || DEFAULT_CENTER;
-  const { showSelect } = useAlert();
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   const [hideNoLocation, setHideNoLocation] = useState(true);
   const [page, setPage] = useState(1);
 
@@ -64,7 +63,8 @@ export default function StoresPage() {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    getNearbyStores(userLocation[0], userLocation[1], selectedCategoryId)
+    // نحمل كل المتاجر ثم نفلتر محلياً لدعم اختيار أكثر من قسم
+    getNearbyStores(userLocation[0], userLocation[1], null)
       .then((d) => {
         if (!mounted) return;
         setStores(Array.isArray(d) ? d : []);
@@ -80,16 +80,22 @@ export default function StoresPage() {
     return () => {
       mounted = false;
     };
-  }, [userLocation[0], userLocation[1], selectedCategoryId]);
+  }, [userLocation[0], userLocation[1]]);
 
   useEffect(() => {
     setPage(1);
-  }, [selectedCategoryId, hideNoLocation]);
+  }, [selectedCategoryIds, hideNoLocation]);
+
+  const filteredByCategory = useMemo(() => {
+    const raw = Array.isArray(stores) ? stores : [];
+    if (selectedCategoryIds.length === 0) return raw;
+    const set = new Set(selectedCategoryIds.map((x) => Number(x)));
+    return raw.filter((s) => set.has(Number(s.category)));
+  }, [stores, selectedCategoryIds]);
 
   const visibleStores = useMemo(() => {
-    const raw = Array.isArray(stores) ? stores : [];
-    return raw.filter((s) => (hideNoLocation ? hasMappableCoords(s) : true));
-  }, [stores, hideNoLocation]);
+    return filteredByCategory.filter((s) => (hideNoLocation ? hasMappableCoords(s) : true));
+  }, [filteredByCategory, hideNoLocation]);
 
   const sortedStores = useMemo(() => {
     if (!userLocation) return visibleStores;
@@ -111,27 +117,14 @@ export default function StoresPage() {
     return sortedStores.slice(start, start + STORES_PER_PAGE);
   }, [sortedStores, safePage]);
 
-  const openCategoryPicker = useCallback(async () => {
-    if (categoriesLoading) return;
-    const opts = [
-      { id: '__all__', label: 'الكل', value: '__all__' },
-      ...categories.map((c) => ({ id: String(c.id), label: c.name, value: c.id })),
-    ];
-    const pick = await showSelect('اختر القسم:', 'تصفية المتاجر', opts);
-    if (pick == null) return;
-    if (pick === '__all__') setSelectedCategoryId(null);
-    else setSelectedCategoryId(Number(pick));
-  }, [categoriesLoading, categories, showSelect]);
+  // اختيار متعدد يتم عبر FiltersDropdown
 
   const mapStoresCount = useMemo(
     () => sortedStores.filter((s) => hasMappableCoords(s)).length,
     [sortedStores]
   );
 
-  const selectedLabel =
-    selectedCategoryId == null
-      ? 'كل الأقسام'
-      : categories.find((c) => Number(c.id) === Number(selectedCategoryId))?.name || 'القسم';
+  const selectedLabel = selectedCategoryIds.length === 0 ? 'كل الأقسام' : `أقسام (${selectedCategoryIds.length})`;
 
   return (
     <MainLayout>
@@ -144,17 +137,27 @@ export default function StoresPage() {
             </div>
 
             <div className="stores-controls">
-              <button
-                type="button"
-                className="stores-filterbtn"
-                onClick={openCategoryPicker}
-                disabled={categoriesLoading}
-                title="تصفية"
-                aria-label="تصفية المتاجر"
-              >
-                <SlidersHorizontal size={18} strokeWidth={2} aria-hidden />
-                <span>{selectedLabel}</span>
-              </button>
+              <FiltersDropdown
+                buttonLabel="فلاتر"
+                title="فلترة المتاجر حسب الأقسام"
+                allLabel="كل الأقسام"
+                options={(categories || []).map((c) => ({ id: c.id, label: c.name }))}
+                selectedIds={selectedCategoryIds}
+                onChangeSelectedIds={(ids) => setSelectedCategoryIds(Array.isArray(ids) ? ids : [])}
+              />
+
+              {selectedCategoryIds.length > 0 ? (
+                <button
+                  type="button"
+                  className="stores-filterbtn"
+                  onClick={() => setSelectedCategoryIds([])}
+                  title="مسح الفلاتر"
+                  aria-label="مسح الفلاتر"
+                >
+                  <X size={18} strokeWidth={2} aria-hidden />
+                  <span>مسح</span>
+                </button>
+              ) : null}
 
               <label className="stores-onlymapped">
                 <input
@@ -184,6 +187,8 @@ export default function StoresPage() {
             </span>
           </button>
         </section>
+
+        {/* filters moved into dropdown */}
 
         {loading ? (
           <div className="stores-loading">جاري تحميل المتاجر…</div>
@@ -295,6 +300,7 @@ export default function StoresPage() {
             flex-wrap: wrap;
             justify-content: flex-end;
           }
+          /* moved chips UI to FiltersDropdown component */
           .stores-filterbtn {
             display: inline-flex;
             align-items: center;

@@ -45,9 +45,14 @@ const clampInt = (n, min, max) => {
   return Math.min(max, Math.max(min, x));
 };
 
-/** يطابق منطق showStoreOnMap: إظهار أزرار الخريطة فقط عند وجود إحداثيات صالحة رقماً */
-const storeHasMappableCoords = (s) =>
-  !!s && Number.isFinite(Number(s.latitude)) && Number.isFinite(Number(s.longitude));
+/** إحداثيات صالحة للعرض على الخريطة (تستبعد القيم القريبة من 0,0 الخاطئة) */
+const storeHasMappableCoords = (s) => {
+  const lat = Number(s?.latitude);
+  const lng = Number(s?.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (Math.abs(lat) < 0.25 && Math.abs(lng) < 0.25) return false;
+  return true;
+};
 
 const StoreProfile = () => {
   const { storeId } = useParams();
@@ -144,7 +149,15 @@ const StoreProfile = () => {
         }
       } catch (e) {
         if (!cancelled) {
-          setError('تعذر تحميل بيانات المتجر');
+          const status = e?.response?.status;
+          const detail = e?.response?.data?.detail || e?.response?.data?.error || '';
+          if (status === 404 && String(detail).includes('تم تعليق المتجر')) {
+            setError('تم تعليق المتجر إدارياً.');
+          } else if (status === 404 && detail) {
+            setError(String(detail));
+          } else {
+            setError('تعذر تحميل بيانات المتجر');
+          }
           setStore(null);
         }
       } finally {
@@ -731,7 +744,7 @@ const StoreProfile = () => {
                   </p>
                 ) : null}
 
-                {(store.location_address || '').trim() ? (
+                {(store.location_address || '').trim() && storeHasMappableCoords(store) ? (
                   <div className="store-profile-box">
                     <div className="store-profile-loc-head">
                       <MapPin size={18} aria-hidden />

@@ -29,6 +29,7 @@ import Offers from './pages/Offers'
 import Search from './pages/Search'
 import Favorites from './pages/Favorites'
 import Contact from './pages/Contact'
+import UserGuide from './pages/UserGuide'
 import Verification from './pages/Verification'
 import StoreProfile from './pages/StoreProfile'
 import SharedCart from './pages/SharedCart'
@@ -398,6 +399,12 @@ const router = createBrowserRouter(
           <Route path="/contact" element={
             <VerificationRoute>
               <Contact />
+            </VerificationRoute>
+          } />
+
+          <Route path="/guide" element={
+            <VerificationRoute>
+              <UserGuide />
             </VerificationRoute>
           } />
 

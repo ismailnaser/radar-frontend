@@ -337,7 +337,16 @@ const Carts = () => {
                     <div key={cart.id} className="card shopping-cart-card">
                       <div className="cart-collapsed-row">
                         <Link to={`/carts/${cart.id}`} className="cart-collapsed-link" aria-label={`فتح سلة ${cart.name}`}>
-                          <h3 className="cart-collapsed-title">{cart.name}</h3>
+                          <div className="cart-collapsed-main">
+                            <h3 className="cart-collapsed-title">{cart.name}</h3>
+                            <div className="cart-collapsed-sub">
+                              <span>{(cart.items || []).length} عنصر</span>
+                              <span className="cart-collapsed-dot" aria-hidden />
+                              <span>
+                                {Number((cart.items || []).reduce((acc, item) => acc + linePrice(item), 0)).toFixed(2)} ₪
+                              </span>
+                            </div>
+                          </div>
                         </Link>
                         <div className="actions flex-center" style={{ gap: '10px' }}>
                           <button
@@ -410,6 +419,18 @@ const Carts = () => {
             }
           }
           .shopping-cart-card { border-top: 5px solid var(--primary); }
+          .shopping-cart-card{
+            padding: 12px 14px;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(26, 29, 38, 0.08);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+            overflow: hidden;
+          }
+          .shopping-cart-card:hover{
+            transform: translateY(-2px);
+            box-shadow: 0 14px 38px rgba(245, 192, 0, 0.14);
+            border-color: rgba(245, 192, 0, 0.4);
+          }
           .cart-collapsed-row{
             display: flex;
             align-items: center;
@@ -421,8 +442,8 @@ const Carts = () => {
             min-width: 0;
             text-decoration: none;
             color: inherit;
-            padding: 10px 4px 10px 0;
-            margin: -6px 0;
+            padding: 8px 10px;
+            margin: -6px -10px;
             border-radius: 12px;
             cursor: pointer;
             transition: background 0.15s ease;
@@ -443,9 +464,51 @@ const Carts = () => {
             text-overflow: ellipsis;
             white-space: nowrap;
           }
-          .action-btn { background: none; border: none; cursor: pointer; color: #777; padding: 5px; transition: color 0.2s; }
-          .action-btn.share:hover { color: #25D366; }
-          .action-btn.delete:hover { color: #FF5252; }
+          .cart-collapsed-main{
+            display:flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+          }
+          .cart-collapsed-sub{
+            display:flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 850;
+            color: var(--text-secondary);
+            min-width: 0;
+          }
+          .cart-collapsed-dot{
+            width: 5px;
+            height: 5px;
+            border-radius: 999px;
+            background: rgba(26, 29, 38, 0.35);
+            flex-shrink: 0;
+          }
+          .action-btn {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(232, 230, 224, 0.95);
+            cursor: pointer;
+            color: var(--secondary);
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.12s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            box-shadow: 0 2px 12px rgba(26, 29, 38, 0.06);
+          }
+          .action-btn:hover { transform: translateY(-1px); border-color: rgba(245, 192, 0, 0.45); box-shadow: 0 10px 24px rgba(26, 29, 38, 0.10); }
+          .action-btn:active { transform: translateY(0); }
+          .action-btn.share { color: #1b5e20; }
+          .action-btn.delete { color: #c62828; border-color: rgba(198, 40, 40, 0.25); }
+          .action-btn.delete:hover { border-color: rgba(198, 40, 40, 0.45); }
+          @media (max-width: 420px){
+            .shopping-cart-card{ padding: 10px 10px; border-radius: 16px; }
+            .action-btn{ width: 38px; height: 38px; border-radius: 13px; }
+          }
           .qty-mini {
             background: var(--white);
             border: 1px solid var(--border);

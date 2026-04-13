@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { getAdminNotifications } from '../api/data';
 import { useAdminPendingCounts } from './AdminPendingCountsContext';
+import { subscribeAdminWebPush } from '../utils/webPush';
 
 const AdminNotificationsContext = createContext(null);
 
@@ -99,6 +100,8 @@ export function AdminNotificationsProvider({ children }) {
 
   useEffect(() => {
     if (!isAdminUser()) return;
+    // Web Push الحقيقي: يسجل الاشتراك مرة واحدة (أو يحدثه) بعد منح صلاحية الإشعارات
+    subscribeAdminWebPush().catch(() => {});
     let alive = true;
     // initial
     pollOnce();

@@ -222,14 +222,6 @@ const Offers = () => {
                   ) : (
                     <div className="offers-card-media-fallback">عرض</div>
                   )}
-                  <div className="offers-card-media-overlay">
-                    <div className="offers-card-media-title">{offer.title}</div>
-                    {Number(offer.product_price) > 0 ? (
-                      <div className="offers-card-media-price">
-                        {Number(offer.product_price).toFixed(2)} ₪
-                      </div>
-                    ) : null}
-                  </div>
                   <button
                     type="button"
                     className={`offers-card-media-cartbtn${canUseCarts ? '' : ' offers-card-media-cartbtn--muted'}`}
@@ -393,9 +385,9 @@ const Offers = () => {
               min-width: 0;
             }
             .offers-card-media {
-              aspect-ratio: 4 / 3;
-              min-height: 0;
-              max-height: 112px;
+              aspect-ratio: 3 / 2;
+              min-height: 110px;
+              max-height: 140px;
             }
             .offers-card-media-cartbtn {
               width: 32px;
@@ -418,24 +410,6 @@ const Offers = () => {
             .offers-card-media-favbtn svg {
               width: 16px;
               height: 16px;
-            }
-            .offers-card-media-overlay {
-              padding-block: 6px 5px;
-              padding-inline: 7px;
-            }
-            .offers-card-media:has(.offers-card-media-cartbtn) .offers-card-media-overlay {
-              padding-inline-start: 40px;
-            }
-            .offers-card-media:has(.offers-card-media-favbtn) .offers-card-media-overlay {
-              padding-inline-end: 40px;
-            }
-            .offers-card-media-title {
-              font-size: 0.68rem;
-              -webkit-line-clamp: 2;
-            }
-            .offers-card-media-price {
-              font-size: 0.68rem;
-              padding: 3px 6px;
             }
             .offers-card-body {
               padding: 7px 8px 9px;
@@ -521,8 +495,8 @@ const Offers = () => {
             flex: 0 0 auto;
             width: 100%;
             aspect-ratio: 3 / 2;
-            min-height: 96px;
-            max-height: 168px;
+            min-height: 120px;
+            max-height: 210px;
             background: linear-gradient(180deg, var(--grey-light), #f0efe8);
             position: relative;
             display: flex;
@@ -598,49 +572,6 @@ const Offers = () => {
           }
           .offers-card-media-favbtn:active{
             transform: translateY(0);
-          }
-          .offers-card-media-overlay{
-            position: absolute;
-            inset-inline: 0;
-            bottom: 0;
-            padding-block: 10px 9px;
-            padding-inline: 10px;
-            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.58) 65%, rgba(0,0,0,0.72) 100%);
-            color: #fff;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 10px;
-            pointer-events: none;
-          }
-          .offers-card-media:has(.offers-card-media-cartbtn) .offers-card-media-overlay {
-            padding-inline-start: 52px;
-          }
-          .offers-card-media:has(.offers-card-media-favbtn) .offers-card-media-overlay {
-            padding-inline-end: 52px;
-          }
-          .offers-card-media-title{
-            font-weight: 950;
-            font-size: 0.92rem;
-            line-height: 1.2;
-            min-width: 0;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.35);
-          }
-          .offers-card-media-price{
-            flex: 0 0 auto;
-            font-weight: 950;
-            font-size: 0.9rem;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.18);
-            border: 1px solid rgba(255,255,255,0.22);
-            backdrop-filter: blur(6px);
-            text-shadow: 0 2px 10px rgba(0,0,0,0.35);
-            white-space: nowrap;
           }
           .offers-card-media-fallback {
             height: 100%;

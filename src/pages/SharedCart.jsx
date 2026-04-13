@@ -108,6 +108,7 @@ const SharedCart = () => {
                 {items.map((row, idx) => {
                   const promo = !!row.is_promotional_line;
                   const standalone = !!row.is_standalone_ad_line;
+                  const expired = !!row.is_expired_line;
                   const unit = Number(row.price);
                   const catRaw = row.catalog_price;
                   const cat =
@@ -115,6 +116,7 @@ const SharedCart = () => {
                       ? Number(catRaw)
                       : null;
                   const showStruck = promo && !standalone && cat != null && Math.abs(unit - cat) > 1e-9;
+                  const canOpenProduct = !expired && row.store_id && row.product_id;
                   return (
                   <div
                     key={idx}
@@ -161,10 +163,48 @@ const SharedCart = () => {
                       )}
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 900, fontSize: '1.05rem' }}>{row.product_name}</div>
+                      {canOpenProduct ? (
+                        <Link
+                          to={`/stores/${row.store_id}`}
+                          state={{ scrollToProductId: row.product_id }}
+                          style={{ fontWeight: 900, fontSize: '1.05rem', color: 'var(--secondary)', textDecoration: 'none' }}
+                          title="فتح المنتج داخل المتجر"
+                        >
+                          {row.product_name}
+                        </Link>
+                      ) : (
+                        <div style={{ fontWeight: 900, fontSize: '1.05rem' }}>{row.product_name}</div>
+                      )}
+                      {expired ? (
+                        <div
+                          style={{
+                            marginTop: 8,
+                            padding: '8px 10px',
+                            borderRadius: 12,
+                            background: 'rgba(229, 115, 115, 0.10)',
+                            border: '1px solid rgba(229, 115, 115, 0.28)',
+                            color: '#8b2b2b',
+                            fontWeight: 900,
+                            fontSize: '0.9rem',
+                            lineHeight: 1.45,
+                          }}
+                        >
+                          {row.expired_message || 'انتهت صلاحية الإعلان.'}
+                        </div>
+                      ) : null}
                       {row.description ? (
                         <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.45 }}>
                           {row.description}
+                        </div>
+                      ) : null}
+                      {Array.isArray(row.product_features) && row.product_features.length > 0 ? (
+                        <div style={{ marginTop: 8, color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                          <div style={{ fontWeight: 900, color: 'var(--text-primary)', marginBottom: 4 }}>تفاصيل</div>
+                          <ul style={{ margin: 0, paddingInlineStart: 18 }}>
+                            {row.product_features.slice(0, 6).map((f, i) => (
+                              <li key={i}>{String(f)}</li>
+                            ))}
+                          </ul>
                         </div>
                       ) : null}
                       {promo ? (
