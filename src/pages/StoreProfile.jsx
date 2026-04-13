@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import {
@@ -72,6 +72,7 @@ const StoreProfile = () => {
   const [favBusy, setFavBusy] = useState(false);
   const [ratingBusy, setRatingBusy] = useState(false);
   const [pendingCartAdd, setPendingCartAdd] = useState(null);
+  const pendingCartAddRef = useRef(null);
   const [flashProductId, setFlashProductId] = useState(null);
 
   const isGuest = localStorage.getItem('isGuest') === 'true';
@@ -269,6 +270,7 @@ const StoreProfile = () => {
         quantity: 1,
         success: 'تمت إضافة العرض للسلة.',
       };
+      pendingCartAddRef.current = cartPayload;
       setPendingCartAdd(cartPayload);
       const carts = await getCarts();
       const list = Array.isArray(carts) ? carts : [];
@@ -302,7 +304,7 @@ const StoreProfile = () => {
   };
 
   const createCartAndAddPending = async (payloadOverride, { isFirstCart = false } = {}) => {
-    const p = payloadOverride != null ? payloadOverride : pendingCartAdd;
+    const p = payloadOverride != null ? payloadOverride : pendingCartAddRef.current;
     if (!p) return;
     const name = await showPrompt(
       isFirstCart
@@ -317,15 +319,17 @@ const StoreProfile = () => {
     await refreshCartQuantities();
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
     setPendingCartAdd(null);
+    pendingCartAddRef.current = null;
   };
 
   const pickCartAndAddPending = async (cart) => {
-    const p = pendingCartAdd;
+    const p = pendingCartAddRef.current;
     if (!p) return;
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await refreshCartQuantities();
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
     setPendingCartAdd(null);
+    pendingCartAddRef.current = null;
   };
 
   const addSponsoredAdToFavorites = async (ad) => {

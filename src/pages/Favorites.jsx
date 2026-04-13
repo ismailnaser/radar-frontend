@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import { Heart, ShoppingBasket, Trash2, Store, Package, Megaphone } from 'lucide-react';
@@ -30,6 +30,7 @@ const Favorites = () => {
   const [isGuest, setIsGuest] = useState(localStorage.getItem('isGuest') === 'true');
   const { showAlert, showConfirm, showPrompt, showSelect } = useAlert();
   const [pendingCartAdd, setPendingCartAdd] = useState(null);
+  const pendingCartAddRef = useRef(null);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -71,6 +72,7 @@ const Favorites = () => {
       );
       return;
     }
+    pendingCartAddRef.current = payload;
     setPendingCartAdd(payload);
     const carts = await getCarts();
     const list = Array.isArray(carts) ? carts : [];
@@ -100,7 +102,7 @@ const Favorites = () => {
   };
 
   const createCartAndAddPending = async (payloadOverride, { isFirstCart = false } = {}) => {
-    const p = payloadOverride != null ? payloadOverride : pendingCartAdd;
+    const p = payloadOverride != null ? payloadOverride : pendingCartAddRef.current;
     if (!p) return;
     const name = await showPrompt(
       isFirstCart
@@ -114,14 +116,16 @@ const Favorites = () => {
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
     setPendingCartAdd(null);
+    pendingCartAddRef.current = null;
   };
 
   const pickCartAndAddPending = async (cart) => {
-    const p = pendingCartAdd;
+    const p = pendingCartAddRef.current;
     if (!p) return;
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
     setPendingCartAdd(null);
+    pendingCartAddRef.current = null;
   };
 
   const handleRemoveProduct = async (id) => {

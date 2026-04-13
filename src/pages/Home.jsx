@@ -396,6 +396,7 @@ const Home = () => {
   const [communityCategories, setCommunityCategories] = useState([]);
   const [communityCatsLoading, setCommunityCatsLoading] = useState(true);
   const [pendingCartAdd, setPendingCartAdd] = useState(null);
+  const pendingCartAddRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -563,6 +564,7 @@ const Home = () => {
       );
       return;
     }
+    pendingCartAddRef.current = payload;
     setPendingCartAdd(payload);
     const carts = await getCarts();
     const list = Array.isArray(carts) ? carts : [];
@@ -631,7 +633,7 @@ const Home = () => {
   }, [filterMode, communityCatsLoading, communityCategories, showSelect, searchParams, setSearchParams]);
 
   const createCartAndAddPending = async (payloadOverride, { isFirstCart = false } = {}) => {
-    const p = payloadOverride != null ? payloadOverride : pendingCartAdd;
+    const p = payloadOverride != null ? payloadOverride : pendingCartAddRef.current;
     if (!p) return;
     const name = await showPrompt(
       isFirstCart
@@ -645,14 +647,16 @@ const Home = () => {
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await showAlert('تمت إضافة المنتج إلى السلة.');
     setPendingCartAdd(null);
+    pendingCartAddRef.current = null;
   };
 
   const pickCartAndAddPending = async (cart) => {
-    const p = pendingCartAdd;
+    const p = pendingCartAddRef.current;
     if (!p) return;
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await showAlert('تمت إضافة المنتج إلى السلة.');
     setPendingCartAdd(null);
+    pendingCartAddRef.current = null;
   };
 
   useEffect(() => {

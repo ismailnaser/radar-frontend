@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import { getOffers, addFavorite, getFavorites, removeFavorite, getCarts, addToCart, createCart } from '../api/data';
@@ -22,6 +22,7 @@ const Offers = () => {
   const [sponsoredFavByAdId, setSponsoredFavByAdId] = useState({});
   const [productFavByProductId, setProductFavByProductId] = useState({});
   const [pendingCartAdd, setPendingCartAdd] = useState(null);
+  const pendingCartAddRef = useRef(null);
 
   useEffect(() => {
     if (!canUseOfferFavorites) {
@@ -133,6 +134,7 @@ const Offers = () => {
       );
       return;
     }
+    pendingCartAddRef.current = payload;
     setPendingCartAdd(payload);
     const carts = await getCarts();
     const list = Array.isArray(carts) ? carts : [];
@@ -161,7 +163,7 @@ const Offers = () => {
   };
 
   const createCartAndAddPending = async (payloadOverride, { isFirstCart = false } = {}) => {
-    const p = payloadOverride != null ? payloadOverride : pendingCartAdd;
+    const p = payloadOverride != null ? payloadOverride : pendingCartAddRef.current;
     if (!p) return;
     const name = await showPrompt(
       isFirstCart
@@ -175,14 +177,16 @@ const Offers = () => {
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await showAlert('تمت إضافة المنتج إلى السلة.', 'تم');
     setPendingCartAdd(null);
+    pendingCartAddRef.current = null;
   };
 
   const pickCartAndAddPending = async (cart) => {
-    const p = pendingCartAdd;
+    const p = pendingCartAddRef.current;
     if (!p) return;
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await showAlert('تمت إضافة المنتج إلى السلة.', 'تم');
     setPendingCartAdd(null);
+    pendingCartAddRef.current = null;
   };
 
   const addSponsoredToCart = async (ad) => {
