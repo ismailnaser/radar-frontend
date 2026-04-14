@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-globals */
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
+import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { NetworkFirst, CacheFirst } from 'workbox-strategies';
@@ -13,7 +13,7 @@ precacheAndRoute(self.__WB_MANIFEST || []);
 cleanupOutdatedCaches();
 
 // SPA navigation fallback
-registerRoute(new NavigationRoute('/index.html'));
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
 
 // Runtime caching (similar to previous generateSW config)
 registerRoute(
