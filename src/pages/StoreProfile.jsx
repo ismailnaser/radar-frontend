@@ -305,7 +305,10 @@ const StoreProfile = () => {
 
   const createCartAndAddPending = async (payloadOverride, { isFirstCart = false } = {}) => {
     const p = payloadOverride != null ? payloadOverride : pendingCartAddRef.current;
-    if (!p) return;
+    if (!p) {
+      await showAlert('تعذر تحديد المنتج المراد إضافته للسلة. جرّب مرة أخرى.', 'خطأ');
+      return;
+    }
     const name = await showPrompt(
       isFirstCart
         ? 'لا توجد لديك سلال بعد. اكتب اسماً لسلتك الأولى — يُضاف المنتج إليها مباشرة.'
@@ -324,7 +327,10 @@ const StoreProfile = () => {
 
   const pickCartAndAddPending = async (cart) => {
     const p = pendingCartAddRef.current;
-    if (!p) return;
+    if (!p) {
+      await showAlert('تعذر تحديد المنتج المراد إضافته للسلة. جرّب مرة أخرى.', 'خطأ');
+      return;
+    }
     await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
     await refreshCartQuantities();
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
@@ -468,6 +474,7 @@ const StoreProfile = () => {
         quantity: qty,
         success: `تمت إضافة «${product.name}» للسلة.`,
       };
+      pendingCartAddRef.current = cartPayload;
       setPendingCartAdd(cartPayload);
       const carts = await getCarts();
       const list = Array.isArray(carts) ? carts : [];
@@ -771,60 +778,64 @@ const StoreProfile = () => {
                       key={ad.id}
                       className="card store-profile-sponsored-card"
                     >
-                      {visualImageUrls(ad).length > 0 ? (
-                        <div className="store-profile-sponsored-media">
+                      <div className="store-profile-sponsored-media">
+                        {visualImageUrls(ad).length > 0 ? (
                           <ImageCarousel images={visualImageUrls(ad)} height={100} borderRadius={12} />
-                          {!store.is_owner ? (
-                            <>
-                              <button
-                                type="button"
-                                className={`store-profile-sponsored-fab store-profile-sponsored-fab--cart${
-                                  canUseCarts ? '' : ' store-profile-sponsored-fab--muted'
-                                }`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  addSponsoredAdToCart(ad);
-                                }}
-                                disabled={addingId === sponsoredCartBusyKey(ad)}
-                                title="إضافة إلى السلة"
-                                aria-label="إضافة إلى السلة"
-                                style={{ cursor: addingId === sponsoredCartBusyKey(ad) ? 'wait' : 'pointer' }}
-                              >
-                                <ShoppingCart size={16} strokeWidth={2} aria-hidden />
-                              </button>
-                              <button
-                                type="button"
-                                className={`store-profile-sponsored-fab store-profile-sponsored-fab--fav${
-                                  authed ? '' : ' store-profile-sponsored-fab--muted'
-                                }`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  addSponsoredAdToFavorites(ad);
-                                }}
-                                disabled={favBusy}
-                                title={ad.product ? 'مفضلة' : 'مفضلة — يُزال عند انتهاء الإعلان'}
-                                aria-label="مفضلة"
-                                style={{ cursor: favBusy ? 'wait' : 'pointer' }}
-                              >
-                                <Heart
-                                  size={16}
-                                  color="#e91e63"
-                                  fill={
-                                    ad.product
-                                      ? productFavByProductId[ad.product]
-                                        ? '#e91e63'
-                                        : 'none'
-                                      : sponsoredFavByAdId[ad.id]
-                                        ? '#e91e63'
-                                        : 'none'
-                                  }
-                                  aria-hidden
-                                />
-                              </button>
-                            </>
-                          ) : null}
-                        </div>
-                      ) : null}
+                        ) : (
+                          <div className="store-profile-sponsored-media-fallback" aria-label="لا توجد صورة للإعلان">
+                            إعلان
+                          </div>
+                        )}
+                        {!store.is_owner ? (
+                          <>
+                            <button
+                              type="button"
+                              className={`store-profile-sponsored-fab store-profile-sponsored-fab--cart${
+                                canUseCarts ? '' : ' store-profile-sponsored-fab--muted'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addSponsoredAdToCart(ad);
+                              }}
+                              disabled={addingId === sponsoredCartBusyKey(ad)}
+                              title="إضافة إلى السلة"
+                              aria-label="إضافة إلى السلة"
+                              style={{ cursor: addingId === sponsoredCartBusyKey(ad) ? 'wait' : 'pointer' }}
+                            >
+                              <ShoppingCart size={16} strokeWidth={2} aria-hidden />
+                            </button>
+                            <button
+                              type="button"
+                              className={`store-profile-sponsored-fab store-profile-sponsored-fab--fav${
+                                authed ? '' : ' store-profile-sponsored-fab--muted'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addSponsoredAdToFavorites(ad);
+                              }}
+                              disabled={favBusy}
+                              title={ad.product ? 'مفضلة' : 'مفضلة — يُزال عند انتهاء الإعلان'}
+                              aria-label="مفضلة"
+                              style={{ cursor: favBusy ? 'wait' : 'pointer' }}
+                            >
+                              <Heart
+                                size={16}
+                                color="#e91e63"
+                                fill={
+                                  ad.product
+                                    ? productFavByProductId[ad.product]
+                                      ? '#e91e63'
+                                      : 'none'
+                                    : sponsoredFavByAdId[ad.id]
+                                      ? '#e91e63'
+                                      : 'none'
+                                }
+                                aria-hidden
+                              />
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
                       <div className="store-profile-sponsored-title">{ad.title}</div>
                       {Number(ad.product_price) > 0 ? (
                         <div className="store-profile-sponsored-price-row">
@@ -1373,6 +1384,15 @@ const StoreProfile = () => {
           margin-bottom: 8px;
           border-radius: 12px;
           overflow: hidden;
+        }
+        .store-profile-sponsored-media-fallback{
+          height: 100px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 950;
+          color: rgba(26, 29, 38, 0.7);
+          background: linear-gradient(135deg, rgba(245,192,0,0.22) 0%, rgba(255,255,255,0.92) 55%, rgba(26,29,38,0.06) 100%);
         }
         .store-profile-sponsored-fab{
           position: absolute;

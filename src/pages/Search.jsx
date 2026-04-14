@@ -184,6 +184,7 @@ const SearchPage = () => {
             buttonLabel="فلاتر"
             title="فلترة حسب الأقسام"
             allLabel="كل الأقسام"
+            requireConfirm
             options={(categories || []).map((c) => ({ id: c.id, label: c.name }))}
             selectedIds={selectedCategoryIds}
             onChangeSelectedIds={(ids) => {

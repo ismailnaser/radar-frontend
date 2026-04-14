@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MainLayout from '../components/MainLayout';
-import { Share2, Trash2, Plus, ChevronUp, ChevronDown, Image as ImageIcon } from 'lucide-react';
+import { Share2, Trash2, Plus, ChevronUp, ChevronDown, Image as ImageIcon, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   getCarts,
@@ -303,68 +303,60 @@ const Carts = () => {
             ) : carts.length > 0 ? (
               <div className="carts-grid">
                 {carts.map(cart => {
-                  const isSponsoredAdNoteLine = (l) =>
-                    l.includes('الإعلان الممول') &&
-                    (l.includes('انتهت') ||
-                      l.includes('انتهاء') ||
-                      l.includes('تمت إزالة') ||
-                      l.includes('أُزيل') ||
-                      l.includes('مستقل') ||
-                      l.includes('غير مربوط') ||
-                      l.includes('كتالوج') ||
-                      l.includes('عُدِّ سعره') ||
-                      l.includes('السعر الأصلي'));
-                  const sponsoredNoticeLines = String(cart.notes || '')
-                    .split('\n')
-                    .map((l) => l.trim())
-                    .filter(isSponsoredAdNoteLine);
-                  const dismissSponsoredNotices = async () => {
-                    const rest = String(cart.notes || '')
-                      .split('\n')
-                      .map((l) => l.trim())
-                      .filter((l) => !isSponsoredAdNoteLine(l))
-                      .join('\n')
-                      .trim();
-                    setSavingCartId(cart.id);
-                    try {
-                      await updateCart(cart.id, { notes: rest });
-                      await fetchCarts();
-                    } finally {
-                      setSavingCartId(null);
-                    }
-                  };
+                  const itemCount = (cart.items || []).length;
+                  const cartTotal = Number(
+                    (cart.items || []).reduce((acc, item) => acc + linePrice(item), 0)
+                  ).toFixed(2);
                   return (
                     <div key={cart.id} className="card shopping-cart-card">
-                      <div className="cart-collapsed-row">
-                        <Link to={`/carts/${cart.id}`} className="cart-collapsed-link" aria-label={`فتح سلة ${cart.name}`}>
-                          <div className="cart-collapsed-main">
-                            <h3 className="cart-collapsed-title">{cart.name}</h3>
-                            <div className="cart-collapsed-sub">
-                              <span>{(cart.items || []).length} عنصر</span>
-                              <span className="cart-collapsed-dot" aria-hidden />
-                              <span>
-                                {Number((cart.items || []).reduce((acc, item) => acc + linePrice(item), 0)).toFixed(2)} ₪
-                              </span>
+                      <div className="cart-card-shell" dir="rtl">
+                        <div className="cart-card-top">
+                          <div className="cart-card-text-cluster" dir="rtl">
+                            <div className="cart-card-row-head">
+                              <div className="cart-card-icon" aria-hidden>
+                                <ShoppingBag size={22} strokeWidth={2.25} />
+                              </div>
+                              <h3 className="cart-collapsed-title">{cart.name}</h3>
+                            </div>
+                            <div className="cart-card-details" dir="rtl">
+                              <div className="cart-card-meta">
+                                <span className="cart-card-pill">
+                                  {itemCount} {itemCount === 1 ? 'عنصر' : 'عناصر'}
+                                </span>
+                              </div>
+                              <div className="cart-card-total-strip">
+                                <span className="cart-card-total-label">الإجمالي</span>
+                                <span className="cart-card-total-num">{cartTotal} ₪</span>
+                              </div>
                             </div>
                           </div>
-                        </Link>
-                        <div className="actions flex-center" style={{ gap: '10px' }}>
-                          <button
-                            type="button"
-                            className="action-btn share"
-                            title="مشاركة واتساب"
-                            onClick={() => shareOnWhatsApp(cart)}
+                          <div className="cart-card-actions flex-center">
+                            <button
+                              type="button"
+                              className="action-btn share"
+                              title="مشاركة واتساب"
+                              onClick={() => shareOnWhatsApp(cart)}
+                            >
+                              <Share2 size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              className="action-btn delete"
+                              title="حذف السلة"
+                              onClick={() => handleDeleteCart(cart)}
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="cart-card-bottom">
+                          <Link
+                            to={`/carts/${cart.id}`}
+                            className="cart-card-view-btn"
+                            aria-label={`عرض سلة ${cart.name}`}
                           >
-                            <Share2 size={18} />
-                          </button>
-                          <button
-                            type="button"
-                            className="action-btn delete"
-                            title="حذف السلة"
-                            onClick={() => handleDeleteCart(cart)}
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                            عرض السلة
+                          </Link>
                         </div>
                       </div>
                     </div>
@@ -410,81 +402,200 @@ const Carts = () => {
           }
           .carts-grid{
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
             gap: clamp(12px, 3vw, 20px);
           }
           @media (min-width: 960px) {
             .carts-grid{
-              grid-template-columns: repeat(3, minmax(0, 1fr));
+              grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
             }
           }
-          .shopping-cart-card { border-top: 5px solid var(--primary); }
           .shopping-cart-card{
-            padding: 12px 14px;
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(26, 29, 38, 0.08);
+            border-top: 5px solid var(--primary);
+            padding: 0;
+            border-radius: 20px;
+            min-height: 244px;
+            box-shadow: 0 12px 34px rgba(26, 29, 38, 0.08);
+            background: linear-gradient(165deg, rgba(255, 252, 238, 0.55) 0%, rgba(255, 255, 255, 0.98) 42%, rgba(255, 255, 255, 1) 100%);
+            border: 1px solid rgba(232, 230, 224, 0.95);
+            border-top-width: 5px;
             transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
           }
           .shopping-cart-card:hover{
-            transform: translateY(-2px);
-            box-shadow: 0 14px 38px rgba(245, 192, 0, 0.14);
-            border-color: rgba(245, 192, 0, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 18px 44px rgba(245, 192, 0, 0.16);
+            border-color: rgba(245, 192, 0, 0.42);
           }
-          .cart-collapsed-row{
+          .cart-card-shell{
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 18px 14px 20px;
+            min-height: 244px;
+            box-sizing: border-box;
+          }
+          .cart-card-top{
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            flex: 1;
+            min-height: 0;
+            min-width: 0;
+            flex-wrap: nowrap;
+          }
+          .cart-card-text-cluster{
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 14px;
+            flex: 1;
+            min-width: 0;
+          }
+          .cart-card-row-head{
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: flex-start;
+            gap: 12px;
+            min-width: 0;
+          }
+          .cart-card-row-head .cart-collapsed-title{
+            flex: 1;
+            min-width: 0;
+            padding-top: 2px;
+          }
+          .cart-card-details{
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            width: 100%;
+            margin-top: 2px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(232, 230, 224, 0.9);
+            box-sizing: border-box;
+          }
+          .cart-card-bottom{
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            flex-shrink: 0;
+            padding-top: 2px;
+          }
+          .cart-card-view-btn{
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 18px;
+            border-radius: 14px;
+            font-weight: 950;
+            font-size: 0.88rem;
+            max-width: min(220px, 100%);
+            box-sizing: border-box;
+            white-space: nowrap;
+            text-decoration: none;
+            color: var(--secondary);
+            background: linear-gradient(180deg, rgba(255, 249, 220, 0.95) 0%, rgba(245, 192, 0, 0.42) 100%);
+            border: 1.5px solid rgba(245, 192, 0, 0.55);
+            box-shadow: 0 4px 14px rgba(245, 192, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+            transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+          }
+          .cart-card-view-btn:hover{
+            transform: translateY(-1px);
+            border-color: rgba(245, 192, 0, 0.85);
+            box-shadow: 0 8px 22px rgba(245, 192, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+          }
+          .cart-card-view-btn:focus-visible{
+            outline: 2px solid rgba(245, 192, 0, 0.75);
+            outline-offset: 2px;
+          }
+          .cart-card-view-btn:active{
+            transform: translateY(0);
+          }
+          .cart-card-icon{
+            flex-shrink: 0;
+            align-self: flex-start;
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            background: linear-gradient(160deg, rgba(245, 192, 0, 0.38) 0%, rgba(255, 249, 220, 0.9) 100%);
+            border: 1px solid rgba(245, 192, 0, 0.45);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+          }
+          .cart-card-meta{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-start;
+          }
+          .cart-card-pill{
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 11px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 900;
+            color: var(--text-secondary);
+            background: rgba(26, 29, 38, 0.06);
+            border: 1px solid rgba(26, 29, 38, 0.08);
+          }
+          .cart-card-total-strip{
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
+            padding: 11px 12px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(245, 192, 0, 0.28);
+            box-shadow: 0 2px 10px rgba(26, 29, 38, 0.05);
           }
-          .cart-collapsed-link{
-            flex: 1;
+          .cart-card-total-label{
+            font-size: 0.8rem;
+            font-weight: 850;
+            color: var(--text-secondary);
+          }
+          .cart-card-total-num{
+            font-size: 1.08rem;
+            font-weight: 950;
+            font-variant-numeric: tabular-nums;
+            color: var(--secondary);
+            letter-spacing: -0.02em;
             min-width: 0;
-            text-decoration: none;
-            color: inherit;
-            padding: 8px 10px;
-            margin: -6px -10px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background 0.15s ease;
+            overflow-wrap: anywhere;
           }
-          .cart-collapsed-link:hover{
-            background: rgba(245, 192, 0, 0.12);
-          }
-          .cart-collapsed-link:focus-visible{
-            outline: 2px solid rgba(245, 192, 0, 0.65);
-            outline-offset: 2px;
+          .cart-card-actions{
+            flex-direction: column;
+            flex-shrink: 0;
+            gap: 8px;
+            align-self: stretch;
+            padding-top: 0;
+            min-width: 44px;
           }
           .cart-collapsed-title{
             margin: 0;
             font-weight: 950;
+            font-size: 1.06rem;
+            line-height: 1.35;
             color: var(--secondary);
             min-width: 0;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-          .cart-collapsed-main{
-            display:flex;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 0;
-          }
-          .cart-collapsed-sub{
-            display:flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.82rem;
-            font-weight: 850;
-            color: var(--text-secondary);
-            min-width: 0;
-          }
-          .cart-collapsed-dot{
-            width: 5px;
-            height: 5px;
-            border-radius: 999px;
-            background: rgba(26, 29, 38, 0.35);
-            flex-shrink: 0;
           }
           .action-btn {
             background: rgba(255,255,255,0.92);
@@ -505,9 +616,47 @@ const Carts = () => {
           .action-btn.share { color: #1b5e20; }
           .action-btn.delete { color: #c62828; border-color: rgba(198, 40, 40, 0.25); }
           .action-btn.delete:hover { border-color: rgba(198, 40, 40, 0.45); }
+          @media (max-width: 520px){
+            .cart-card-top{
+              flex-direction: column;
+              align-items: stretch;
+              gap: 14px;
+            }
+            .cart-card-text-cluster{
+              order: 0;
+              width: 100%;
+            }
+            .cart-card-actions{
+              flex-direction: row;
+              justify-content: flex-start;
+              gap: 10px;
+              order: 1;
+              align-self: stretch;
+              padding-top: 0;
+            }
+            .cart-card-total-strip{
+              flex-wrap: wrap;
+              row-gap: 8px;
+            }
+          }
           @media (max-width: 420px){
-            .shopping-cart-card{ padding: 10px 10px; border-radius: 16px; }
+            .cart-card-shell{
+              padding: 16px 12px 18px;
+              gap: 14px;
+              min-height: 252px;
+            }
+            .cart-card-top{ gap: 12px; }
+            .cart-card-view-btn{
+              padding: 10px 14px;
+              font-size: 0.84rem;
+              max-width: 100%;
+            }
+            .cart-card-icon{ width: 44px; height: 44px; border-radius: 14px; }
+            .cart-card-icon svg{ width: 19px; height: 19px; }
+            .cart-collapsed-title{ font-size: 1rem; }
+            .cart-card-total-num{ font-size: 1rem; }
             .action-btn{ width: 38px; height: 38px; border-radius: 13px; }
+            .shopping-cart-card{ min-height: 252px; border-radius: 18px; }
           }
           .qty-mini {
             background: var(--white);

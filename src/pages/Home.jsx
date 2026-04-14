@@ -104,6 +104,7 @@ import { storeHasWeeklyHoursSchedule } from '../utils/storeHours';
 import { formatApiError } from '../utils/apiErrors';
 import { canUseShoppingCarts } from '../utils/cartAccess';
 import { communityPointHasMapCoords, communityPointLatLng } from '../utils/communityPointCoords';
+import FiltersDropdown from '../components/ui/FiltersDropdown';
 
 function haversineKm(a, b) {
   const R = 6371;
@@ -129,11 +130,24 @@ function parseStoreCategoryId(search) {
   try {
     const raw = new URLSearchParams(search).get('category');
     if (raw == null || raw === '') return null;
-    const n = Number(raw);
+    const first = String(raw).split(',')[0];
+    const n = Number(first);
     return Number.isFinite(n) ? n : null;
   } catch {
     return null;
   }
+}
+
+function parseCsvNumbers(raw) {
+  if (raw == null) return [];
+  const s = String(raw).trim();
+  if (!s) return [];
+  const out = [];
+  for (const part of s.split(',')) {
+    const n = Number(String(part).trim());
+    if (Number.isFinite(n)) out.push(n);
+  }
+  return Array.from(new Set(out));
 }
 
 function parseFilterMode(search) {
@@ -385,6 +399,11 @@ const Home = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState(() =>
     typeof window !== 'undefined' ? parseStoreCategoryId(window.location.search) : null
   );
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState(() =>
+    typeof window !== 'undefined'
+      ? parseCsvNumbers(new URLSearchParams(window.location.search).get('category'))
+      : []
+  );
   const [selectedCommunityCategoryId, setSelectedCommunityCategoryId] = useState(() =>
     typeof window !== 'undefined' ? parseCommunityCategoryId(window.location.search) : null
   );
@@ -482,11 +501,9 @@ const Home = () => {
   useEffect(() => {
     setFilterMode(parseFilterMode(`?${searchParams.toString()}`));
     const rawCat = searchParams.get('category');
-    if (rawCat == null || rawCat === '') setSelectedCategoryId(null);
-    else {
-      const n = Number(rawCat);
-      setSelectedCategoryId(Number.isFinite(n) ? n : null);
-    }
+    const cats = parseCsvNumbers(rawCat);
+    setSelectedCategoryIds(cats);
+    setSelectedCategoryId(cats.length ? cats[0] : null);
     const rawCc = searchParams.get('cc');
     if (rawCc == null || rawCc === '') setSelectedCommunityCategoryId(null);
     else {
@@ -1027,15 +1044,26 @@ const Home = () => {
                     aria-label="بحث في رادار"
                     enterKeyHint="search"
                   />
-                  <Link
-                    to="/categories"
-                    className="home-hero-filter-btn"
-                    title="الأقسام والتصفية"
-                    aria-label="الأقسام والتصفية"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <SlidersHorizontal size={20} strokeWidth={1.85} aria-hidden />
-                  </Link>
+                  <FiltersDropdown
+                    className="filters-dd--home-hero"
+                    buttonClassName="home-hero-filter-btn"
+                    buttonLabel="فلترة"
+                    title="فلترة حسب الأقسام"
+                    allLabel="كل الأقسام"
+                    requireConfirm
+                    confirmLabel="تأكيد"
+                    options={(categories || []).map((c) => ({ id: c.id, label: c.name }))}
+                    selectedIds={selectedCategoryIds}
+                    onChangeSelectedIds={(ids) => {
+                      const next = new URLSearchParams(searchParams);
+                      next.delete('filter');
+                      next.delete('cc');
+                      const picks = Array.isArray(ids) ? ids.filter((x) => x != null && String(x).trim() !== '') : [];
+                      if (picks.length === 0) next.delete('category');
+                      else next.set('category', picks.join(','));
+                      setSearchParams(next, { replace: true });
+                    }}
+                  />
                   <button type="submit" className="home-hero-submit-btn" aria-label="تنفيذ البحث">
                     <Search size={20} strokeWidth={1.85} aria-hidden />
                   </button>
@@ -1851,8 +1879,8 @@ const Home = () => {
             font-weight: 500;
           }
 
-          /* موبايل: صغّر الهيرو، وخلي الـ placeholder أوضح وأقصر */
-          @media (max-width: 520px) {
+          /* موبايل/تابلت صغير: شيل الهيرو لأن البحث موجود في الهيدر */
+          @media (max-width: 768px) {
             /* على الشاشات الصغيرة: مربع "ماذا تبحث" غير لازم لأن البحث بالناف بار */
             .home-hero {
               display: none;
@@ -1907,6 +1935,9 @@ const Home = () => {
             border: 1.5px solid var(--border);
             text-decoration: none;
             transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+          }
+          .filters-dd--home-hero .filters-dd__btn > span{
+            display:none;
           }
           .home-hero-filter-btn:hover {
             background: rgba(255, 204, 0, 0.14);

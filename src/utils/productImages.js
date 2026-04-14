@@ -4,6 +4,25 @@ export function visualImageUrls(entity) {
   if (Array.isArray(entity.images) && entity.images.length > 0) {
     return entity.images.filter(Boolean);
   }
+  // توافق: بعض الـ APIs تُرجع gallery_images كقائمة كائنات {image/url/...}
+  if (Array.isArray(entity.gallery_images) && entity.gallery_images.length > 0) {
+    const out = [];
+    for (const g of entity.gallery_images) {
+      if (!g) continue;
+      if (typeof g === 'string') {
+        if (g) out.push(g);
+        continue;
+      }
+      const u = g.url || g.image || g.src;
+      if (u) out.push(u);
+    }
+    if (out.length > 0) return out;
+  }
+  // توافق: قد تكون الصور ضمن تفاصيل المنتج
+  if (entity.product_details) {
+    const nested = visualImageUrls(entity.product_details);
+    if (nested.length > 0) return nested;
+  }
   if (entity.image) return [entity.image];
   return [];
 }

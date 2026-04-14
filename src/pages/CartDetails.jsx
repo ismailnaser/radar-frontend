@@ -16,9 +16,9 @@ const CartDetails = () => {
   const [savingItemId, setSavingItemId] = useState(null);
   const [savingCartId, setSavingCartId] = useState(null);
 
-  const fetchCart = useCallback(async () => {
+  const fetchCart = useCallback(async ({ silent = false } = {}) => {
     if (!cartId) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const data = await getCart(cartId);
       setCart(data);
@@ -26,7 +26,7 @@ const CartDetails = () => {
       setCart(null);
       showAlert(formatApiError(e, 'تعذر تحميل السلة.'), 'خطأ');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [cartId, showAlert]);
 
@@ -63,10 +63,10 @@ const CartDetails = () => {
     setSavingCartId(cart.id);
     try {
       await updateCart(cart.id, { notes: next });
-      await fetchCart();
+      await fetchCart({ silent: true });
     } catch (e) {
       showAlert(formatApiError(e, 'تعذر حفظ الملاحظة.'));
-      await fetchCart();
+      await fetchCart({ silent: true });
     } finally {
       setSavingCartId(null);
     }
@@ -79,7 +79,7 @@ const CartDetails = () => {
     setSavingItemId(item.id);
     try {
       await deleteCartItem(item.id);
-      await fetchCart();
+      await fetchCart({ silent: true });
     } catch (e) {
       showAlert(formatApiError(e, 'تعذر حذف المنتج.'));
     } finally {
@@ -96,9 +96,10 @@ const CartDetails = () => {
     setSavingItemId(item.id);
     try {
       await updateCartItem(item.id, { quantity: next });
-      await fetchCart();
+      await fetchCart({ silent: true });
     } catch (e) {
       showAlert(formatApiError(e, 'تعذر تحديث الكمية.'));
+      await fetchCart({ silent: true });
     } finally {
       setSavingItemId(null);
     }
@@ -108,16 +109,16 @@ const CartDetails = () => {
     const q = parseInt(String(raw), 10);
     if (Number.isNaN(q) || q < 1) {
       showAlert('الكمية يجب أن تكون رقماً صحيحاً ≥ ١');
-      await fetchCart();
+      await fetchCart({ silent: true });
       return;
     }
     setSavingItemId(item.id);
     try {
       await updateCartItem(item.id, { quantity: q });
-      await fetchCart();
+      await fetchCart({ silent: true });
     } catch (e) {
       showAlert(formatApiError(e, 'تعذر تحديث الكمية.'));
-      await fetchCart();
+      await fetchCart({ silent: true });
     } finally {
       setSavingItemId(null);
     }
@@ -261,8 +262,7 @@ const CartDetails = () => {
                             inputMode="numeric"
                             className="cart-qty-stepper__input"
                             disabled={savingItemId === item.id || item.is_expired_line}
-                            defaultValue={item.quantity}
-                            key={`${item.id}-${item.quantity}`}
+                            value={String(item.quantity ?? '')}
                             onBlur={(e) => commitItemQuantity(item, e.target.value)}
                             aria-label="الكمية"
                           />

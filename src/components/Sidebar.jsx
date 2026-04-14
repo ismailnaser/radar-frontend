@@ -26,6 +26,11 @@ import { logout } from '../api/auth';
 import { useAlert } from './AlertProvider';
 import { useAdminPendingCounts } from '../context/AdminPendingCountsContext';
 
+function backendBaseUrl() {
+  const raw = (import.meta && import.meta.env && import.meta.env.VITE_PROXY_TARGET) || 'http://127.0.0.1:8000';
+  return String(raw).replace(/\/$/, '');
+}
+
 function pathIsActive(pathname, path) {
   if (!path) return false;
   if (path === '/') return pathname === '/';
@@ -60,6 +65,12 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
   const adminMenuExtraPrimary = [
     { kind: 'section', label: 'إدارة النظام' },
     { icon: <LayoutDashboard size={20} />, label: 'لوحة الإدارة', path: '/admin' },
+    {
+      kind: 'external',
+      icon: <Settings size={20} />,
+      label: 'Django Admin',
+      href: `${backendBaseUrl()}/admin/`,
+    },
     { icon: <Users size={20} />, label: 'المستخدمون', path: '/admin/users' },
     { icon: <Users size={20} />, label: 'إدارة المدراء', path: '/admin/accounts' },
     { icon: <Store size={20} />, label: 'المتاجر المشتركة', path: '/admin/stores' },
@@ -76,6 +87,12 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
   const adminMenuExtraSecondary = [
     { kind: 'section', label: 'إدارة النظام' },
     { icon: <LayoutDashboard size={20} />, label: 'لوحة الإدارة', path: '/admin' },
+    {
+      kind: 'external',
+      icon: <Settings size={20} />,
+      label: 'Django Admin',
+      href: `${backendBaseUrl()}/admin/`,
+    },
     { icon: <Users size={20} />, label: 'المستخدمون', path: '/admin/users' },
     { icon: <Megaphone size={20} />, label: 'إدارة الإعلانات الممولة', path: '/admin/ads' },
     { icon: <CreditCard size={20} />, label: 'إدارة الاشتراكات', path: '/admin/subscriptions' },
@@ -172,6 +189,22 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
                 <div key={`sec-${index}`} className="sidebar-section-title">
                   {item.label}
                 </div>
+              );
+            }
+            if (item.kind === 'external') {
+              return (
+                <a
+                  key={`ext-${index}`}
+                  href={item.href}
+                  className="menu-item"
+                  onClick={() => toggleSidebar()}
+                  title="فتح لوحة Django Admin"
+                >
+                  <span className="menu-icon-wrap">{item.icon}</span>
+                  <span className="menu-label-row">
+                    <span className="menu-label">{item.label}</span>
+                  </span>
+                </a>
               );
             }
             const pendingN = resolvedVariant === 'admin' ? pendingCountForPath(item.path) : null;

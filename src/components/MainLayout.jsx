@@ -172,16 +172,37 @@ const MainLayout = ({ children }) => {
           .slice()
           .reverse()
           .slice(0, 12)
-          .map((n) => (
-            <div key={n.id} className="admin-notifs-item">
-              <div className="admin-notifs-item__title">{n.title}</div>
-              {n.body ? <div className="admin-notifs-item__body">{n.body}</div> : null}
-              <div className="admin-notifs-item__meta">
-                <span>{n.event_type_label || n.event_type}</span>
-                <span className="muted small">{new Date(n.created_at).toLocaleString('ar')}</span>
-              </div>
-            </div>
-          ))}
+          .map((n) => {
+            const type = n?.event_type;
+            const rid = n?.related_id;
+            const href =
+              type === 'ad_request' && rid != null
+                ? `/admin/ads/${rid}`
+                : type === 'subscription_renewal'
+                  ? '/admin/subscriptions'
+                  : type === 'community_point'
+                    ? '/admin/community'
+                    : '/admin';
+            return (
+              <button
+                key={n.id}
+                type="button"
+                className="admin-notifs-item"
+                onClick={() => {
+                  setAdminNotifsOpen(false);
+                  navigate(href);
+                }}
+                title="فتح الطلب"
+              >
+                <div className="admin-notifs-item__title">{n.title}</div>
+                {n.body ? <div className="admin-notifs-item__body">{n.body}</div> : null}
+                <div className="admin-notifs-item__meta">
+                  <span>{n.event_type_label || n.event_type}</span>
+                  <span className="muted small">{new Date(n.created_at).toLocaleString('ar')}</span>
+                </div>
+              </button>
+            );
+          })}
         {!adminNotifs.items || adminNotifs.items.length === 0 ? (
           <div className="muted small" style={{ padding: 10 }}>
             لا إشعارات بعد.
@@ -313,7 +334,7 @@ const MainLayout = ({ children }) => {
             className="header-mobile-search"
             aria-label="بحث سريع"
             onClick={() => {
-              mobileSearchInputRef.current?.focus?.();
+              navigate('/search');
             }}
           >
             <Link to="/categories" className="header-mobile-search__filter" aria-label="فلترة">
@@ -323,7 +344,11 @@ const MainLayout = ({ children }) => {
               className="header-mobile-search__bar"
               role="search"
               aria-label="بحث"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate('/search');
+              }}
               onSubmit={(e) => {
                 e.preventDefault();
                 const q = (searchQuery || '').trim();
@@ -335,21 +360,8 @@ const MainLayout = ({ children }) => {
                 className="header-mobile-search__input"
                 type="search"
                 value={searchQuery || ''}
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setSearchQuery(next);
-
-                  // Live search: update /search?q=... while typing (debounced, replace history)
-                  if (mobileSearchNavDebounceRef.current) window.clearTimeout(mobileSearchNavDebounceRef.current);
-                  mobileSearchNavDebounceRef.current = window.setTimeout(() => {
-                    const q = String(next || '').trim();
-                    if (pathname !== '/search') {
-                      navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search', { replace: false });
-                      return;
-                    }
-                    navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search', { replace: true });
-                  }, 250);
-                }}
+                readOnly
+                onFocus={() => navigate('/search')}
                 placeholder="ابحث عن متجر، منتج، أو قسم…"
                 aria-label="اكتب للبحث"
                 enterKeyHint="search"
@@ -1041,8 +1053,19 @@ const MainLayout = ({ children }) => {
           overflow: auto;
         }
         .admin-notifs-item{
+          width: 100%;
+          text-align: right;
+          background: transparent;
+          border: none;
           padding: 10px 12px;
           border-bottom: 1px solid rgba(232, 230, 224, 0.85);
+          cursor: pointer;
+        }
+        .admin-notifs-item:hover{ background: rgba(26,29,38,0.04); }
+        .admin-notifs-item:active{ background: rgba(26,29,38,0.06); }
+        .admin-notifs-item:focus-visible{
+          outline: 2px solid rgba(245, 192, 0, 0.55);
+          outline-offset: -2px;
         }
         .admin-notifs-item:last-child{ border-bottom: none; }
         .admin-notifs-item__title{
