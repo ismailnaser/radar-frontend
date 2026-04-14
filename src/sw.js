@@ -13,7 +13,12 @@ precacheAndRoute(self.__WB_MANIFEST || []);
 cleanupOutdatedCaches();
 
 // SPA navigation fallback
-registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
+registerRoute(
+  new NavigationRoute(createHandlerBoundToURL('/index.html'), {
+    // Never serve the React shell for backend/admin/static/media routes
+    denylist: [/^\/api\//, /^\/static\//, /^\/media\//],
+  }),
+);
 
 // Runtime caching (similar to previous generateSW config)
 registerRoute(
