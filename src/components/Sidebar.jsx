@@ -31,6 +31,15 @@ function backendBaseUrl() {
   return String(raw).replace(/\/$/, '');
 }
 
+function djangoAdminUrl() {
+  const explicit = import.meta?.env?.VITE_DJANGO_ADMIN_URL;
+  if (explicit != null && String(explicit).trim() !== '') {
+    return String(explicit).trim();
+  }
+  // Default: same backend base (usually local dev); go directly to /api/admin/
+  return `${backendBaseUrl()}/api/admin/`;
+}
+
 function pathIsActive(pathname, path) {
   if (!path) return false;
   if (path === '/') return pathname === '/';
@@ -69,7 +78,7 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
       kind: 'external',
       icon: <Settings size={20} />,
       label: 'Django Admin',
-      href: `${backendBaseUrl()}/admin/`,
+      href: djangoAdminUrl(),
     },
     { icon: <Users size={20} />, label: 'المستخدمون', path: '/admin/users' },
     { icon: <Users size={20} />, label: 'إدارة المدراء', path: '/admin/accounts' },
@@ -91,7 +100,7 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
       kind: 'external',
       icon: <Settings size={20} />,
       label: 'Django Admin',
-      href: `${backendBaseUrl()}/admin/`,
+      href: djangoAdminUrl(),
     },
     { icon: <Users size={20} />, label: 'المستخدمون', path: '/admin/users' },
     { icon: <Megaphone size={20} />, label: 'إدارة الإعلانات الممولة', path: '/admin/ads' },

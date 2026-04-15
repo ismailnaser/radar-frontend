@@ -16,7 +16,7 @@ cleanupOutdatedCaches();
 registerRoute(
   new NavigationRoute(createHandlerBoundToURL('/index.html'), {
     // Never serve the React shell for backend/admin/static/media routes
-    denylist: [/^\/api\//, /^\/static\//, /^\/media\//],
+    denylist: [/^\/api\//, /^\/admin(\/|$)/, /^\/django-admin(\/|$)/, /^\/static\//, /^\/media\//],
   }),
 );
 
@@ -55,7 +55,7 @@ self.addEventListener('push', (event) => {
     lang: 'ar',
     dir: 'rtl',
     data: {
-      url: data.url || '/admin',
+      url: data.url || '/api/admin/',
     },
   };
 
