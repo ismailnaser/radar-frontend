@@ -36,7 +36,22 @@ function djangoAdminUrl() {
   if (explicit != null && String(explicit).trim() !== '') {
     return String(explicit).trim();
   }
-  // Default: same backend base (usually local dev); go directly to /api/admin/
+  // On production/server: use current origin so it never points to localhost.
+  try {
+    const origin = window?.location?.origin || '';
+    const host = window?.location?.hostname || '';
+    const isLocal =
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '::1' ||
+      host.endsWith('.local');
+    if (origin && !isLocal) {
+      return `${String(origin).replace(/\/$/, '')}/api/admin/`;
+    }
+  } catch {
+    // ignore
+  }
+  // Local dev fallback: use configured backend base (proxy target) and go directly to /api/admin/
   return `${backendBaseUrl()}/api/admin/`;
 }
 
