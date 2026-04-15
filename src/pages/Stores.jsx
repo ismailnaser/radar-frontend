@@ -149,19 +149,6 @@ export default function StoresPage() {
                 onChangeSelectedIds={(ids) => setSelectedCategoryIds(Array.isArray(ids) ? ids : [])}
               />
 
-              {selectedCategoryIds.length > 0 ? (
-                <button
-                  type="button"
-                  className="stores-filterbtn"
-                  onClick={() => setSelectedCategoryIds([])}
-                  title="مسح الفلاتر"
-                  aria-label="مسح الفلاتر"
-                >
-                  <X size={18} strokeWidth={2} aria-hidden />
-                  <span>مسح</span>
-                </button>
-              ) : null}
-
               <label className="stores-onlymapped">
                 <input
                   type="checkbox"
@@ -387,6 +374,11 @@ export default function StoresPage() {
             min-height: 130px;
             text-align: right;
             font-family: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 10px;
           }
           .stores-mini-map__shine {
             display: none;
@@ -419,7 +411,8 @@ export default function StoresPage() {
           .stores-mini-map__hint {
             position: relative;
             z-index: 1;
-            margin-top: 10px;
+            margin-top: 0;
+            display: block;
             color: rgba(26, 29, 38, 0.75);
             font-weight: 800;
           }

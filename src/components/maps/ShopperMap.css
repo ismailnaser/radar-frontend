@@ -40,9 +40,10 @@
 
 .shopper-map-manual-bar {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  top: auto;
   z-index: 1000;
   display: flex;
   flex-wrap: wrap;
@@ -51,8 +52,12 @@
   gap: 10px;
   padding: 10px 12px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.88) 100%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
   pointer-events: auto;
+  max-width: min(560px, calc(100% - 24px));
+  margin-inline: auto;
 }
 
 .shopper-map-gps-inline{
@@ -77,7 +82,7 @@
 
 @media (max-width: 520px) {
   .shopper-map-manual-bar {
-    padding: 8px 6px;
+    padding: 8px 8px;
     gap: 8px;
     justify-content: center;
   }
@@ -111,7 +116,7 @@
 
 .radar-map--pick-active .shopper-map-manual-bar {
   background: linear-gradient(180deg, rgba(30, 190, 165, 0.18) 0%, rgba(255, 255, 255, 0.92) 100%);
-  border-bottom-color: rgba(30, 190, 165, 0.35);
+  border-color: rgba(30, 190, 165, 0.45);
 }
 
 .shopper-map-manual-hint {

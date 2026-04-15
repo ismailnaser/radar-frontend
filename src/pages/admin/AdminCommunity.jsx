@@ -23,6 +23,7 @@ const DEFAULT_CENTER = [31.5, 34.4];
 
 function AdminCommunity() {
   const { showAlert, showPrompt, showConfirm } = useAlert();
+  const { refresh } = useAdminPendingCounts();
   const [statusFilter, setStatusFilter] = useState('pending');
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +41,11 @@ function AdminCommunity() {
   const [addBusy, setAddBusy] = useState(false);
   const [addLocating, setAddLocating] = useState(false);
 
-  const loadPoints = useCallback(async () => {
+  const loadPoints = useCallback(async (statusOverride = null) => {
     setLoading(true);
     try {
-      const data = await getAdminCommunityPoints(statusFilter);
+      const st = statusOverride == null ? statusFilter : statusOverride;
+      const data = await getAdminCommunityPoints(st);
       setPoints(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
@@ -107,7 +109,7 @@ function AdminCommunity() {
               ? 'تم إخفاء النقطة عن العامة.'
               : 'تم إظهار النقطة للعامة.';
       await showAlert(msg, 'تم');
-      await refreshPendingCounts();
+      await refresh();
       loadPoints();
     } catch (e) {
       await showAlert(formatApiError(e, 'تعذر التحديث.'), 'خطأ');
@@ -159,14 +161,16 @@ function AdminCommunity() {
     setAddBusy(true);
     try {
       await adminCreateCommunityPoint(payload);
-      await showAlert('تمت إضافة النقطة معتمدة مباشرة.', 'تم');
+      await showAlert('تمت إضافة النقطة معتمدة مباشرة. سيتم عرضها ضمن "معتمد".', 'تم');
       setAddTitle('');
       setAddDetail('');
       setAddAddress('');
       setAddPick(null);
       setAddWater('');
       setAddInst('');
-      loadPoints();
+      setStatusFilter('approved');
+      await refresh();
+      loadPoints('approved');
     } catch (err) {
       await showAlert(formatApiError(err, 'تعذر الإضافة.'), 'خطأ');
     } finally {

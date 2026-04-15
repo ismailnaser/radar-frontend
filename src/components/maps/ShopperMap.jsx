@@ -453,7 +453,7 @@ const ShopperMap = ({
                 className="shopper-map-manual-btn shopper-map-manual-btn-primary"
                 onClick={() => setAwaitingManualPick(true)}
               >
-                تحديد موقعي يدوياً على الخريطة
+                تحديد موقعي يدوياً
               </button>
               {gpsInline && showGpsOnMap && typeof onGpsClick === 'function' ? (
                 <button
@@ -537,7 +537,7 @@ const ShopperMap = ({
               <div style={{ maxWidth: 220 }}>
                 <div style={{ fontWeight: 800, marginBottom: 6 }}>موقعك للمقارنة بالمتاجر</div>
                 <div style={{ fontSize: '0.88rem', lineHeight: 1.45, color: '#444' }}>
-                  استخدم «تحديد موقعي يدوياً على الخريطة» ثم انقر المكان، أو زر «موقعي الحالي» على حافة الخريطة
+                  استخدم «تحديد موقعي يدوياً» ثم انقر المكان، أو زر «موقعي الحالي» على حافة الخريطة
                   للـ GPS.
                 </div>
               </div>
