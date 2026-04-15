@@ -537,6 +537,7 @@ const MainLayout = ({ children }) => {
           display: flex;
           flex-direction: column;
           overflow-x: clip;
+          background: var(--background);
         }
 
         .layout-container--map {
@@ -1617,6 +1618,8 @@ const MainLayout = ({ children }) => {
 
         .content.content--auth {
           padding-bottom: env(safe-area-inset-bottom, 0px);
+          /* Match auth pages' background so footer area doesn't look different */
+          background: linear-gradient(168deg, var(--background) 0%, var(--surface) 38%, var(--primary-light) 100%);
         }
 
         .content.content--home {
