@@ -590,6 +590,9 @@ const Carts = () => {
             position: absolute;
             top: 0;
             inset-inline-end: 0;
+            bottom: 0;
+            justify-content: center;
+            align-items: center;
           }
           .cart-collapsed-title{
             margin: 0;
