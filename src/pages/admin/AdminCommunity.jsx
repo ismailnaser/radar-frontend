@@ -431,7 +431,8 @@ function AdminCommunity() {
 
               <div style={{ marginTop: 16 }}>
                 <CustomButton
-                  type="submit"
+                  type="button"
+                  onClick={handleDirectAdd}
                   loading={addBusy}
                   confirm="حفظ نقطة الخدمة المجتمعية كمعتمدة؟"
                   showErrorAlert={false}

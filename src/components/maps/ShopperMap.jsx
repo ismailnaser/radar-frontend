@@ -567,18 +567,7 @@ const ShopperMap = ({
                 if (ref) communityMarkerRefs.current[pid] = ref;
               }}
             >
-              <Tooltip direction="top" offset={[0, -34]} opacity={0.95} sticky>
-                <div style={{ maxWidth: 260 }}>
-                  <div style={{ fontWeight: 900, marginBottom: 4 }}>{p.title}</div>
-                  {p.detail_description ? (
-                    <div style={{ fontSize: '0.85rem', lineHeight: 1.45, color: '#333' }}>
-                      {String(p.detail_description).slice(0, 180)}
-                      {String(p.detail_description).length > 180 ? '…' : ''}
-                    </div>
-                  ) : null}
-                </div>
-              </Tooltip>
-              <Popup>
+              <Popup offset={[0, -32]}>
                 <div style={{ minWidth: 200, maxWidth: 280 }}>
                   <div style={{ fontWeight: 900, marginBottom: 6 }}>{p.title}</div>
                   <div style={{ fontSize: '0.82rem', color: '#555', marginBottom: 6 }}>

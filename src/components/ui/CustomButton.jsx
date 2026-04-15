@@ -52,13 +52,14 @@ const CustomButton = ({
             form.requestSubmit();
           } else {
             // form.submit() لا يطلق حدث submit وبالتالي لا يصل لـ onSubmit في React
-            // fallback: أنشئ زر submit مؤقت وانقره ليتم إطلاق الحدث بشكل طبيعي
-            const tmp = document.createElement('button');
-            tmp.type = 'submit';
-            tmp.style.display = 'none';
-            form.appendChild(tmp);
-            tmp.click();
-            tmp.remove();
+            // fallback أكثر توافقاً: أطلق حدث submit (React يلتقطه على document)،
+            // وإن لم يُمنع افتراضياً نفّذ submit فعلياً.
+            const ev = new Event('submit', { bubbles: true, cancelable: true });
+            const notPrevented = form.dispatchEvent(ev);
+            if (notPrevented) {
+              // آخر حل: قد يسبب reload إن لم يوجد onSubmit يمنعه
+              form.submit();
+            }
           }
         }
       }

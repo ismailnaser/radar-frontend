@@ -177,7 +177,16 @@ export default function MapPage() {
     if (!Number.isFinite(id)) return base;
     if (base.some((p) => Number(p?.id) === id)) return base;
     const raw = (communityPoints || []).find((p) => Number(p?.id) === id);
-    return raw ? [...base, raw] : base;
+    const withFocus = raw ? [...base, raw] : base;
+    // Dedup by id (defensive against duplicate API rows)
+    const seen = new Set();
+    return withFocus.filter((p) => {
+      const pid = p?.id != null ? String(p.id) : '';
+      if (!pid) return true;
+      if (seen.has(pid)) return false;
+      seen.add(pid);
+      return true;
+    });
   }, [mode, filteredCommunityPoints, communityPoints, focusCommunityPointId]);
 
   const focusOnResults =
@@ -291,31 +300,54 @@ export default function MapPage() {
           .map-topbar{
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            padding: 10px 12px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.86) 100%);
+            gap: 6px;
+            padding: 6px 8px;
+            background: transparent;
             border: 1px solid rgba(0,0,0,0.08);
             border-radius: 16px;
             backdrop-filter: blur(10px);
             pointer-events: auto;
-            max-width: min(720px, 100%);
+            max-width: min(420px, 100%);
             margin-inline: auto;
           }
           .map-topbar-row{
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            flex-wrap: nowrap;
+            gap: 6px;
             align-items: center;
             justify-content: center;
+          }
+          .map-topbar-row > *{
+            flex: 0 0 auto;
           }
           .map-topbar-chip{
             border: 1.5px solid var(--border);
             background: var(--white);
             color: var(--secondary);
             font-weight: 900;
-            padding: 8px 12px;
+            padding: 6px 8px;
             border-radius: 999px;
             cursor: pointer;
+            font-size: 0.82rem;
+            line-height: 1.1;
+          }
+          .map-topbar .filters-dd__btn{
+            padding: 6px 8px;
+            gap: 6px;
+            font-size: 0.82rem;
+          }
+          .map-topbar .filters-dd__btn svg{
+            width: 16px;
+            height: 16px;
+          }
+          .map-topbar .filters-dd__btnwrap{
+            flex-direction: row;
+            align-items: center;
+            gap: 0;
+          }
+          /* لا نعرض سطر الملخص تحت زر الفلاتر داخل شريط الخريطة */
+          .map-topbar .filters-dd__summary{
+            display: none !important;
           }
           .map-topbar-chip--active{
             background: linear-gradient(180deg, var(--primary) 0%, var(--primary-hover) 100%);
@@ -340,9 +372,9 @@ export default function MapPage() {
             border: 1.5px solid rgba(232, 230, 224, 0.95);
             background: rgba(255, 255, 255, 0.92);
             border-radius: 999px;
-            padding: 12px 14px;
+            padding: 8px 10px;
             font-weight: 800;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             outline: none;
           }
           .map-topbar-search-input:focus{
