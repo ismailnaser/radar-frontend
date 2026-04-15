@@ -461,12 +461,27 @@ const MainLayout = ({ children }) => {
           </div>
         ) : null}
         {children}
-        <footer className="site-footer" aria-label="تذييل الصفحة">
-          <div className="site-footer__inner" dir="ltr">
-            <span className="site-footer__label">Created by</span>
-            <span className="site-footer__names">ismail_nsr · lama_dirbi</span>
-          </div>
-        </footer>
+        {pathname !== '/map' ? (
+          <footer className="site-footer" aria-label="تذييل الصفحة">
+            <div className="site-footer__inner" dir="ltr">
+              <span className="site-footer__label">Created by</span>
+              <div className="site-footer__people" aria-label="المساهمون">
+                <div className="site-footer__person">
+                  <div className="site-footer__name">ismail_nsr</div>
+                  <a className="site-footer__email" href="mailto:ismailnaser67@gmail.com">
+                    ismailnaser67@gmail.com
+                  </a>
+                </div>
+                <div className="site-footer__person">
+                  <div className="site-footer__name">lama_dirbi</div>
+                  <a className="site-footer__email" href="mailto:lamaadirbi@gmail.com">
+                    lamaadirbi@gmail.com
+                  </a>
+                </div>
+              </div>
+            </div>
+          </footer>
+        ) : null}
       </main>
 
       {!hideBottomNav ? (
@@ -1620,37 +1635,89 @@ const MainLayout = ({ children }) => {
         .site-footer__inner{
           display: inline-flex;
           align-items: center;
-          gap: 10px;
-          padding: 10px 14px;
-          border-radius: 999px;
+          gap: 12px;
+          padding: 12px 16px;
+          border-radius: 18px;
           background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,254,248,0.92) 100%);
-          border: 1px solid rgba(232, 230, 224, 0.92);
-          box-shadow: 0 8px 22px rgba(26, 29, 38, 0.06);
-          color: rgba(26, 29, 38, 0.72);
+          border: 1px solid rgba(232, 230, 224, 0.95);
+          box-shadow:
+            0 10px 28px rgba(26, 29, 38, 0.07),
+            0 1px 0 rgba(255,255,255,0.65) inset;
+          color: rgba(26, 29, 38, 0.78);
           line-height: 1;
           -webkit-backdrop-filter: blur(10px);
           backdrop-filter: blur(10px);
         }
         .site-footer__label{
           font-weight: 900;
-          color: rgba(26, 29, 38, 0.6);
+          color: rgba(26, 29, 38, 0.55);
           letter-spacing: -0.01em;
-          font-size: 0.86rem;
+          font-size: 0.78rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
         }
-        .site-footer__names{
+        .site-footer__people{
+          display: grid;
+          grid-auto-flow: column;
+          align-items: center;
+          column-gap: 18px;
+        }
+        .site-footer__person{
+          display: inline-flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 5px;
+          min-width: 0;
+          padding-inline: 2px;
+        }
+        .site-footer__person + .site-footer__person{
+          border-inline-start: 1px solid rgba(26, 29, 38, 0.12);
+          padding-inline-start: 18px;
+        }
+        .site-footer__name{
           font-weight: 950;
           color: var(--secondary);
           letter-spacing: -0.015em;
-          font-size: 0.92rem;
+          font-size: 0.94rem;
+          white-space: nowrap;
+        }
+        .site-footer__email{
+          font-weight: 850;
+          font-size: 0.82rem;
+          color: rgba(26, 29, 38, 0.6);
+          text-decoration: none;
+          white-space: nowrap;
+        }
+        .site-footer__email:hover{
+          color: rgba(26, 29, 38, 0.8);
+          text-decoration: underline;
+          text-decoration-thickness: 2px;
+          text-underline-offset: 3px;
         }
 
         @media (max-width: 420px){
           .site-footer__inner{
-            gap: 8px;
-            padding: 10px 12px;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 16px;
           }
-          .site-footer__label{ font-size: 0.82rem; }
-          .site-footer__names{ font-size: 0.88rem; }
+          .site-footer__label{ font-size: 0.74rem; }
+          .site-footer__people{
+            grid-auto-flow: row;
+            row-gap: 10px;
+          }
+          .site-footer__person{
+            align-items: center;
+            text-align: center;
+          }
+          .site-footer__person + .site-footer__person{
+            border-inline-start: none;
+            padding-inline-start: 0;
+            padding-top: 10px;
+            border-top: 1px solid rgba(26, 29, 38, 0.12);
+          }
+          .site-footer__name{ font-size: 0.9rem; }
+          .site-footer__email{ font-size: 0.8rem; }
         }
 
         .header-nav {
