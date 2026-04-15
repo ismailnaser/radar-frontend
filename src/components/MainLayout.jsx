@@ -11,7 +11,8 @@ import { getPublicAnnouncements } from '../api/data';
 import InstallPwaButton from './InstallPwaButton';
 
 const MainLayout = ({ children }) => {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const navigate = useNavigate();
   const [urlSearchParams] = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -144,6 +145,8 @@ const MainLayout = ({ children }) => {
     }
     navigate('/');
   }, [navigate, pathname]);
+
+  const nextForAuth = `${location.pathname}${location.search}${location.hash || ''}`;
 
   useEffect(() => {
     setAdminNotifsOpen(false);
@@ -316,7 +319,7 @@ const MainLayout = ({ children }) => {
               </div>
             ) : (
               <Link
-                to="/register"
+                to={`/register?next=${encodeURIComponent(nextForAuth)}`}
                 className="header-register-btn"
                 aria-label="إنشاء حساب — تسجيل"
                 title="تسجيل"

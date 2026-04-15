@@ -43,6 +43,18 @@ function AdminCommunity() {
   const [addBusy, setAddBusy] = useState(false);
   const [addLocating, setAddLocating] = useState(false);
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editBusy, setEditBusy] = useState(false);
+  const [editPoint, setEditPoint] = useState(null);
+  const [editCategory, setEditCategory] = useState('');
+  const [editTitle, setEditTitle] = useState('');
+  const [editDetail, setEditDetail] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editPick, setEditPick] = useState(null);
+  const [editWater, setEditWater] = useState('');
+  const [editInst, setEditInst] = useState('');
+  const [editHidden, setEditHidden] = useState(false);
+
   const loadPoints = useCallback(async (statusOverride = null) => {
     setLoading(true);
     try {
@@ -84,6 +96,12 @@ function AdminCommunity() {
     [categories, addCategory]
   );
   const addSlug = selectedAddCat?.slug || '';
+
+  const selectedEditCat = useMemo(
+    () => categories.find((c) => String(c.id) === String(editCategory)),
+    [categories, editCategory]
+  );
+  const editSlug = selectedEditCat?.slug || '';
 
   const handleModerate = async (id, action) => {
     let reason = '';
@@ -136,38 +154,84 @@ function AdminCommunity() {
     }
   };
 
-  const handleEdit = async (p) => {
-    const title = await showPrompt('العنوان:', 'العنوان…', 'تعديل النقطة', p?.title || '');
-    if (title == null) return;
-    const detail = await showPrompt(
-      'الوصف التفصيلي:',
-      'الوصف…',
-      'تعديل النقطة',
-      p?.detail_description || ''
-    );
-    if (detail == null) return;
-    const address = await showPrompt(
-      'العنوان النصي:',
-      'العنوان…',
-      'تعديل النقطة',
-      p?.address_text || ''
-    );
-    if (address == null) return;
+  const openEdit = (p) => {
+    setEditPoint(p);
+    setEditCategory(p?.category != null ? String(p.category) : '');
+    setEditTitle(p?.title || '');
+    setEditDetail(p?.detail_description || '');
+    setEditAddress(p?.address_text || '');
+    const la = Number(p?.latitude);
+    const lo = Number(p?.longitude);
+    setEditPick(Number.isFinite(la) && Number.isFinite(lo) ? [la, lo] : null);
+    setEditWater(p?.water_is_potable === true ? 'true' : p?.water_is_potable === false ? 'false' : '');
+    setEditInst(p?.institution_scope || '');
+    setEditHidden(Boolean(p?.is_hidden_by_admin));
+    setEditOpen(true);
+  };
 
-    setBusyId(p.id);
+  const closeEdit = () => {
+    setEditOpen(false);
+    setEditPoint(null);
+    setEditPick(null);
+    setEditWater('');
+    setEditInst('');
+    setEditHidden(false);
+  };
+
+  const saveEdit = async () => {
+    if (!editPoint?.id) return;
+    if (!editCategory) {
+      await showAlert('اختر القسم.', 'تنبيه');
+      return;
+    }
+    if (!String(editTitle || '').trim() || !String(editDetail || '').trim() || !String(editAddress || '').trim()) {
+      await showAlert('عنوان ووصف وعنوان نصي مطلوبة.', 'تنبيه');
+      return;
+    }
+    if (!editPick) {
+      await showAlert('حدد الموقع على الخريطة.', 'تنبيه');
+      return;
+    }
+
+    const payload = {
+      category: Number(editCategory),
+      title: String(editTitle).trim(),
+      detail_description: String(editDetail).trim(),
+      address_text: String(editAddress).trim(),
+      latitude: editPick[0],
+      longitude: editPick[1],
+      is_hidden_by_admin: Boolean(editHidden),
+    };
+    if (editSlug === 'water') {
+      if (editWater !== 'true' && editWater !== 'false') {
+        await showAlert('حدد صلاحية الشرب للمياه.', 'تنبيه');
+        return;
+      }
+      payload.water_is_potable = editWater === 'true';
+    } else {
+      payload.water_is_potable = null;
+    }
+    if (editSlug === 'institution') {
+      if (!['local', 'international', 'charity'].includes(editInst)) {
+        await showAlert('اختر نطاق المؤسسة.', 'تنبيه');
+        return;
+      }
+      payload.institution_scope = editInst;
+    } else {
+      payload.institution_scope = '';
+    }
+
+    setEditBusy(true);
     try {
-      await adminUpdateCommunityPoint(p.id, {
-        title: String(title).trim(),
-        detail_description: String(detail).trim(),
-        address_text: String(address).trim(),
-      });
+      await adminUpdateCommunityPoint(editPoint.id, payload);
       await showAlert('تم تعديل النقطة.', 'تم');
       await refresh();
+      closeEdit();
       loadPoints();
     } catch (e) {
       await showAlert(formatApiError(e, 'تعذر تعديل النقطة.'), 'خطأ');
     } finally {
-      setBusyId(null);
+      setEditBusy(false);
     }
   };
 
@@ -328,7 +392,7 @@ function AdminCommunity() {
                           type="button"
                           className="btn-secondary"
                           disabled={busyId === p.id}
-                          onClick={() => handleEdit(p)}
+                          onClick={() => openEdit(p)}
                         >
                           تعديل
                         </button>
@@ -355,7 +419,7 @@ function AdminCommunity() {
                           type="button"
                           className="btn-secondary"
                           disabled={busyId === p.id}
-                          onClick={() => handleEdit(p)}
+                          onClick={() => openEdit(p)}
                         >
                           تعديل
                         </button>
@@ -374,7 +438,7 @@ function AdminCommunity() {
                           type="button"
                           className="btn-secondary"
                           disabled={busyId === p.id}
-                          onClick={() => handleEdit(p)}
+                          onClick={() => openEdit(p)}
                         >
                           تعديل
                         </button>
@@ -547,6 +611,154 @@ function AdminCommunity() {
             </form>
           )}
         </section>
+
+        {editOpen ? (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="تعديل نقطة خدمة مجتمعية"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              background: 'rgba(0,0,0,0.45)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 12,
+            }}
+            onClick={closeEdit}
+          >
+            <div
+              className="card"
+              style={{
+                width: 'min(720px, 100%)',
+                maxHeight: 'min(88dvh, 780px)',
+                overflow: 'auto',
+                padding: 14,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <h2 style={{ margin: 0 }}>تعديل النقطة</h2>
+                <button type="button" className="btn-no" onClick={closeEdit}>
+                  إغلاق
+                </button>
+              </div>
+
+              <label style={{ display: 'block', fontWeight: 800, margin: '12px 0 6px' }}>القسم</label>
+              <select
+                value={editCategory}
+                onChange={(e) => {
+                  setEditCategory(e.target.value);
+                  setEditWater('');
+                  setEditInst('');
+                }}
+                style={{ width: '100%', maxWidth: 520, padding: 10, borderRadius: 10 }}
+                required
+              >
+                <option value="">— اختر —</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+
+              {editSlug === 'water' ? (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontWeight: 800, marginBottom: 6 }}>المياه</div>
+                  <label style={{ marginRight: 16 }}>
+                    <input type="radio" name="ew" checked={editWater === 'true'} onChange={() => setEditWater('true')} />{' '}
+                    صالحة للشرب
+                  </label>
+                  <label>
+                    <input type="radio" name="ew" checked={editWater === 'false'} onChange={() => setEditWater('false')} />{' '}
+                    غير صالحة
+                  </label>
+                </div>
+              ) : null}
+
+              {editSlug === 'institution' ? (
+                <div style={{ marginTop: 12 }}>
+                  <label style={{ display: 'block', fontWeight: 800, marginBottom: 6 }}>نطاق المؤسسة</label>
+                  <select
+                    value={editInst}
+                    onChange={(e) => setEditInst(e.target.value)}
+                    style={{ width: '100%', maxWidth: 520, padding: 10, borderRadius: 10 }}
+                  >
+                    <option value="">— اختر —</option>
+                    <option value="local">محلية</option>
+                    <option value="international">عالمية</option>
+                    <option value="charity">خيرية</option>
+                  </select>
+                </div>
+              ) : null}
+
+              <label style={{ display: 'block', fontWeight: 800, margin: '12px 0 6px' }}>العنوان</label>
+              <input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                style={{ width: '100%', maxWidth: 520, padding: 10, borderRadius: 10 }}
+                required
+              />
+
+              <label style={{ display: 'block', fontWeight: 800, margin: '12px 0 6px' }}>الوصف التفصيلي</label>
+              <textarea
+                value={editDetail}
+                onChange={(e) => setEditDetail(e.target.value)}
+                rows={4}
+                style={{ width: '100%', maxWidth: 680, padding: 10, borderRadius: 10 }}
+                required
+              />
+
+              <label style={{ display: 'block', fontWeight: 800, margin: '12px 0 6px' }}>العنوان النصي</label>
+              <textarea
+                value={editAddress}
+                onChange={(e) => setEditAddress(e.target.value)}
+                rows={2}
+                style={{ width: '100%', maxWidth: 680, padding: 10, borderRadius: 10 }}
+                required
+              />
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, fontWeight: 850 }}>
+                <input type="checkbox" checked={editHidden} onChange={(e) => setEditHidden(e.target.checked)} />
+                إخفاء عن العامة
+              </label>
+
+              <p style={{ marginTop: 12, fontWeight: 800 }}>الموقع على الخريطة</p>
+              <div style={{ maxWidth: 680, marginTop: 8, borderRadius: 12, overflow: 'hidden' }}>
+                <MapContainer
+                  center={editPick || DEFAULT_CENTER}
+                  zoom={14}
+                  minZoom={10}
+                  maxZoom={19}
+                  scrollWheelZoom
+                  style={{ height: 'clamp(240px, 48dvh, 380px)', width: '100%' }}
+                >
+                  <BasemapLayersControl />
+                  <LeafletInvalidateOnLayout />
+                  <MapFlyToPosition position={editPick} />
+                  <MapClickPicker onPick={(la, lo) => setEditPick([la, lo])} />
+                  {editPick ? (
+                    <Marker position={editPick}>
+                      <Popup>موقع النقطة</Popup>
+                    </Marker>
+                  ) : null}
+                </MapContainer>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
+                <CustomButton type="button" variant="secondary" onClick={closeEdit} confirm={false} showErrorAlert={false}>
+                  إلغاء
+                </CustomButton>
+                <CustomButton type="button" loading={editBusy} onClick={saveEdit} confirm="حفظ تعديل النقطة؟" showErrorAlert={false}>
+                  حفظ التعديلات
+                </CustomButton>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <style dangerouslySetInnerHTML={{ __html: adminPanelCss }} />
       </div>
