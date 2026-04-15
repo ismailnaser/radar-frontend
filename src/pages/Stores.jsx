@@ -13,7 +13,10 @@ const STORES_PER_PAGE = 12;
 function hasMappableCoords(store) {
   const la = Number(store?.latitude);
   const ln = Number(store?.longitude);
-  return Number.isFinite(la) && Number.isFinite(ln);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return false;
+  // استبعد القيم الفارغة/الخاطئة التي تتحول إلى 0,0 (null/'' → 0)
+  if (Math.abs(la) < 0.25 && Math.abs(ln) < 0.25) return false;
+  return true;
 }
 
 function haversineKm(a, b) {

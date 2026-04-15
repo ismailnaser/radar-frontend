@@ -271,12 +271,15 @@ export default function FiltersDropdown({
           box-shadow: 0 18px 46px rgba(26, 29, 38, 0.18);
           z-index: 12001;
           overflow: hidden;
+          display: flex;
+          flex-direction: column;
         }
         .filters-dd__head{
           display:flex; align-items:center; justify-content: space-between; gap: 10px;
           padding: 10px 12px;
           border-bottom: 1px solid rgba(0,0,0,0.08);
           background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.86) 100%);
+          flex: 0 0 auto;
         }
         .filters-dd__title{ font-weight: 950; color: var(--secondary); }
         .filters-dd__close{
@@ -287,6 +290,7 @@ export default function FiltersDropdown({
         }
         .filters-dd__close:hover{ background: rgba(26,29,38,0.06); }
         .filters-dd__search{ padding: 10px 12px; }
+        .filters-dd__search{ flex: 0 0 auto; }
         .filters-dd__search-input{
           width: 100%;
           border: 1.5px solid rgba(232, 230, 224, 0.95);
@@ -300,6 +304,7 @@ export default function FiltersDropdown({
           padding: 0 12px 10px;
           display:flex; flex-wrap: wrap; gap: 8px; align-items:center;
         }
+        .filters-dd__actions{ flex: 0 0 auto; }
         .filters-dd__picked{
           padding: 0 12px 10px;
           font-size: 0.78rem;
@@ -310,6 +315,7 @@ export default function FiltersDropdown({
           overflow: hidden;
           text-overflow: ellipsis;
         }
+        .filters-dd__picked{ flex: 0 0 auto; }
         .filters-dd__chip{
           border: 1.5px solid rgba(232, 230, 224, 0.95);
           background: rgba(255,255,255,0.92);
@@ -334,6 +340,8 @@ export default function FiltersDropdown({
         .filters-dd__list{
           padding: 6px 12px 12px;
           overflow: auto;
+          flex: 1 1 auto;
+          min-height: 0;
         }
         .filters-dd__footer{
           padding: 10px 12px;
@@ -342,6 +350,7 @@ export default function FiltersDropdown({
           gap: 10px;
           justify-content: flex-end;
           background: linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.96) 100%);
+          flex: 0 0 auto;
         }
         .filters-dd__footer-btn{
           border-radius: 999px;
@@ -376,16 +385,7 @@ export default function FiltersDropdown({
         .filters-dd__row--on{ background: rgba(245, 192, 0, 0.14); }
         .filters-dd__empty{ padding: 10px 10px; color: var(--text-secondary); font-weight: 800; }
 
-        .filters-dd__head{
-          position: sticky;
-          top: 0;
-          z-index: 1;
-        }
-        .filters-dd__footer{
-          position: sticky;
-          bottom: 0;
-          z-index: 1;
-        }
+        /* Important: keep footer from overlapping scrollable list */
       `}} />
     </div>
   );
