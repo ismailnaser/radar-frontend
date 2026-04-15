@@ -461,6 +461,12 @@ const MainLayout = ({ children }) => {
           </div>
         ) : null}
         {children}
+        <footer className="site-footer" aria-label="تذييل الصفحة">
+          <div className="site-footer__inner" dir="ltr">
+            <span className="site-footer__label">Created by</span>
+            <span className="site-footer__names">ismail_nsr · lama_dirbi</span>
+          </div>
+        </footer>
       </main>
 
       {!hideBottomNav ? (
@@ -1601,6 +1607,50 @@ const MainLayout = ({ children }) => {
         .content.content--home {
           padding: 0;
           padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .site-footer{
+          max-width: 1240px;
+          width: 100%;
+          margin: 18px auto 0;
+          padding: 12px clamp(8px, 2.2vw, 22px);
+          box-sizing: border-box;
+          text-align: center;
+        }
+        .site-footer__inner{
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 14px;
+          border-radius: 999px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,254,248,0.92) 100%);
+          border: 1px solid rgba(232, 230, 224, 0.92);
+          box-shadow: 0 8px 22px rgba(26, 29, 38, 0.06);
+          color: rgba(26, 29, 38, 0.72);
+          line-height: 1;
+          -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+        }
+        .site-footer__label{
+          font-weight: 900;
+          color: rgba(26, 29, 38, 0.6);
+          letter-spacing: -0.01em;
+          font-size: 0.86rem;
+        }
+        .site-footer__names{
+          font-weight: 950;
+          color: var(--secondary);
+          letter-spacing: -0.015em;
+          font-size: 0.92rem;
+        }
+
+        @media (max-width: 420px){
+          .site-footer__inner{
+            gap: 8px;
+            padding: 10px 12px;
+          }
+          .site-footer__label{ font-size: 0.82rem; }
+          .site-footer__names{ font-size: 0.88rem; }
         }
 
         .header-nav {
