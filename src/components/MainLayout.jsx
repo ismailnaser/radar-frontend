@@ -1628,7 +1628,7 @@ const MainLayout = ({ children }) => {
           max-width: 1240px;
           width: 100%;
           margin: 18px auto 0;
-          padding: 12px clamp(8px, 2.2vw, 22px);
+          padding: 8px clamp(8px, 2.2vw, 22px);
           box-sizing: border-box;
           text-align: center;
         }
@@ -1636,7 +1636,7 @@ const MainLayout = ({ children }) => {
           display: inline-flex;
           align-items: center;
           gap: 12px;
-          padding: 12px 16px;
+          padding: 8px 12px;
           border-radius: 18px;
           background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,254,248,0.92) 100%);
           border: 1px solid rgba(232, 230, 224, 0.95);
@@ -1698,7 +1698,7 @@ const MainLayout = ({ children }) => {
         @media (max-width: 420px){
           .site-footer__inner{
             gap: 10px;
-            padding: 12px 14px;
+            padding: 8px 10px;
             border-radius: 16px;
           }
           .site-footer__label{ font-size: 0.74rem; }
