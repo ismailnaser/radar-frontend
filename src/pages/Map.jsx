@@ -294,15 +294,19 @@ export default function MapPage() {
             gap: 10px;
             padding: 10px 12px;
             background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.86) 100%);
-            border-bottom: 1px solid rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 16px;
             backdrop-filter: blur(10px);
             pointer-events: auto;
+            max-width: min(720px, 100%);
+            margin-inline: auto;
           }
           .map-topbar-row{
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             align-items: center;
+            justify-content: center;
           }
           .map-topbar-chip{
             border: 1.5px solid var(--border);

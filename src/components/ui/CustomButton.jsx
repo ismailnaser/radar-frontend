@@ -51,7 +51,14 @@ const CustomButton = ({
           if (typeof form.requestSubmit === 'function') {
             form.requestSubmit();
           } else {
-            form.submit();
+            // form.submit() لا يطلق حدث submit وبالتالي لا يصل لـ onSubmit في React
+            // fallback: أنشئ زر submit مؤقت وانقره ليتم إطلاق الحدث بشكل طبيعي
+            const tmp = document.createElement('button');
+            tmp.type = 'submit';
+            tmp.style.display = 'none';
+            form.appendChild(tmp);
+            tmp.click();
+            tmp.remove();
           }
         }
       }

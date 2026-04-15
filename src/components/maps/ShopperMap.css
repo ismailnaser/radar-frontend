@@ -40,24 +40,24 @@
 
 .shopper-map-manual-bar {
   position: absolute;
-  left: 12px;
-  right: 12px;
+  left: 10px;
+  right: auto;
   bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   top: auto;
   z-index: 1000;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 10px;
-  padding: 10px 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.88) 100%);
-  border: 1px solid rgba(0, 0, 0, 0.10);
-  border-radius: 14px;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   pointer-events: auto;
-  max-width: min(560px, calc(100% - 24px));
-  margin-inline: auto;
+  max-width: calc(100% - 20px);
+  margin-inline: 0;
 }
 
 .shopper-map-gps-inline{
@@ -82,9 +82,10 @@
 
 @media (max-width: 520px) {
   .shopper-map-manual-bar {
-    padding: 8px 8px;
+    left: 8px;
+    max-width: calc(100% - 16px);
     gap: 8px;
-    justify-content: center;
+    justify-content: flex-start;
   }
   .shopper-map-manual-btn-primary {
     font-size: 0.78rem;
@@ -103,20 +104,22 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: 58px;
+  top: 8px;
   z-index: 1000;
   pointer-events: none;
+  padding-inline: 64px;
+  box-sizing: border-box;
 }
 .radar-map--manual-wrap .shopper-map-topbar{
-  top: 64px;
+  top: 8px;
 }
 .radar-map--pick-active .shopper-map-topbar{
-  top: 64px;
+  top: 8px;
 }
 
 .radar-map--pick-active .shopper-map-manual-bar {
-  background: linear-gradient(180deg, rgba(30, 190, 165, 0.18) 0%, rgba(255, 255, 255, 0.92) 100%);
-  border-color: rgba(30, 190, 165, 0.45);
+  background: transparent;
+  border-color: transparent;
 }
 
 .shopper-map-manual-hint {
