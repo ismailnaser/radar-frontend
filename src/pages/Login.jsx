@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { User, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { login } from '../api/auth';
 import MainLayout from '../components/MainLayout';
 import CustomInput from '../components/ui/CustomInput';
@@ -18,6 +18,15 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { showAlert } = useAlert();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const nextUrl = (() => {
+    const raw = searchParams.get('next');
+    if (!raw) return '/';
+    // only allow relative in-app navigation
+    return raw.startsWith('/') ? raw : '/';
+  })();
 
   useEffect(() => {
     const saved = loadRememberedLogin();
@@ -26,6 +35,14 @@ const Login = () => {
       setPassword(saved.password);
       setRememberMe(true);
     }
+  }, []);
+
+  useEffect(() => {
+    const msg = location.state?.flash;
+    if (msg) {
+      showAlert(String(msg), 'تنبيه').catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const continueAsGuest = async () => {
@@ -52,7 +69,7 @@ const Login = () => {
         rememberMe,
       });
       await showAlert('تم تسجيل الدخول بنجاح.', 'تم');
-      navigate('/', { replace: true });
+      navigate(nextUrl || '/', { replace: true });
     } catch (err) {
       console.error('Login error:', err);
       const status = err?.response?.status;
@@ -140,7 +157,7 @@ const Login = () => {
           </form>
 
           <p className="auth-footer-link">
-            لا تملك حساباً؟ <Link to="/register">إنشاء حساب</Link>
+            لا تملك حساباً؟ <Link to={`/register?next=${encodeURIComponent(nextUrl || '/')}`}>إنشاء حساب</Link>
           </p>
 
           <button type="button" className="btn-ghost auth-guest-btn" onClick={continueAsGuest}>

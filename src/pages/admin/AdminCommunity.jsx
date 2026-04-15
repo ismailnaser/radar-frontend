@@ -3,7 +3,9 @@ import MainLayout from '../../components/MainLayout';
 import { useAlert } from '../../components/AlertProvider';
 import {
   adminCreateCommunityPoint,
+  adminDeleteCommunityPoint,
   adminModerateCommunityPoint,
+  adminUpdateCommunityPoint,
   getAdminCommunityPoints,
   getCommunityCategories,
 } from '../../api/data';
@@ -113,6 +115,57 @@ function AdminCommunity() {
       loadPoints();
     } catch (e) {
       await showAlert(formatApiError(e, 'تعذر التحديث.'), 'خطأ');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleDelete = async (p) => {
+    const ok = await showConfirm(`تأكيد حذف النقطة نهائياً؟\n\n${p?.title || ''}`, 'حذف');
+    if (!ok) return;
+    setBusyId(p.id);
+    try {
+      await adminDeleteCommunityPoint(p.id);
+      await showAlert('تم حذف النقطة.', 'تم');
+      await refresh();
+      loadPoints();
+    } catch (e) {
+      await showAlert(formatApiError(e, 'تعذر حذف النقطة.'), 'خطأ');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleEdit = async (p) => {
+    const title = await showPrompt('العنوان:', 'العنوان…', 'تعديل النقطة', p?.title || '');
+    if (title == null) return;
+    const detail = await showPrompt(
+      'الوصف التفصيلي:',
+      'الوصف…',
+      'تعديل النقطة',
+      p?.detail_description || ''
+    );
+    if (detail == null) return;
+    const address = await showPrompt(
+      'العنوان النصي:',
+      'العنوان…',
+      'تعديل النقطة',
+      p?.address_text || ''
+    );
+    if (address == null) return;
+
+    setBusyId(p.id);
+    try {
+      await adminUpdateCommunityPoint(p.id, {
+        title: String(title).trim(),
+        detail_description: String(detail).trim(),
+        address_text: String(address).trim(),
+      });
+      await showAlert('تم تعديل النقطة.', 'تم');
+      await refresh();
+      loadPoints();
+    } catch (e) {
+      await showAlert(formatApiError(e, 'تعذر تعديل النقطة.'), 'خطأ');
     } finally {
       setBusyId(null);
     }
@@ -271,6 +324,22 @@ function AdminCommunity() {
                         >
                           رفض
                         </button>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          disabled={busyId === p.id}
+                          onClick={() => handleEdit(p)}
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-danger"
+                          disabled={busyId === p.id}
+                          onClick={() => handleDelete(p)}
+                        >
+                          حذف
+                        </button>
                       </div>
                     ) : p.status === 'approved' ? (
                       <div className="admin-actions" style={{ marginTop: 12 }}>
@@ -281,6 +350,41 @@ function AdminCommunity() {
                           onClick={() => handleModerate(p.id, p.is_hidden_by_admin ? 'unhide' : 'hide')}
                         >
                           {p.is_hidden_by_admin ? 'إظهار للعامة' : 'إخفاء عن العامة'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          disabled={busyId === p.id}
+                          onClick={() => handleEdit(p)}
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-danger"
+                          disabled={busyId === p.id}
+                          onClick={() => handleDelete(p)}
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    ) : p.status === 'rejected' ? (
+                      <div className="admin-actions" style={{ marginTop: 12 }}>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          disabled={busyId === p.id}
+                          onClick={() => handleEdit(p)}
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-danger"
+                          disabled={busyId === p.id}
+                          onClick={() => handleDelete(p)}
+                        >
+                          حذف
                         </button>
                       </div>
                     ) : null}

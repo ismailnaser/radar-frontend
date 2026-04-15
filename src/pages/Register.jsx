@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup } from 'react-leaflet';
 import { Lock, Eye, EyeOff, User, Store, MapPin } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { register, login } from '../api/auth';
 import { getCategories } from '../api/data';
 import MainLayout from '../components/MainLayout';
@@ -74,6 +74,22 @@ const Register = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { showAlert } = useAlert();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const nextUrl = (() => {
+    const raw = searchParams.get('next');
+    if (!raw) return '/';
+    return raw.startsWith('/') ? raw : '/';
+  })();
+
+  useEffect(() => {
+    const msg = location.state?.flash;
+    if (msg) {
+      showAlert(String(msg), 'تنبيه').catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const merchantMapCenter = useMemo(
     () => (merchantMapPick && merchantMapPick.length === 2 ? merchantMapPick : REGISTER_MAP_DEFAULT_CENTER),
@@ -210,7 +226,7 @@ const Register = () => {
         rememberMe,
       });
       await showAlert('تم إنشاء الحساب وتسجيل الدخول بنجاح.', 'تم');
-      navigate('/', { replace: true });
+      navigate(nextUrl || '/', { replace: true });
     } catch (err) {
       const msg = formatApiError(err, 'تعذر إنشاء الحساب. حاول مرة أخرى.');
       setError(msg);
@@ -505,7 +521,7 @@ const Register = () => {
           </form>
 
           <p className="auth-footer-link">
-            لديك حساب بالفعل؟ <Link to="/login">تسجيل الدخول</Link>
+            لديك حساب بالفعل؟ <Link to={`/login?next=${encodeURIComponent(nextUrl || '/')}`}>تسجيل الدخول</Link>
           </p>
         </div>
 

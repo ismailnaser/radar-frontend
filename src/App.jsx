@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
   Outlet,
+  useLocation,
 } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -68,8 +69,16 @@ const VerificationRoute = ({ children }) => {
 
 // 2. Protect Favorites and Carts from Guests
 const ProtectedRoute = ({ children }) => {
+  const location = useLocation();
   if (isGuest() || !isAuthenticated()) {
-    return <Navigate to="/login" replace />;
+    const next = `${location.pathname}${location.search}${location.hash || ''}`;
+    return (
+      <Navigate
+        to={`/login?next=${encodeURIComponent(next)}`}
+        replace
+        state={{ flash: 'يجب تسجيل الدخول أولاً.' }}
+      />
+    );
   }
   return children;
 };
@@ -78,15 +87,31 @@ const ProtectedRoute = ({ children }) => {
 const RoleHomeRoute = () => <Home />;
 
 const MerchantOnlyRoute = ({ children }) => {
+  const location = useLocation();
   if (isGuest() || !isAuthenticated() || !isMerchant()) {
-    return <Navigate to="/" replace />;
+    const next = `${location.pathname}${location.search}${location.hash || ''}`;
+    return (
+      <Navigate
+        to={`/login?next=${encodeURIComponent(next)}`}
+        replace
+        state={{ flash: 'يجب تسجيل الدخول أولاً.' }}
+      />
+    );
   }
   return children;
 };
 
 const AdminOnlyRoute = ({ children }) => {
+  const location = useLocation();
   if (isGuest() || !isAuthenticated() || !isAdmin()) {
-    return <Navigate to="/login" replace />;
+    const next = `${location.pathname}${location.search}${location.hash || ''}`;
+    return (
+      <Navigate
+        to={`/login?next=${encodeURIComponent(next)}`}
+        replace
+        state={{ flash: 'يجب تسجيل الدخول أولاً.' }}
+      />
+    );
   }
   return children;
 };
@@ -99,8 +124,16 @@ const PrimaryAdminOnlyRoute = ({ children }) => {
 };
 
 const ShopperOrMerchantRoute = ({ children }) => {
+  const location = useLocation();
   if (isGuest() || !isAuthenticated()) {
-    return <Navigate to="/login" replace />;
+    const next = `${location.pathname}${location.search}${location.hash || ''}`;
+    return (
+      <Navigate
+        to={`/login?next=${encodeURIComponent(next)}`}
+        replace
+        state={{ flash: 'يجب تسجيل الدخول أولاً.' }}
+      />
+    );
   }
   const t = localStorage.getItem('user_type');
   if (t !== 'shopper' && t !== 'merchant') {

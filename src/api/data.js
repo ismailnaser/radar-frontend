@@ -61,6 +61,18 @@ export const adminModerateCommunityPoint = async (id, action, rejectionReason = 
   return response.data;
 };
 
+export const adminUpdateCommunityPoint = async (id, payload) => {
+  const response = await api.patch(`stores/admin/community-points/${id}/`, payload, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return response.data;
+};
+
+export const adminDeleteCommunityPoint = async (id) => {
+  const response = await api.delete(`stores/admin/community-points/${id}/`);
+  return response.data;
+};
+
 export const getNearbyStores = async (lat, lng, categoryId = null) => {
   let url = `stores/stores/?lat=${lat}&lng=${lng}`;
   if (categoryId) url += `&category=${categoryId}`;
