@@ -448,6 +448,7 @@ const Carts = () => {
             min-height: 0;
             min-width: 0;
             flex-wrap: nowrap;
+            position: relative;
           }
           .cart-card-text-cluster{
             display: flex;
@@ -456,19 +457,23 @@ const Carts = () => {
             gap: 14px;
             flex: 1;
             min-width: 0;
+            /* reserve space for the absolute actions column so the title+icon can truly center */
+            padding-inline-end: 56px;
           }
           .cart-card-row-head{
             display: flex;
             flex-direction: row;
-            align-items: flex-start;
-            justify-content: flex-start;
+            align-items: center;
+            justify-content: center;
             gap: 12px;
             min-width: 0;
+            text-align: center;
           }
           .cart-card-row-head .cart-collapsed-title{
-            flex: 1;
+            flex: 0 1 auto;
             min-width: 0;
             padding-top: 2px;
+            text-align: start;
           }
           .cart-card-details{
             display: flex;
@@ -582,6 +587,9 @@ const Carts = () => {
             align-self: stretch;
             padding-top: 0;
             min-width: 44px;
+            position: absolute;
+            top: 0;
+            inset-inline-end: 0;
           }
           .cart-collapsed-title{
             margin: 0;
@@ -621,10 +629,12 @@ const Carts = () => {
               flex-direction: column;
               align-items: stretch;
               gap: 14px;
+              position: static;
             }
             .cart-card-text-cluster{
               order: 0;
               width: 100%;
+              padding-inline-end: 0;
             }
             .cart-card-actions{
               flex-direction: row;
@@ -633,6 +643,7 @@ const Carts = () => {
               order: 1;
               align-self: stretch;
               padding-top: 0;
+              position: static;
             }
             .cart-card-total-strip{
               flex-wrap: wrap;

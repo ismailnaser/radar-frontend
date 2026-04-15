@@ -61,7 +61,6 @@ import {
   KeyRound,
   Stethoscope,
   Search,
-  SlidersHorizontal,
   Warehouse,
   Candy,
   Croissant,
@@ -609,46 +608,6 @@ const Home = () => {
     await pickCartAndAddPending({ id: pick });
   };
 
-  const openCategoryPicker = useCallback(async () => {
-    if (filterMode !== 'stores') return;
-    if (categoriesLoading) return;
-    const opts = [
-      { id: '__all__', label: 'الكل', value: null },
-      ...categories.map((c) => ({ id: String(c.id), label: c.name, value: c.id })),
-    ];
-    const pick = await showSelect('اختر القسم:', 'تصفية المتاجر', opts);
-    if (pick == null) return;
-    const next = new URLSearchParams(searchParams);
-    next.delete('filter');
-    next.delete('cc');
-    if (pick === '__all__') {
-      next.delete('category');
-    } else {
-      next.set('category', String(pick));
-    }
-    setSearchParams(next, { replace: true });
-  }, [filterMode, categoriesLoading, categories, showSelect, searchParams, setSearchParams]);
-
-  const openCommunityCategoryPicker = useCallback(async () => {
-    if (filterMode !== 'community') return;
-    if (communityCatsLoading) return;
-    const opts = [
-      { id: '__all__', label: 'الكل', value: null },
-      ...communityCategories.map((c) => ({ id: String(c.id), label: c.name, value: c.id })),
-    ];
-    const pick = await showSelect('اختر القسم:', 'تصفية الخدمات', opts);
-    if (pick == null) return;
-    const next = new URLSearchParams(searchParams);
-    next.set('filter', 'community');
-    next.delete('category');
-    if (pick === '__all__') {
-      next.delete('cc');
-    } else {
-      next.set('cc', String(pick));
-    }
-    setSearchParams(next, { replace: true });
-  }, [filterMode, communityCatsLoading, communityCategories, showSelect, searchParams, setSearchParams]);
-
   const createCartAndAddPending = async (payloadOverride, { isFirstCart = false } = {}) => {
     const p = payloadOverride != null ? payloadOverride : pendingCartAddRef.current;
     if (!p) return;
@@ -1178,34 +1137,49 @@ const Home = () => {
 
         {!isMerchantOnHome ? (
           <section className="home-browse-block" aria-label="تصفح حسب الفئات">
-            {isSmallScreen ? (
-              <div className="home-browse-head">
-                <h2 className="home-browse-title">تصفية سريعة</h2>
-                <button
-                  type="button"
-                  className="home-browse-filterbtn"
-                  onClick={filterMode === 'stores' ? openCategoryPicker : openCommunityCategoryPicker}
-                  disabled={filterMode === 'stores' ? categoriesLoading : communityCatsLoading}
-                  aria-label={filterMode === 'stores' ? 'تصفية المتاجر حسب القسم' : 'تصفية الخدمات حسب القسم'}
-                >
-                  <SlidersHorizontal size={18} strokeWidth={2} aria-hidden />
-                  <span className="home-browse-filterbtn-text">
-                    {filterMode === 'stores'
-                      ? selectedCategoryId == null
-                        ? 'كل الأقسام'
-                        : categories.find((x) => Number(x.id) === Number(selectedCategoryId))?.name || 'القسم'
-                      : selectedCommunityCategoryId == null
-                        ? 'كل الخدمات'
-                        : communityCategories.find((x) => Number(x.id) === Number(selectedCommunityCategoryId))?.name ||
-                          'الخدمة'}
-                  </span>
-                </button>
-              </div>
-            ) : (
+            <div className="home-browse-head">
               <h2 className="home-browse-title">
-                {filterMode === 'stores' ? 'تصفح حسب الفئات' : 'أقسام الخدمات المجتمعية'}
+                {isSmallScreen ? 'تصفية سريعة' : filterMode === 'stores' ? 'تصفح حسب الفئات' : 'أقسام الخدمات المجتمعية'}
               </h2>
-            )}
+              <FiltersDropdown
+                className="filters-dd--home-quick"
+                buttonClassName="home-browse-filterbtn"
+                buttonLabel="فلترة"
+                title={filterMode === 'stores' ? 'فلترة المتاجر حسب الأقسام' : 'فلترة الخدمات حسب الأقسام'}
+                allLabel={filterMode === 'stores' ? 'كل الأقسام' : 'كل الخدمات'}
+                requireConfirm
+                options={(filterMode === 'stores' ? categories : communityCategories).map((c) => ({
+                  id: c.id,
+                  label: c.name,
+                }))}
+                selectedIds={
+                  filterMode === 'stores'
+                    ? selectedCategoryIds
+                    : selectedCommunityCategoryId != null
+                      ? [selectedCommunityCategoryId]
+                      : []
+                }
+                onChangeSelectedIds={(ids) => {
+                  const next = new URLSearchParams(searchParams);
+                  if (filterMode === 'stores') {
+                    next.delete('filter');
+                    next.delete('cc');
+                    const picks = Array.isArray(ids)
+                      ? ids.filter((x) => x != null && String(x).trim() !== '')
+                      : [];
+                    if (picks.length === 0) next.delete('category');
+                    else next.set('category', picks.join(','));
+                  } else {
+                    next.set('filter', 'community');
+                    next.delete('category');
+                    const pick = Array.isArray(ids) && ids.length ? Number(ids[0]) : null;
+                    if (pick == null || !Number.isFinite(pick)) next.delete('cc');
+                    else next.set('cc', String(pick));
+                  }
+                  setSearchParams(next, { replace: true });
+                }}
+              />
+            </div>
             <div className="home-browse-scroll" ref={browseScrollRef}>
               {filterMode === 'stores' ? (
                 <>
