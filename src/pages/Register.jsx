@@ -172,6 +172,26 @@ const Register = () => {
     setLoading(true);
     setError('');
 
+    const uNorm = String(username || '').trim();
+    if (uNorm.length < 6) {
+      setError('اسم المستخدم يجب أن يكون 6 أحرف على الأقل.');
+      setLoading(false);
+      return;
+    }
+    // تحقق سريع لقوة كلمة المرور (التحقق النهائي في الباك إند عبر Django validators)
+    const pw = String(password || '');
+    const strong =
+      pw.length >= 8 &&
+      /[a-z]/.test(pw) &&
+      /[A-Z]/.test(pw) &&
+      /\d/.test(pw) &&
+      /[^A-Za-z0-9]/.test(pw);
+    if (!strong) {
+      setError('كلمة المرور ضعيفة: استخدم 8 أحرف على الأقل مع حرف كبير وصغير ورقم ورمز.');
+      setLoading(false);
+      return;
+    }
+
     if (accountType === 'merchant') {
       if (!storeName.trim()) {
         setError('أدخل اسم المتجر.');
@@ -201,7 +221,7 @@ const Register = () => {
 
     try {
       const payload = {
-        username: username.trim(),
+        username: uNorm,
         user_type: accountType,
         password,
       };
@@ -301,6 +321,7 @@ const Register = () => {
               placeholder="اسم المستخدم"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              minLength={6}
               required
             />
 
@@ -311,6 +332,7 @@ const Register = () => {
                 placeholder="كلمة المرور"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
                 required
               />
               <button
