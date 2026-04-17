@@ -151,7 +151,7 @@ const Login = () => {
               </button>
             </div>
 
-            <div style={{ marginTop: 6, marginBottom: 8, textAlign: 'left' }}>
+            <div style={{ marginTop: 4, marginBottom: 10, textAlign: 'right' }}>
               <Link
                 to={`/forgot-password?next=${encodeURIComponent(nextUrl || '/')}`}
                 style={{ fontWeight: 900, color: 'var(--secondary)', textDecoration: 'none', opacity: 0.92 }}
