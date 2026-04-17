@@ -63,8 +63,8 @@ export default function Settings() {
       showAlert('أدخل كلمة المرور الحالية.', 'تنبيه');
       return;
     }
-    if (!newPassword || newPassword.length < 6) {
-      showAlert('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل.', 'تنبيه');
+    if (!newPassword || newPassword.length < 8) {
+      showAlert('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل.', 'تنبيه');
       return;
     }
     const okPass = await showConfirm('تأكيد تغيير كلمة المرور؟', 'تأكيد');

@@ -151,6 +151,15 @@ const Login = () => {
               </button>
             </div>
 
+            <div style={{ marginTop: 6, marginBottom: 8, textAlign: 'left' }}>
+              <Link
+                to={`/forgot-password?next=${encodeURIComponent(nextUrl || '/')}`}
+                style={{ fontWeight: 900, color: 'var(--secondary)', textDecoration: 'none', opacity: 0.92 }}
+              >
+                نسيت كلمة المرور؟
+              </Link>
+            </div>
+
             <label
               className="auth-remember"
               title="حفظ اسم المستخدم وكلمة المرور محلياً على هذا الجهاز لتعبئتهما تلقائياً لاحقاً"

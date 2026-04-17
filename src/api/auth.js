@@ -137,6 +137,25 @@ export const loginWithGoogleIdToken = async (idToken) => {
   return response.data;
 };
 
+export const requestPasswordResetEmail = async (email) => {
+  const response = await api.post('auth/password/reset/', { email }, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return response.data;
+};
+
+export const confirmPasswordReset = async ({ uid, token, new_password1, new_password2 }) => {
+  const response = await api.post('auth/password/reset/confirm/', {
+    uid,
+    token,
+    new_password1,
+    new_password2,
+  }, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return response.data;
+};
+
 export const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('refresh');

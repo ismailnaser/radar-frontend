@@ -10,6 +10,8 @@ import {
 } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPasswordConfirm from './pages/ResetPasswordConfirm'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
 import MerchantDashboard from './pages/merchant/Dashboard'
@@ -165,6 +167,8 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<AppLayout />}>
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/confirm/:uid/:token" element={<ResetPasswordConfirm />} />
           <Route path="/share/cart/:shareToken" element={<SharedCart />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-whatsapp" element={<Verification />} />
