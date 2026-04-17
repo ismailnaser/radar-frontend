@@ -31,7 +31,12 @@ export default function GoogleLoginButton({
 }) {
   const divRef = useRef(null);
   const [ready, setReady] = useState(false);
-  const clientId = useMemo(() => import.meta.env.VITE_GOOGLE_CLIENT_ID || '', []);
+  const clientId = useMemo(
+    () =>
+      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+      '407689787967-7qo6llkgshi16oreveh6ndikj0aod9kt.apps.googleusercontent.com',
+    []
+  );
 
   useEffect(() => {
     let cancelled = false;
