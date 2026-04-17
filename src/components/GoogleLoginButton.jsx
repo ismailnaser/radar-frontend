@@ -10,8 +10,14 @@ function loadGsiScriptOnce() {
     s.src = 'https://accounts.google.com/gsi/client';
     s.async = true;
     s.defer = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('تعذر تحميل مكتبة Google Identity.'));
+    s.onload = () => {
+      console.log('[GSI] script loaded');
+      resolve();
+    };
+    s.onerror = (e) => {
+      console.error('[GSI] script failed to load', e);
+      reject(new Error('تعذر تحميل مكتبة Google Identity.'));
+    };
     document.head.appendChild(s);
   });
   return window.__radar_gsi_loading_promise;
@@ -31,6 +37,7 @@ export default function GoogleLoginButton({
     let cancelled = false;
     (async () => {
       try {
+        console.log('[GSI] VITE_GOOGLE_CLIENT_ID =', clientId ? `${String(clientId).slice(0, 12)}…` : '(empty)');
         if (!clientId) return;
         await loadGsiScriptOnce();
         if (cancelled) return;
@@ -38,12 +45,14 @@ export default function GoogleLoginButton({
           client_id: clientId,
           callback: (resp) => {
             const cred = resp?.credential;
+            console.log('[GSI] credential received =', cred ? `${String(cred).slice(0, 18)}…` : '(empty)');
             if (cred && typeof onCredential === 'function') onCredential(cred);
           },
           ux_mode: 'popup',
         });
         setReady(true);
-      } catch {
+      } catch (e) {
+        console.error('[GSI] init failed', e);
         setReady(false);
       }
     })();
