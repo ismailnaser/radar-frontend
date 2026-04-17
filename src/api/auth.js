@@ -99,6 +99,44 @@ export const register = async (userData) => {
   return response.data;
 };
 
+export const loginWithGoogleAccessToken = async (accessToken) => {
+  const response = await api.post('users/auth/google/', { access_token: accessToken }, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (response.data.access) {
+    localStorage.setItem('token', response.data.access);
+    localStorage.setItem('refresh', response.data.refresh);
+    localStorage.setItem('is_verified', response.data.user?.is_whatsapp_verified ?? 'true');
+    localStorage.setItem('user_type', response.data.user?.user_type || 'shopper');
+    localStorage.setItem('user_name', response.data.user?.username || '');
+    localStorage.setItem(
+      'is_primary_admin',
+      response.data.user?.is_primary_admin ? 'true' : 'false'
+    );
+    localStorage.removeItem('isGuest');
+  }
+  return response.data;
+};
+
+export const loginWithGoogleIdToken = async (idToken) => {
+  const response = await api.post('users/auth/google/', { id_token: idToken }, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (response.data.access) {
+    localStorage.setItem('token', response.data.access);
+    localStorage.setItem('refresh', response.data.refresh);
+    localStorage.setItem('is_verified', response.data.user?.is_whatsapp_verified ?? 'true');
+    localStorage.setItem('user_type', response.data.user?.user_type || 'shopper');
+    localStorage.setItem('user_name', response.data.user?.username || '');
+    localStorage.setItem(
+      'is_primary_admin',
+      response.data.user?.is_primary_admin ? 'true' : 'false'
+    );
+    localStorage.removeItem('isGuest');
+  }
+  return response.data;
+};
+
 export const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('refresh');

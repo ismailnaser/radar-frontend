@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { User, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { login } from '../api/auth';
+import { login, loginWithGoogleIdToken } from '../api/auth';
 import MainLayout from '../components/MainLayout';
 import CustomInput from '../components/ui/CustomInput';
 import CustomButton from '../components/ui/CustomButton';
 import { useAlert } from '../components/AlertProvider';
 import { formatApiError } from '../utils/apiErrors';
 import { loadRememberedLogin, saveRememberedLogin } from '../utils/rememberLogin';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -86,6 +87,23 @@ const Login = () => {
     }
   };
 
+  const handleGoogleCredential = async (credential) => {
+    setLoading(true);
+    setError('');
+    try {
+      await loginWithGoogleIdToken(credential);
+      await showAlert('تم تسجيل الدخول عبر Google بنجاح.', 'تم');
+      navigate(nextUrl || '/', { replace: true });
+    } catch (err) {
+      console.error('Google login error:', err);
+      const msg = formatApiError(err, 'تعذر تسجيل الدخول عبر Google.');
+      setError('');
+      await showAlert(msg, 'خطأ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="auth-page">
@@ -155,6 +173,8 @@ const Login = () => {
               تسجيل الدخول
             </CustomButton>
           </form>
+
+          <GoogleLoginButton onCredential={handleGoogleCredential} disabled={loading} />
 
           <p className="auth-footer-link">
             لا تملك حساباً؟ <Link to={`/register?next=${encodeURIComponent(nextUrl || '/')}`}>إنشاء حساب</Link>

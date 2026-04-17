@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup } from 'react-leaflet';
 import { Lock, Eye, EyeOff, User, Store, MapPin } from 'lucide-react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { register, login } from '../api/auth';
+import { register, login, loginWithGoogleIdToken } from '../api/auth';
 import { getCategories } from '../api/data';
 import MainLayout from '../components/MainLayout';
 import CustomInput from '../components/ui/CustomInput';
@@ -16,6 +16,7 @@ import '../components/maps/leafletIconFix';
 import { getRefinedGeolocationPosition } from '../utils/geolocation';
 import { formatApiError } from '../utils/apiErrors';
 import { loadRememberedLogin, saveRememberedLogin } from '../utils/rememberLogin';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 const REGISTER_MAP_DEFAULT_CENTER = [31.5, 34.4];
 
@@ -252,6 +253,27 @@ const Register = () => {
       setError(msg);
       await showAlert(msg, 'فشل');
       console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleCredential = async (credential) => {
+    setLoading(true);
+    setError('');
+    try {
+      await loginWithGoogleIdToken(credential);
+      saveRememberedLogin({
+        username: '',
+        password: '',
+        rememberMe,
+      });
+      await showAlert('تم تسجيل الدخول عبر Google بنجاح.', 'تم');
+      navigate(nextUrl || '/', { replace: true });
+    } catch (err) {
+      const msg = formatApiError(err, 'تعذر تسجيل الدخول عبر Google.');
+      setError(msg);
+      await showAlert(msg, 'خطأ');
     } finally {
       setLoading(false);
     }
@@ -540,6 +562,8 @@ const Register = () => {
             >
               تصفح كزائر
             </CustomButton>
+
+            <GoogleLoginButton onCredential={handleGoogleCredential} disabled={loading} />
           </form>
 
           <p className="auth-footer-link">
