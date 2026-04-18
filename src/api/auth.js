@@ -32,6 +32,24 @@ api.interceptors.request.use((config) => {
 });
 
 // Add Response Interceptor to handle global errors (like 401 Unauthorized)
+function persistAuthUser(user, usernameFallback = '') {
+  if (!user) return;
+  localStorage.setItem('is_verified', user.is_whatsapp_verified ?? 'true');
+  localStorage.setItem('user_type', user.user_type || 'shopper');
+  localStorage.setItem('user_name', user.username || usernameFallback || '');
+  localStorage.setItem('is_primary_admin', user.is_primary_admin ? 'true' : 'false');
+  if (user.email != null && String(user.email).trim() !== '') {
+    localStorage.setItem('user_email', String(user.email).trim().toLowerCase());
+  } else {
+    localStorage.removeItem('user_email');
+  }
+  if (user.user_type === 'merchant') {
+    localStorage.setItem('merchant_profile_complete', user.merchant_profile_complete === true ? 'true' : 'false');
+  } else {
+    localStorage.removeItem('merchant_profile_complete');
+  }
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -81,14 +99,7 @@ export const login = async (username, password) => {
   if (response.data.access) {
     localStorage.setItem('token', response.data.access);
     localStorage.setItem('refresh', response.data.refresh);
-    // Store verification status if returned by backend, default to true for now to avoid blocks unless we add user endpoint
-    localStorage.setItem('is_verified', response.data.user?.is_whatsapp_verified ?? 'true');
-    localStorage.setItem('user_type', response.data.user?.user_type || 'shopper');
-    localStorage.setItem('user_name', response.data.user?.username || username || '');
-    localStorage.setItem(
-      'is_primary_admin',
-      response.data.user?.is_primary_admin ? 'true' : 'false'
-    );
+    persistAuthUser(response.data.user, username);
     localStorage.removeItem('isGuest');
   }
   return response.data;
@@ -106,32 +117,24 @@ export const loginWithGoogleAccessToken = async (accessToken) => {
   if (response.data.access) {
     localStorage.setItem('token', response.data.access);
     localStorage.setItem('refresh', response.data.refresh);
-    localStorage.setItem('is_verified', response.data.user?.is_whatsapp_verified ?? 'true');
-    localStorage.setItem('user_type', response.data.user?.user_type || 'shopper');
-    localStorage.setItem('user_name', response.data.user?.username || '');
-    localStorage.setItem(
-      'is_primary_admin',
-      response.data.user?.is_primary_admin ? 'true' : 'false'
-    );
+    persistAuthUser(response.data.user);
     localStorage.removeItem('isGuest');
   }
   return response.data;
 };
 
-export const loginWithGoogleIdToken = async (idToken) => {
-  const response = await api.post('users/auth/google/', { id_token: idToken }, {
+export const loginWithGoogleIdToken = async (idToken, options = {}) => {
+  const body = { id_token: idToken };
+  if (options.registerAsMerchant) {
+    body.register_as_merchant = true;
+  }
+  const response = await api.post('users/auth/google/', body, {
     headers: { 'Content-Type': 'application/json' },
   });
   if (response.data.access) {
     localStorage.setItem('token', response.data.access);
     localStorage.setItem('refresh', response.data.refresh);
-    localStorage.setItem('is_verified', response.data.user?.is_whatsapp_verified ?? 'true');
-    localStorage.setItem('user_type', response.data.user?.user_type || 'shopper');
-    localStorage.setItem('user_name', response.data.user?.username || '');
-    localStorage.setItem(
-      'is_primary_admin',
-      response.data.user?.is_primary_admin ? 'true' : 'false'
-    );
+    persistAuthUser(response.data.user);
     localStorage.removeItem('isGuest');
   }
   return response.data;
@@ -162,6 +165,8 @@ export const logout = () => {
   localStorage.removeItem('refresh');
   localStorage.removeItem('user_type');
   localStorage.removeItem('user_name');
+  localStorage.removeItem('user_email');
+  localStorage.removeItem('merchant_profile_complete');
   localStorage.removeItem('is_verified');
   localStorage.removeItem('is_primary_admin');
   localStorage.removeItem('isGuest');

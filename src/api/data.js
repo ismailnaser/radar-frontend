@@ -512,6 +512,11 @@ export const changeMyPassword = async ({ current_password, new_password }) => {
   return response.data;
 };
 
+export const changeMyEmail = async (email) => {
+  const response = await api.patch('users/me/email/', { email });
+  return response.data;
+};
+
 export const removeFavorite = async (favoriteId) => {
   const response = await api.delete(`products/user/favorites/${favoriteId}/`);
   return response.data;

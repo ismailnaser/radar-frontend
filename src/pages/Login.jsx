@@ -29,6 +29,17 @@ const Login = () => {
     return raw.startsWith('/') ? raw : '/';
   })();
 
+  const navigateAfterAuth = () => {
+    if (
+      localStorage.getItem('user_type') === 'merchant' &&
+      localStorage.getItem('merchant_profile_complete') !== 'true'
+    ) {
+      navigate(`/merchant/complete-profile?next=${encodeURIComponent(nextUrl || '/')}`, { replace: true });
+      return;
+    }
+    navigate(nextUrl || '/', { replace: true });
+  };
+
   useEffect(() => {
     const saved = loadRememberedLogin();
     if (saved.rememberMe) {
@@ -70,7 +81,7 @@ const Login = () => {
         rememberMe,
       });
       await showAlert('تم تسجيل الدخول بنجاح.', 'تم');
-      navigate(nextUrl || '/', { replace: true });
+      navigateAfterAuth();
     } catch (err) {
       console.error('Login error:', err);
       const status = err?.response?.status;
@@ -93,7 +104,7 @@ const Login = () => {
     try {
       await loginWithGoogleIdToken(credential);
       await showAlert('تم تسجيل الدخول عبر Google بنجاح.', 'تم');
-      navigate(nextUrl || '/', { replace: true });
+      navigateAfterAuth();
     } catch (err) {
       console.error('Google login error:', err);
       const msg = formatApiError(err, 'تعذر تسجيل الدخول عبر Google.');

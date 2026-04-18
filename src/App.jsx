@@ -22,6 +22,7 @@ import MerchantAds from './pages/merchant/Ads'
 import MerchantMySponsoredAds from './pages/merchant/MySponsoredAds'
 import MerchantSubscription from './pages/merchant/Subscription'
 import MerchantStoreSettings from './pages/merchant/StoreSettings'
+import MerchantCompleteProfile from './pages/merchant/MerchantCompleteProfile'
 import MerchantProfile from './pages/merchant/Profile'
 import Categories from './pages/Categories'
 import Services from './pages/Services'
@@ -64,6 +65,7 @@ const isAuthenticated = () => !!localStorage.getItem('token');
 const isGuest = () => localStorage.getItem('isGuest') === 'true';
 const isMerchant = () => localStorage.getItem('user_type') === 'merchant';
 const isAdmin = () => localStorage.getItem('user_type') === 'admin';
+const merchantProfileComplete = () => localStorage.getItem('merchant_profile_complete') === 'true';
 
 // 1. Force verification if logged in but not verified
 const VerificationRoute = ({ children }) => {
@@ -89,6 +91,22 @@ const ProtectedRoute = ({ children }) => {
 // 3. الرئيسية (الخريطة + الخدمات المجتمعية) لجميع المستخدمين؛ التاجر والمدير يصلون للوحة عبر القائمة
 const RoleHomeRoute = () => <Home />;
 
+/** تاجر مسجّل — بدون شرط اكتمال الملف (لصفحة إكمال بيانات المتجر). */
+const MerchantAuthRoute = ({ children }) => {
+  const location = useLocation();
+  if (isGuest() || !isAuthenticated() || !isMerchant()) {
+    const next = `${location.pathname}${location.search}${location.hash || ''}`;
+    return (
+      <Navigate
+        to={`/login?next=${encodeURIComponent(next)}`}
+        replace
+        state={{ flash: 'يجب تسجيل الدخول كتاجر.' }}
+      />
+    );
+  }
+  return children;
+};
+
 const MerchantOnlyRoute = ({ children }) => {
   const location = useLocation();
   if (isGuest() || !isAuthenticated() || !isMerchant()) {
@@ -98,6 +116,15 @@ const MerchantOnlyRoute = ({ children }) => {
         to={`/login?next=${encodeURIComponent(next)}`}
         replace
         state={{ flash: 'يجب تسجيل الدخول أولاً.' }}
+      />
+    );
+  }
+  if (!merchantProfileComplete()) {
+    const next = `${location.pathname}${location.search}${location.hash || ''}`;
+    return (
+      <Navigate
+        to={`/merchant/complete-profile?next=${encodeURIComponent(next)}`}
+        replace
       />
     );
   }
@@ -305,6 +332,14 @@ const router = createBrowserRouter(
           <Route path="/dashboard" element={
             <VerificationRoute>
               <Dashboard />
+            </VerificationRoute>
+          } />
+
+          <Route path="/merchant/complete-profile" element={
+            <VerificationRoute>
+              <MerchantAuthRoute>
+                <MerchantCompleteProfile />
+              </MerchantAuthRoute>
             </VerificationRoute>
           } />
 

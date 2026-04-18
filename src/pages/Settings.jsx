@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { changeMyPassword, changeMyUsername } from '../api/data';
+import { Link, useLocation } from 'react-router-dom';
+import { changeMyEmail, changeMyPassword, changeMyUsername } from '../api/data';
 import { formatApiError } from '../utils/apiErrors';
 import { useAlert } from '../components/AlertProvider';
 import MainLayout from '../components/MainLayout';
 
 export default function Settings() {
   const { showAlert, showConfirm } = useAlert();
+  const location = useLocation();
   const isGuest = localStorage.getItem('isGuest') === 'true';
   const hasToken = !!localStorage.getItem('token');
   const isAuthenticated = hasToken && !isGuest;
@@ -13,6 +15,10 @@ export default function Settings() {
   const initialUsername = useMemo(() => localStorage.getItem('user_name') || '', []);
   const [username, setUsername] = useState(initialUsername);
   const [usernameSaving, setUsernameSaving] = useState(false);
+
+  const initialEmail = useMemo(() => localStorage.getItem('user_email') || '', []);
+  const [email, setEmail] = useState(initialEmail);
+  const [emailSaving, setEmailSaving] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -82,6 +88,29 @@ export default function Settings() {
     }
   };
 
+  const onSaveEmail = async (e) => {
+    e.preventDefault();
+    const v = (email || '').trim().toLowerCase();
+    if (!v || !v.includes('@')) {
+      showAlert('أدخل بريد إلكتروني صحيح.', 'تنبيه');
+      return;
+    }
+    const ok = await showConfirm('تأكيد حفظ البريد الإلكتروني؟', 'تأكيد');
+    if (!ok) return;
+    setEmailSaving(true);
+    try {
+      const res = await changeMyEmail(v);
+      const newE = (res?.email || v || '').trim().toLowerCase();
+      localStorage.setItem('user_email', newE);
+      setEmail(newE);
+      showAlert('تم تحديث البريد الإلكتروني.', 'تم');
+    } catch (err) {
+      showAlert(formatApiError(err, 'تعذر تحديث البريد الإلكتروني. حاول لاحقاً.'), 'خطأ');
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
   return (
     <MainLayout>
     <div dir="rtl" style={{ maxWidth: 860, margin: '0 auto' }}>
@@ -89,7 +118,7 @@ export default function Settings() {
         <div className="card">
           <h2 style={{ marginTop: 0 }}>الإعدادات</h2>
           <div className="muted">
-            يمكنك هنا تحديث اسم المستخدم وكلمة المرور.
+            يمكنك هنا تحديث اسم المستخدم والبريد الإلكتروني وكلمة المرور.
           </div>
         </div>
 
@@ -107,6 +136,24 @@ export default function Settings() {
               />
               <button className="btn" type="submit" disabled={usernameSaving}>
                 {usernameSaving ? 'جاري الحفظ…' : 'حفظ'}
+              </button>
+            </form>
+          </div>
+
+          <div className="card">
+            <h3 style={{ marginTop: 0 }}>البريد الإلكتروني</h3>
+            <form onSubmit={onSaveEmail} className="form">
+              <label className="lbl">البريد الإلكتروني</label>
+              <input
+                className="inp"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@email.com"
+                autoComplete="email"
+                inputMode="email"
+              />
+              <button className="btn" type="submit" disabled={emailSaving}>
+                {emailSaving ? 'جاري الحفظ…' : 'حفظ'}
               </button>
             </form>
           </div>
@@ -130,6 +177,14 @@ export default function Settings() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 autoComplete="new-password"
               />
+              <div style={{ marginTop: -2, marginBottom: 2, textAlign: 'right' }}>
+                <Link
+                  to={`/forgot-password?next=${encodeURIComponent(location.pathname || '/settings')}`}
+                  style={{ fontWeight: 900, color: 'var(--secondary)', textDecoration: 'none', opacity: 0.92 }}
+                >
+                  نسيت كلمة المرور؟
+                </Link>
+              </div>
               <button className="btn" type="submit" disabled={passwordSaving}>
                 {passwordSaving ? 'جاري الحفظ…' : 'تغيير كلمة المرور'}
               </button>
