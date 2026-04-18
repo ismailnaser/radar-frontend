@@ -119,18 +119,21 @@ const MainLayout = ({ children }) => {
     pathname === '/register' ||
     pathname === '/login' ||
     pathname === '/forgot-password' ||
+    pathname.startsWith('/password-reset/confirm') ||
     pathname.startsWith('/reset-password/confirm');
   /** الشريط السفلي الثابت يغطي أزرار أسفل بطاقة الدخول/التسجيل؛ نخفيه هناك مثل الهيدر */
   const hideBottomNav =
     pathname === '/register' ||
     pathname === '/login' ||
     pathname === '/forgot-password' ||
+    pathname.startsWith('/password-reset/confirm') ||
     pathname.startsWith('/reset-password/confirm');
   const hideHeaderLocationButton = pathname === '/';
   const hideHeaderProfileFab =
     pathname === '/register' ||
     pathname === '/login' ||
     pathname === '/forgot-password' ||
+    pathname.startsWith('/password-reset/confirm') ||
     pathname.startsWith('/reset-password/confirm');
   const storesTabActive = pathname === '/stores';
   const adminHomeActive = pathname === '/admin';

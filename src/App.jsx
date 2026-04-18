@@ -7,6 +7,7 @@ import {
   Navigate,
   Outlet,
   useLocation,
+  useParams,
 } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -163,13 +164,21 @@ function AppLayout() {
   );
 }
 
+/** مسار قديم (reset-password) — إعادة توجيه إلى المسار الصحيح (password-reset). */
+function LegacyResetPasswordConfirmRedirect() {
+  const { uid, token } = useParams();
+  return <Navigate to={`/password-reset/confirm/${uid}/${token}`} replace />;
+}
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<AppLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/confirm/:uid/:token" element={<ResetPasswordConfirm />} />
-          <Route path="/reset-password/confirm/:uid/:token/" element={<ResetPasswordConfirm />} />
+          <Route path="/password-reset/confirm/:uid/:token" element={<ResetPasswordConfirm />} />
+          <Route path="/password-reset/confirm/:uid/:token/" element={<ResetPasswordConfirm />} />
+          <Route path="/reset-password/confirm/:uid/:token" element={<LegacyResetPasswordConfirmRedirect />} />
+          <Route path="/reset-password/confirm/:uid/:token/" element={<LegacyResetPasswordConfirmRedirect />} />
           <Route path="/share/cart/:shareToken" element={<SharedCart />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-whatsapp" element={<Verification />} />

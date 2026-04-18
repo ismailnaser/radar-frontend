@@ -6,6 +6,7 @@ import { formatApiError } from '../utils/apiErrors';
 import CustomButton from '../components/ui/CustomButton';
 import { confirmPasswordReset } from '../api/auth';
 
+/** صفحة تأكيد إعادة التعيين — المسار: `/password-reset/confirm/:uid/:token`؛ uid و token من useParams. */
 export default function ResetPasswordConfirm() {
   const { uid, token } = useParams();
   const navigate = useNavigate();
