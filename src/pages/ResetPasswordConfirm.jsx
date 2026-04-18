@@ -113,7 +113,7 @@ export default function ResetPasswordConfirm() {
               confirm={false}
               showErrorAlert={false}
             >
-              حفظ كلمة المرور
+              حفظ
             </CustomButton>
           </form>
 

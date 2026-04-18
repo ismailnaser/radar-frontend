@@ -115,11 +115,23 @@ const MainLayout = ({ children }) => {
 
   const hideHeaderOnMap = pathname === '/map';
   /** إخفاء الناف العلوي: تسجيل الدخول وإنشاء الحساب فقط — الخريطة تخفي الهيدر على الموبايل بالـ CSS */
-  const hideMainHeader = pathname === '/register' || pathname === '/login';
+  const hideMainHeader =
+    pathname === '/register' ||
+    pathname === '/login' ||
+    pathname === '/forgot-password' ||
+    pathname.startsWith('/reset-password/confirm');
   /** الشريط السفلي الثابت يغطي أزرار أسفل بطاقة الدخول/التسجيل؛ نخفيه هناك مثل الهيدر */
-  const hideBottomNav = pathname === '/register' || pathname === '/login';
+  const hideBottomNav =
+    pathname === '/register' ||
+    pathname === '/login' ||
+    pathname === '/forgot-password' ||
+    pathname.startsWith('/reset-password/confirm');
   const hideHeaderLocationButton = pathname === '/';
-  const hideHeaderProfileFab = pathname === '/register' || pathname === '/login';
+  const hideHeaderProfileFab =
+    pathname === '/register' ||
+    pathname === '/login' ||
+    pathname === '/forgot-password' ||
+    pathname.startsWith('/reset-password/confirm');
   const storesTabActive = pathname === '/stores';
   const adminHomeActive = pathname === '/admin';
   const adminStoresActive = pathname === '/admin/stores';

@@ -144,6 +144,7 @@ export const requestPasswordResetEmail = async (email) => {
   return response.data;
 };
 
+/** POST /api/auth/password/reset/confirm/ — dj-rest-auth يتوقع new_password1 و new_password2 (مثل Django SetPasswordForm). */
 export const confirmPasswordReset = async ({ uid, token, new_password1, new_password2 }) => {
   const response = await api.post('auth/password/reset/confirm/', {
     uid,

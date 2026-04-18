@@ -169,6 +169,7 @@ const router = createBrowserRouter(
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/confirm/:uid/:token" element={<ResetPasswordConfirm />} />
+          <Route path="/reset-password/confirm/:uid/:token/" element={<ResetPasswordConfirm />} />
           <Route path="/share/cart/:shareToken" element={<SharedCart />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-whatsapp" element={<Verification />} />
