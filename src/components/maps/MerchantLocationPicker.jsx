@@ -7,7 +7,14 @@ import LeafletInvalidateOnLayout from './LeafletInvalidateOnLayout';
 import CustomButton from '../ui/CustomButton';
 import { useAlert } from '../AlertProvider';
 
-const DEFAULT_CENTER = [31.5, 34.4];
+// مركز قطاع غزة تقريباً
+const DEFAULT_CENTER = [31.45, 34.40];
+// حدود تقريبية لقطاع غزة لمنع الانطلاق بعيداً عند التحميل
+// جنوب/غرب ← شمال/شرق
+const GAZA_BOUNDS = [
+  [31.20, 34.15],
+  [31.62, 34.62],
+];
 
 function ClickToSet({ onPick }) {
   useMapEvents({
@@ -45,6 +52,8 @@ const MerchantLocationPicker = ({ value, onChange }) => {
     if (value?.length === 2) return value;
     return DEFAULT_CENTER;
   }, [value]);
+
+  const initialZoom = value?.length === 2 ? 16 : 12;
 
   const useMyLocation = async () => {
     if (!navigator.geolocation) {
@@ -92,10 +101,12 @@ const MerchantLocationPicker = ({ value, onChange }) => {
       </div>
       <MapContainer
         center={center}
-        zoom={14}
+        zoom={initialZoom}
         minZoom={10}
         maxZoom={19}
         scrollWheelZoom
+        maxBounds={GAZA_BOUNDS}
+        maxBoundsViscosity={0.85}
         style={{ height: 'clamp(260px, 50dvh, 380px)', width: '100%' }}
       >
         <BasemapLayersControl />
