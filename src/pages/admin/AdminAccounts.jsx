@@ -13,6 +13,7 @@ function AdminAccounts() {
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [accUsername, setAccUsername] = useState('');
+  const [accEmail, setAccEmail] = useState('');
   const [accPhone, setAccPhone] = useState('');
   const [accPassword, setAccPassword] = useState('');
   const [accTier, setAccTier] = useState('secondary');
@@ -42,10 +43,16 @@ function AdminAccounts() {
       await showAlert('أكمل اسم المستخدم ورقم الهاتف وكلمة مرور لا تقل عن 6 أحرف.', 'تنبيه');
       return;
     }
+    const emailNorm = (accEmail || '').trim().toLowerCase();
+    if (emailNorm && (!emailNorm.includes('@') || emailNorm.length < 5)) {
+      await showAlert('أدخل بريداً إلكترونياً صحيحاً أو اترك الحقل فارغاً.', 'تنبيه');
+      return;
+    }
     setCreatingAccount(true);
     try {
       await createAdminAccount({
         username: accUsername.trim(),
+        email: emailNorm,
         phone_number: accPhone.trim(),
         password: accPassword,
         tier: accTier,
@@ -55,6 +62,7 @@ function AdminAccounts() {
         'تم'
       );
       setAccUsername('');
+      setAccEmail('');
       setAccPhone('');
       setAccPassword('');
       setAccTier('secondary');
@@ -108,6 +116,16 @@ function AdminAccounts() {
                 />
               </label>
               <label>
+                البريد الإلكتروني
+                <input
+                  type="email"
+                  value={accEmail}
+                  onChange={(e) => setAccEmail(e.target.value)}
+                  placeholder="اختياري — يُستحسن لاستعادة كلمة المرور"
+                  autoComplete="off"
+                />
+              </label>
+              <label>
                 رقم الهاتف
                 <input
                   type="text"
@@ -146,6 +164,7 @@ function AdminAccounts() {
                 <thead>
                   <tr>
                     <th>المستخدم</th>
+                    <th>البريد</th>
                     <th>الهاتف</th>
                     <th>النوع</th>
                     <th>الحالة</th>
@@ -161,6 +180,9 @@ function AdminAccounts() {
                         <td>
                           {acc.username}
                           {isSelf ? <span className="you-badge">أنت</span> : null}
+                        </td>
+                        <td dir="ltr" style={{ fontSize: '0.9rem' }}>
+                          {acc.email ? acc.email : '—'}
                         </td>
                         <td>{acc.phone_number}</td>
                         <td>
