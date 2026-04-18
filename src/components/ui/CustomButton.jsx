@@ -38,31 +38,35 @@ const CustomButton = ({
     const msg = resolveConfirmMessage();
 
     if (type === 'submit') {
+      const form = e.currentTarget?.form;
+      const submitForm = () => {
+        if (!form) return;
+        if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          const ev = new Event('submit', { bubbles: true, cancelable: true });
+          const notPrevented = form.dispatchEvent(ev);
+          if (notPrevented) {
+            form.submit();
+          }
+        }
+      };
+
       if (msg) {
         e.preventDefault();
         const ok = await showConfirm(msg, confirmTitle);
         if (!ok) return;
-        const form = e.currentTarget?.form;
-        if (form) {
-          if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
-            form.reportValidity();
-            return;
-          }
-          if (typeof form.requestSubmit === 'function') {
-            form.requestSubmit();
-          } else {
-            // form.submit() لا يطلق حدث submit وبالتالي لا يصل لـ onSubmit في React
-            // fallback أكثر توافقاً: أطلق حدث submit (React يلتقطه على document)،
-            // وإن لم يُمنع افتراضياً نفّذ submit فعلياً.
-            const ev = new Event('submit', { bubbles: true, cancelable: true });
-            const notPrevented = form.dispatchEvent(ev);
-            if (notPrevented) {
-              // آخر حل: قد يسبب reload إن لم يوجد onSubmit يمنعه
-              form.submit();
-            }
-          }
-        }
+        submitForm();
+        return;
       }
+
+      // بدون تأكيد: يجب استدعاء requestSubmit يدوياً لأن onClick قد يمنع وصول submit إلى React في بعض الحالات
+      e.preventDefault();
+      submitForm();
       return;
     }
 

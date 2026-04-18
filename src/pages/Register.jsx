@@ -73,6 +73,8 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  /** بعد 5 محاولات فاشلة: انتظار بالثواني (من الباك-إند retry_after) */
+  const [registerCooldownSec, setRegisterCooldownSec] = useState(null);
   const navigate = useNavigate();
   const { showAlert } = useAlert();
   const location = useLocation();
@@ -105,6 +107,15 @@ const Register = () => {
       setRememberMe(true);
     }
   }, []);
+
+  const registerCooldownActive = registerCooldownSec != null && registerCooldownSec > 0;
+  useEffect(() => {
+    if (!registerCooldownActive) return undefined;
+    const id = window.setInterval(() => {
+      setRegisterCooldownSec((s) => (s == null || s <= 1 ? null : s - 1));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [registerCooldownActive]);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,6 +181,9 @@ const Register = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (registerCooldownSec != null && registerCooldownSec > 0) {
+      return;
+    }
     setLoading(true);
     setError('');
 
@@ -249,9 +263,16 @@ const Register = () => {
       await showAlert('تم إنشاء الحساب وتسجيل الدخول بنجاح.', 'تم');
       navigate(nextUrl || '/', { replace: true });
     } catch (err) {
+      if (err?.response?.status === 429) {
+        const retry = err.response.data?.retry_after;
+        const n = Number(retry);
+        if (Number.isFinite(n) && n > 0) {
+          setRegisterCooldownSec(Math.min(120, Math.ceil(n)));
+        }
+      }
       const msg = formatApiError(err, 'تعذر إنشاء الحساب. حاول مرة أخرى.');
       setError(msg);
-      await showAlert(msg, 'فشل');
+      await showAlert(msg, err?.response?.status === 429 ? 'تجاوز الحد' : 'فشل');
       console.error(err);
     } finally {
       setLoading(false);
@@ -336,6 +357,24 @@ const Register = () => {
           {error && (
             <p style={{ color: '#c62828', fontSize: '0.85rem', marginBottom: '12px', fontWeight: 700 }}>{error}</p>
           )}
+
+          {registerCooldownSec != null && registerCooldownSec > 0 ? (
+            <p
+              style={{
+                color: 'var(--secondary)',
+                fontSize: '0.9rem',
+                marginBottom: '12px',
+                fontWeight: 900,
+                textAlign: 'center',
+              }}
+            >
+              يمكنك إعادة المحاولة بعد{' '}
+              <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {registerCooldownSec}
+              </span>{' '}
+              ثانية
+            </p>
+          ) : null}
 
           <form onSubmit={handleRegister}>
             <CustomInput
@@ -539,6 +578,7 @@ const Register = () => {
             <CustomButton
               type="submit"
               loading={loading}
+              disabled={registerCooldownSec != null && registerCooldownSec > 0}
               style={{ width: '100%', marginTop: '10px' }}
               confirm={false}
               showErrorAlert={false}

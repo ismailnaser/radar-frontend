@@ -79,6 +79,12 @@ export function formatApiError(err, fallback = 'تعذر إكمال العملي
   if (status === 401) {
     return 'يرجى تسجيل الدخول للمتابعة.';
   }
+  if (status === 429) {
+    const msg = typeof d.error === 'string' && d.error.trim() ? d.error.trim() : null;
+    const safe = sanitizeUserFacingMessage(msg);
+    if (safe) return safe;
+    return 'تجاوزت عدد المحاولات المسموح. حاول لاحقاً.';
+  }
 
   let candidate = null;
   if (typeof d.error === 'string' && d.error.trim()) candidate = d.error.trim();
