@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { MapPin, Maximize2, Star, UserX } from 'lucide-react';
+import { MapPin, Maximize2, Star, UserX, X } from 'lucide-react';
 import L from 'leaflet';
 import { MapContainer, Marker, Popup, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import '../../components/maps/leafletIconFix';
@@ -403,6 +403,8 @@ const ShopperMap = ({
   }, [stores, categories]);
 
   const [awaitingManualPick, setAwaitingManualPick] = useState(false);
+  const [showGovSelector, setShowGovSelector] = useState(false);
+  const [zoomGov, setZoomGov] = useState(null);
   const manualPickEnabled = typeof onManualLocationPick === 'function';
   const storeMarkerRefs = useRef({});
   const communityMarkerRefs = useRef({});
@@ -451,7 +453,7 @@ const ShopperMap = ({
               <button
                 type="button"
                 className="shopper-map-manual-btn shopper-map-manual-btn-primary"
-                onClick={() => setAwaitingManualPick(true)}
+                onClick={() => setShowGovSelector(true)}
               >
                 تحديد موقعي يدوياً
               </button>
@@ -489,6 +491,76 @@ const ShopperMap = ({
           <Maximize2 size={20} strokeWidth={2.25} aria-hidden />
         </button>
       ) : null}
+
+      {showGovSelector && typeof document !== 'undefined' ? createPortal(
+        <>
+          <div 
+            onClick={() => setShowGovSelector(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 12000, cursor: 'default' }} 
+          />
+          <div 
+            style={{ 
+              position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
+              width: 'min(380px, 92vw)', background: '#fff', borderRadius: '18px',
+              border: '1px solid rgba(232,230,224,0.95)', boxShadow: '0 18px 46px rgba(26,29,38,0.18)',
+              zIndex: 12001, display: 'flex', flexDirection: 'column', overflow: 'hidden'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderBottom: '1px solid rgba(0,0,0,0.08)', background: '#fdfdfd' }}>
+              <strong style={{ fontWeight: 950, color: 'var(--secondary)' }}>اختر المحافظة أولاً</strong>
+              <button 
+                type="button" 
+                onClick={() => setShowGovSelector(false)}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', color: '#5c6378' }}
+              >
+                <X size={18} strokeWidth={2} />
+              </button>
+            </div>
+            <div style={{ padding: '16px' }}>
+              <div style={{ paddingBottom: '14px', fontSize: '0.9rem', color: '#666', lineHeight: 1.5 }}>
+                لتسهيل تحديد موقعك الدقيق، الرجاء اختيار المحافظة التي تتواجد بها لتوجيه الخريطة إليها:
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {[
+                  { id: 'north', label: 'محافظة شمال غزة', lat: 31.54, lng: 34.50 },
+                  { id: 'gaza', label: 'محافظة غزة', lat: 31.50, lng: 34.46 },
+                  { id: 'middle', label: 'محافظة الوسطى', lat: 31.43, lng: 34.39 },
+                  { id: 'khan', label: 'محافظة خانيونس', lat: 31.34, lng: 34.30 },
+                ].map((gov) => (
+                  <button
+                    key={gov.id}
+                    type="button"
+                    onClick={() => {
+                      setZoomGov(gov);
+                      setAwaitingManualPick(true);
+                      setShowGovSelector(false);
+                    }}
+                    style={{
+                      padding: '14px 14px',
+                      borderRadius: '12px',
+                      border: '1.5px solid #e8e6e0',
+                      background: '#fff',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      textAlign: 'right',
+                      fontFamily: 'inherit',
+                      fontSize: '0.95rem',
+                      color: 'var(--secondary)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = '#fafafa'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e8e6e0'; }}
+                  >
+                    {gov.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>,
+        document.body
+      ) : null}
+
       <MapContainer
         center={center}
         zoom={DEFAULT_ZOOM}
@@ -504,6 +576,7 @@ const ShopperMap = ({
         }
       >
         <InitGazaBounds onceRef={didInitBounds} />
+        <GovernorateZoomer zoomGov={zoomGov} clearGov={() => setZoomGov(null)} />
         <BasemapLayersControl />
         <LeafletInvalidateOnLayout />
         <PickModeCursor active={awaitingManualPick} />
@@ -684,6 +757,17 @@ function AutoOpenStorePopup({ storeId, markerRefs }) {
       cancelled = true;
     };
   }, [storeId, markerRefs, map]);
+  return null;
+}
+
+function GovernorateZoomer({ zoomGov, clearGov }) {
+  const map = useMap();
+  useEffect(() => {
+    if (zoomGov) {
+      map.flyTo([zoomGov.lat, zoomGov.lng], 13, { duration: 1.0, animate: true });
+      clearGov();
+    }
+  }, [zoomGov, map, clearGov]);
   return null;
 }
 
