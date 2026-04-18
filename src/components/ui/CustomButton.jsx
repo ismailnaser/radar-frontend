@@ -97,7 +97,6 @@ const CustomButton = ({
       type={type}
       onClick={handleClick}
       className={`btn-${variant} ${busy ? 'loading' : ''}`}
-      disabled={disabled || busy}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -106,6 +105,7 @@ const CustomButton = ({
         ...style,
       }}
       {...props}
+      disabled={disabled || busy}
     >
       {busy ? (
         <span className="spinner"></span>

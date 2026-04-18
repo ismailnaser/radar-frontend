@@ -1,28 +1,31 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import { useAlert } from '../components/AlertProvider';
 import { formatApiError } from '../utils/apiErrors';
-import CustomButton from '../components/ui/CustomButton';
 import { confirmPasswordReset } from '../api/auth';
+
+function decodeSegment(v) {
+  if (v == null) return '';
+  const s = String(v);
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
 
 /** صفحة تأكيد إعادة التعيين — المسار: `/password-reset/confirm/:uid/:token`؛ uid و token من useParams. */
 export default function ResetPasswordConfirm() {
-  const { uid, token } = useParams();
+  const params = useParams();
+  const uid = decodeSegment(params.uid);
+  const token = decodeSegment(params.token);
   const navigate = useNavigate();
   const { showAlert } = useAlert();
 
   const [p1, setP1] = useState('');
   const [p2, setP2] = useState('');
   const [busy, setBusy] = useState(false);
-
-  const canSubmit = useMemo(() => {
-    if (!uid || !token) return false;
-    if (!p1 || !p2) return false;
-    if (p1.length < 8) return false;
-    if (p1 !== p2) return false;
-    return true;
-  }, [uid, token, p1, p2]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -106,16 +109,21 @@ export default function ResetPasswordConfirm() {
               }}
             />
 
-            <CustomButton
+            <button
               type="submit"
-              loading={busy}
-              disabled={!canSubmit}
-              style={{ width: '100%' }}
-              confirm={false}
-              showErrorAlert={false}
+              className="btn-primary"
+              disabled={busy}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                marginTop: 4,
+              }}
             >
-              حفظ
-            </CustomButton>
+              {busy ? 'جاري الحفظ…' : 'حفظ'}
+            </button>
           </form>
 
           <p className="auth-footer-link" style={{ marginTop: 14 }}>
