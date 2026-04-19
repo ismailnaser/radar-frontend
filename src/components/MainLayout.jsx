@@ -588,7 +588,7 @@ const MainLayout = ({ children }) => {
 
         .site-announcements{
           max-width: 1240px;
-          margin: 10px auto 0;
+          margin: 16px auto 16px;
           padding-inline: clamp(8px, 2.2vw, 22px);
           box-sizing: border-box;
           display: flex;

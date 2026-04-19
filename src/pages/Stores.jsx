@@ -149,14 +149,6 @@ export default function StoresPage() {
                 onChangeSelectedIds={(ids) => setSelectedCategoryIds(Array.isArray(ids) ? ids : [])}
               />
 
-              <label className="stores-onlymapped">
-                <input
-                  type="checkbox"
-                  checked={hideNoLocation}
-                  onChange={(e) => setHideNoLocation(e.target.checked)}
-                />
-                <span>المتاجر الموجودة على الخريطة فقط</span>
-              </label>
             </div>
           </div>
 
