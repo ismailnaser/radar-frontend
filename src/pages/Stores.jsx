@@ -39,7 +39,7 @@ export default function StoresPage() {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
-  const [hideNoLocation, setHideNoLocation] = useState(true);
+  const [hideNoLocation, setHideNoLocation] = useState(false);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -137,18 +137,16 @@ export default function StoresPage() {
             <div className="stores-head__titles">
               <h1 className="stores-title">المتاجر</h1>
               <p className="stores-sub">فلترة سريعة + خريطة منبثقة عند الضغط.</p>
-            </div>
-
-            <div className="stores-controls">
-              <FiltersDropdown
-                buttonLabel="فلاتر"
-                title="فلترة المتاجر حسب الأقسام"
-                allLabel="كل الأقسام"
-                options={(categories || []).map((c) => ({ id: c.id, label: c.name }))}
-                selectedIds={selectedCategoryIds}
-                onChangeSelectedIds={(ids) => setSelectedCategoryIds(Array.isArray(ids) ? ids : [])}
-              />
-
+              <div className="stores-controls" style={{ marginTop: '14px', justifyContent: 'flex-start' }}>
+                <FiltersDropdown
+                  buttonLabel="فلاتر"
+                  title="فلترة المتاجر حسب الأقسام"
+                  allLabel="كل الأقسام"
+                  options={(categories || []).map((c) => ({ id: c.id, label: c.name }))}
+                  selectedIds={selectedCategoryIds}
+                  onChangeSelectedIds={(ids) => setSelectedCategoryIds(Array.isArray(ids) ? ids : [])}
+                />
+              </div>
             </div>
           </div>
 
@@ -160,13 +158,15 @@ export default function StoresPage() {
           >
             <span className="stores-mini-map__bg" aria-hidden />
             <span className="stores-mini-map__shine" aria-hidden />
-            <span className="stores-mini-map__badge">
-              <Map size={16} strokeWidth={2} aria-hidden />
-              اضغط لفتح الخريطة
-            </span>
-            <span className="stores-mini-map__hint">
-              {mapStoresCount} متجر على الخريطة
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', position: 'relative', zIndex: 1, width: '100%', justifyContent: 'flex-start' }}>
+              <span className="stores-mini-map__badge" style={{ margin: 0, padding: '8px 12px' }}>
+                <Map size={16} strokeWidth={2} aria-hidden />
+                اضغط لفتح الخريطة
+              </span>
+              <span className="stores-mini-map__hint" style={{ margin: 0 }}>
+                {mapStoresCount} متجر على الخريطة
+              </span>
+            </div>
           </button>
         </section>
 

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Menu, MapPin, User, UserPlus, Home as HomeIcon, Map as MapIcon, Megaphone, Store, SlidersHorizontal, Search as SearchIcon, LayoutDashboard, Users, Tags, ChevronRight, Bell } from 'lucide-react';
+import { Menu, MapPin, User, UserPlus, Home as HomeIcon, Map as MapIcon, Megaphone, Store, SlidersHorizontal, Search as SearchIcon, LayoutDashboard, Users, Tags, ChevronRight, Bell, Briefcase } from 'lucide-react';
 import { useMapExplore } from '../context/MapExploreContext';
 import { useAdminPendingCounts } from '../context/AdminPendingCountsContext';
 import { useAdminNotifications } from '../context/AdminNotificationsContext';
@@ -405,6 +405,10 @@ const MainLayout = ({ children }) => {
               <Store size={20} strokeWidth={2} aria-hidden />
               <span>المتاجر</span>
             </Link>
+            <Link to="/services" className={`header-nav-item${pathname === '/services' ? ' header-nav-item--active' : ''}`}>
+              <Briefcase size={20} strokeWidth={2} aria-hidden />
+              <span>الخدمات</span>
+            </Link>
             <button type="button" className="header-nav-item header-nav-item--menu" onClick={toggleSidebar} aria-label="القائمة">
               <Menu size={20} strokeWidth={2} aria-hidden />
               {isAdminUser && pendingTotal > 0 ? (
@@ -516,6 +520,10 @@ const MainLayout = ({ children }) => {
             <Link to="/stores" className={`bottom-nav-item${storesTabActive ? ' bottom-nav-item--active' : ''}`}>
               <Store size={22} strokeWidth={2} aria-hidden />
               <span>المتاجر</span>
+            </Link>
+            <Link to="/services" className={`bottom-nav-item${pathname === '/services' ? ' bottom-nav-item--active' : ''}`}>
+              <Briefcase size={22} strokeWidth={2} aria-hidden />
+              <span>الخدمات</span>
             </Link>
             <button type="button" className="bottom-nav-item" onClick={toggleSidebar} aria-label="القائمة">
               <Menu size={22} strokeWidth={2} aria-hidden />

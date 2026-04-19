@@ -1108,6 +1108,7 @@ const Home = () => {
           ) : null}
         </div>
 
+        <div style={{ display: 'none' }}>
         <div className="home-mode-strip" role="presentation">
           <div className="home-mode-switch" role="tablist" aria-label="تصفح المتاجر أو الخدمات المجتمعية">
             <button
@@ -1539,6 +1540,7 @@ const Home = () => {
               )}
             </>
           )}
+        </div>
         </div>
 
         <style dangerouslySetInnerHTML={{ __html: `
