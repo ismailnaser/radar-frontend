@@ -999,7 +999,8 @@ const Home = () => {
                     className="home-hero-search-input"
                     placeholder="ابحث عن متجر أو قسم…"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    readOnly
+                    onFocus={() => navigate('/search')}
                     aria-label="بحث في رادار"
                     enterKeyHint="search"
                   />

@@ -129,6 +129,22 @@ export const deleteMerchantProduct = async (id) => {
   return response.data;
 };
 
+/** تصدير منتجات التاجر كملف Excel — يُرجع Blob */
+export const exportMerchantProductsExcel = async () => {
+  const response = await api.get('products/merchant/products/export-excel/', {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
+/** استيراد منتجات من ملف Excel */
+export const importMerchantProductsExcel = async (file) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  const response = await api.post('products/merchant/products/import-excel/', fd);
+  return response.data;
+};
+
 export const getMerchantAds = async () => {
   const response = await api.get('products/merchant/ads/');
   return response.data;

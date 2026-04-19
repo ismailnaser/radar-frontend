@@ -44,11 +44,38 @@
   --font-family: 'Tajawal', 'Cairo', 'Segoe UI', Tahoma, sans-serif;
 }
 
-* {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   font-family: var(--font-family);
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+}
+
+/* إزالة الخلفية الزرقاء عند الضغط على أي عنصر */
+a, button, input, select, textarea,
+[role="button"], [tabindex],
+label, summary, details,
+div, span, li, img, svg, path,
+nav, header, footer, section, article {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+  outline: none;
+}
+
+/* فقط focus-visible (من الكيبورد) يُظهر outline */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* إزالة outline عند الضغط بالماوس أو اللمس */
+*:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none;
 }
 
 body {

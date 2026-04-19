@@ -1,14 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import MainLayout from '../../components/MainLayout';
-import { Plus, Pencil, Archive, Trash2, Image as ImageIcon, Megaphone } from 'lucide-react';
+import { Plus, Pencil, Archive, Trash2, Image as ImageIcon, Megaphone, Download, Upload, Info } from 'lucide-react';
 import ImageCarousel from '../../components/ImageCarousel';
 import { visualImageUrls } from '../../utils/productImages';
-import { deleteMerchantProduct, getMerchantProducts, updateMerchantProduct } from '../../api/data';
+import { 
+  deleteMerchantProduct, 
+  getMerchantProducts, 
+  updateMerchantProduct, 
+  exportMerchantProductsExcel, 
+  importMerchantProductsExcel 
+} from '../../api/data';
 import { Link } from 'react-router-dom';
+import { useAlert } from '../../components/AlertProvider';
 
 const MerchantProducts = () => {
+  const { showAlert, showConfirm } = useAlert();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -28,35 +37,123 @@ const MerchantProducts = () => {
   };
 
   const remove = async (p) => {
-    if (!confirm('متأكد بدك تحذف المنتج نهائياً؟')) return;
+    const ok = await showConfirm('متأكد بدك تحذف المنتج نهائياً؟', 'تأكيد الحذف');
+    if (!ok) return;
     await deleteMerchantProduct(p.id);
     await refresh();
+  };
+
+  const handleExport = async () => {
+    try {
+      const blob = await exportMerchantProductsExcel();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `منتجات_رادار_${new Date().toLocaleDateString('ar-EG').replace(/\//g, '-')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      void showAlert('فشل تصدير الملف. حاول مرة أخرى.', 'خطأ');
+    }
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setImporting(true);
+    try {
+      const res = await importMerchantProductsExcel(file);
+      await showAlert(res.message, 'تم الاستيراد');
+      if (res.skipped?.length || res.errors?.length) {
+        console.warn('Import issues:', res);
+      }
+      await refresh();
+    } catch (err) {
+      const msg = err.response?.data?.error || 'فشل استيراد الملف. تأكد من الصيغة والبيانات.';
+      await showAlert(msg, 'خطأ');
+    } finally {
+      setImporting(false);
+      e.target.value = ''; // Reset input
+    }
+  };
+
+  const showImportHelp = () => {
+    showAlert(
+      'يجب أن يكون ملف Excel بالصيغة التالية:\n' +
+      '1. العمود الأول: اسم المنتج (مطلوب)\n' +
+      '2. العمود الثاني: السعر (رقم)\n' +
+      '3. العمود الثالث: وصف المنتج\n' +
+      '4. العمود الرابع: تفاصيل المنتج (افصل بينها بـ |)\n\n' +
+      'تأكد من البدء من الصف الثاني (الصف الأول للعناوين).',
+      'تعليمات الاستيراد'
+    );
   };
 
   return (
     <MainLayout>
       <div className="merchant-products">
-        <div className="flex-between" style={{ marginBottom: 16 }}>
-          <h1 style={{ fontSize: '1.8rem' }}>منتجاتي</h1>
-          <Link to="/merchant/products/new" className="btn-primary" style={{ width: 'auto', display: 'inline-flex', gap: 10, alignItems: 'center' }}>
-            <Plus size={18} />
-            إضافة منتج
-          </Link>
+        <div className="flex-between" style={{ marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+          <h1 style={{ fontSize: '1.8rem', margin: 0 }}>منتجاتي</h1>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button 
+              onClick={handleExport} 
+              className="btn-secondary" 
+              style={{ width: 'auto', display: 'inline-flex', gap: 8, alignItems: 'center', background: 'var(--white)', color: 'var(--secondary)', border: '1px solid var(--border)' }}
+            >
+              <Download size={18} />
+              تصدير إكسل
+            </button>
+            <div style={{ position: 'relative' }}>
+              <button 
+                disabled={importing}
+                className="btn-secondary" 
+                style={{ width: 'auto', display: 'inline-flex', gap: 8, alignItems: 'center', background: 'var(--white)', color: 'var(--secondary)', border: '1px solid var(--border)' }}
+                onClick={() => document.getElementById('excel-import-input').click()}
+              >
+                <Upload size={18} />
+                {importing ? 'جاري الاستيراد...' : 'استيراد إكسل'}
+              </button>
+              <input 
+                id="excel-import-input"
+                type="file" 
+                accept=".xlsx, .xls" 
+                style={{ display: 'none' }} 
+                onChange={handleImport} 
+              />
+            </div>
+            <Link to="/merchant/products/new" className="btn-primary" style={{ width: 'auto', display: 'inline-flex', gap: 10, alignItems: 'center' }}>
+              <Plus size={18} />
+              إضافة منتج
+            </Link>
+          </div>
         </div>
 
-        <div
-          className="card"
-          style={{
-            marginBottom: 14,
-            padding: '12px 16px',
-            background: 'var(--primary-light)',
-            borderColor: 'rgba(245,192,0,0.45)',
-            fontSize: '0.92rem',
-            lineHeight: 1.55,
-            color: 'var(--text-primary)',
-          }}
-        >
-          <strong>مهم:</strong> المنتجات ذات الحالة «مؤرشف» لا تظهر في صفحة المتجر للمتسوّقين ولا على الخريطة كقائمة منتجات. اضغط أيقونة الأرشيف بجانب المنتج لإلغاء الأرشفة وجعله «نشطاً».
+        <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+          <div
+            className="card"
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              background: 'var(--primary-light)',
+              borderColor: 'rgba(245,192,0,0.45)',
+              fontSize: '0.92rem',
+              lineHeight: 1.55,
+              color: 'var(--text-primary)',
+            }}
+          >
+            <strong>مهم:</strong> المنتجات ذات الحالة «مؤرشف» لا تظهر في صفحة المتجر للمتسوّقين. اضغط أيقونة الأرشيف بجانب المنتج لتغيير حالته.
+          </div>
+          <button 
+            onClick={showImportHelp}
+            className="iconBtn" 
+            title="تعليمات الاستيراد"
+            style={{ background: 'var(--white)', border: '1px solid var(--border)', flexShrink: 0 }}
+          >
+            <Info size={20} />
+          </button>
         </div>
 
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>

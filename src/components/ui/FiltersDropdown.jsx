@@ -119,9 +119,6 @@ export default function FiltersDropdown({
           <span>{buttonLabel}</span>
           {count > 0 ? <span className="filters-dd__badge">{count}</span> : null}
         </button>
-        <div className={`filters-dd__summary${count === 0 ? ' filters-dd__summary--all' : ''}`} title={selectedSummary}>
-          {selectedSummary}
-        </div>
       </div>
 
       {open && typeof document !== 'undefined'

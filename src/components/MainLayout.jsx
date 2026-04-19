@@ -578,7 +578,7 @@ const MainLayout = ({ children }) => {
         .main-header {
           display: flex;
           flex-direction: column;
-          align-items: stretch;
+          align-items: center;
           padding: 6px 10px 8px;
           gap: 0;
           margin-inline: 0;
@@ -746,7 +746,7 @@ const MainLayout = ({ children }) => {
             grid-template-columns: minmax(0, 1fr) auto;
             grid-template-rows: auto auto;
             gap: 8px 10px;
-            align-items: start;
+            align-items: center;
           }
           .main-header--shopper-market.main-header--home .header-right {
             grid-column: 1;
