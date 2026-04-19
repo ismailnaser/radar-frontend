@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import { getOffers, addFavorite, getFavorites, removeFavorite, getCarts, addToCart, createCart } from '../api/data';
@@ -9,9 +9,13 @@ import ImageCarousel from '../components/ImageCarousel';
 import { visualImageUrls } from '../utils/productImages';
 // اختيار السلة عبر النافذة المنبثقة العامة (CustomModal)
 import { formatApiError } from '../utils/apiErrors';
+
+const OFFERS_PER_PAGE = 20;
+
 const Offers = () => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [offersPage, setOffersPage] = useState(1);
   const { showAlert, showSelect, showPrompt } = useAlert();
 
   const isGuestVisitor = localStorage.getItem('isGuest') === 'true';
@@ -71,6 +75,19 @@ const Offers = () => {
     };
     fetchOffers();
   }, []);
+
+  useEffect(() => {
+    setOffersPage(1);
+  }, [offers.length]);
+
+  const offersTotalPages = Math.max(1, Math.ceil((offers?.length || 0) / OFFERS_PER_PAGE));
+  const safeOffersPage = Math.min(offersPage, offersTotalPages);
+
+  const pagedOffers = useMemo(() => {
+    const list = Array.isArray(offers) ? offers : [];
+    const start = (safeOffersPage - 1) * OFFERS_PER_PAGE;
+    return list.slice(start, start + OFFERS_PER_PAGE);
+  }, [offers, safeOffersPage]);
 
   const addSponsoredToFavorites = async (ad) => {
     if (!canUseOfferFavorites) {
@@ -217,8 +234,9 @@ const Offers = () => {
         {loading ? (
           <p className="offers-loading">جاري تحميل العروض...</p>
         ) : offers.length > 0 ? (
+          <>
           <div className="offers-grid">
-            {offers.map((offer) => (
+            {pagedOffers.map((offer) => (
               <article key={offer.id} className="offers-card">
                 <div className="offers-card-media">
                   {visualImageUrls(offer).length > 0 ? (
@@ -293,6 +311,32 @@ const Offers = () => {
               </article>
             ))}
           </div>
+          {offersTotalPages > 1 ? (
+            <div className="offers-pager" aria-label="تصفح العروض">
+              <button
+                type="button"
+                onClick={() => setOffersPage((p) => Math.max(1, p - 1))}
+                disabled={safeOffersPage <= 1}
+              >
+                السابق
+              </button>
+              <span className="offers-pager-meta">
+                صفحة {safeOffersPage} من {offersTotalPages} — {offers.length} عرضاً
+              </span>
+              <button
+                type="button"
+                onClick={() => setOffersPage((p) => Math.min(offersTotalPages, p + 1))}
+                disabled={safeOffersPage >= offersTotalPages}
+              >
+                التالي
+              </button>
+            </div>
+          ) : (
+            <p className="offers-count-note" aria-live="polite">
+              {offers.length} {offers.length === 1 ? 'عرض' : 'عروض'}
+            </p>
+          )}
+          </>
         ) : (
           <div className="offers-empty card">
             <Tag size={44} color="var(--text-light)" aria-hidden />
@@ -307,6 +351,45 @@ const Offers = () => {
             padding-inline: clamp(8px, 2.2vw, 22px);
             padding-bottom: 32px;
             box-sizing: border-box;
+          }
+          .offers-pager {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(232, 230, 224, 0.95);
+            background: rgba(255, 255, 255, 0.92);
+          }
+          .offers-pager button {
+            border-radius: 12px;
+            border: 1px solid rgba(232, 230, 224, 0.95);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: var(--secondary);
+            font-weight: 900;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-family: inherit;
+          }
+          .offers-pager button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+          }
+          .offers-pager-meta {
+            font-weight: 800;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            text-align: center;
+          }
+          .offers-count-note {
+            margin: 16px 0 0;
+            text-align: center;
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--text-secondary);
           }
           .offers-hero {
             display: flex;

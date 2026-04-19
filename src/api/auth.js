@@ -14,7 +14,7 @@ const api = axios.create({
   baseURL: resolveApiBaseURL(),
 });
 
-/** يُعرَّف من UnauthorizedSessionBridge عبر showConfirm — قبلها قد يكون null */
+/** يُعرَّف من AlertProvider عبر showConfirm — قبل التحميل قد يكون null لثوانٍ */
 let unauthorizedLogoutConfirm = null;
 let sessionExpiredPromptInFlight = false;
 
@@ -69,13 +69,16 @@ api.interceptors.response.use(
       }
       sessionExpiredPromptInFlight = true;
       try {
+        let waitMs = 0;
+        while (!unauthorizedLogoutConfirm && waitMs < 800) {
+          await new Promise((r) => setTimeout(r, 40));
+          waitMs += 40;
+        }
         let proceed = true;
         if (unauthorizedLogoutConfirm) {
           proceed = await unauthorizedLogoutConfirm();
         } else {
-          proceed = window.confirm(
-            'تم قطع الجلسة أو انتهت صلاحية الدخول. الانتقال إلى صفحة تسجيل الدخول؟'
-          );
+          proceed = true;
         }
         if (proceed) {
           localStorage.removeItem('token');

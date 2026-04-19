@@ -11,7 +11,6 @@ import {
   LogIn,
   Home,
   Phone,
-  Package,
   Megaphone,
   CreditCard,
   BarChart3,
@@ -21,10 +20,12 @@ import {
   PlusCircle,
   ClipboardList,
   LayoutDashboard,
+  Package,
 } from 'lucide-react';
 import { logout } from '../api/auth';
 import { useAlert } from './AlertProvider';
 import { useAdminPendingCounts } from '../context/AdminPendingCountsContext';
+import InstallPwaButton from './InstallPwaButton';
 
 function backendBaseUrl() {
   const raw = (import.meta && import.meta.env && import.meta.env.VITE_PROXY_TARGET) || 'http://127.0.0.1:8000';
@@ -127,6 +128,7 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
     { kind: 'section', label: 'إدارة المتجر' },
     { icon: <BarChart3 size={20} />, label: 'إحصائيات المتجر', path: '/merchant/dashboard', protected: true },
     { icon: <Package size={20} />, label: 'منتجاتي', path: '/merchant/products', protected: true },
+    { icon: <PlusCircle size={20} />, label: 'إضافة منتج', path: '/merchant/products/new', protected: true },
     { icon: <ClipboardList size={20} />, label: 'إعلاناتي الممولة', path: '/merchant/my-ads', protected: true },
     { icon: <PlusCircle size={20} />, label: 'طلب إعلان ممول', path: '/merchant/ads', protected: true },
     { icon: <CreditCard size={20} />, label: 'الاشتراك', path: '/merchant/subscription', protected: true },
@@ -195,6 +197,9 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
           <div className="sidebar-brand">
             <img src="/logo.png" alt="رادار" className="sidebar-brand-img" />
             <span className="sidebar-brand-caption">لوحة التنقّل</span>
+            <div className="sidebar-pwa-wrap">
+              <InstallPwaButton />
+            </div>
           </div>
         </div>
 
@@ -339,6 +344,18 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
             font-weight: 800;
             color: var(--text-secondary);
             letter-spacing: 0.02em;
+          }
+
+          .sidebar-pwa-wrap {
+            width: 100%;
+            margin-top: 10px;
+          }
+          .sidebar-pwa-wrap .pwa-install {
+            width: 100%;
+          }
+          .sidebar-pwa-wrap .pwa-install__btn {
+            max-width: none;
+            width: 100%;
           }
 
           .sidebar-menu {

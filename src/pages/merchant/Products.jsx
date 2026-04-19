@@ -156,7 +156,7 @@ const MerchantProducts = () => {
           </button>
         </div>
 
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="card merchant-products-table" style={{ padding: 0, overflow: 'hidden' }}>
           {loading ? (
             <div style={{ padding: 18 }}>جاري التحميل...</div>
           ) : products.length === 0 ? (
@@ -244,17 +244,22 @@ const MerchantProducts = () => {
             padding-bottom: 32px;
             box-sizing: border-box;
           }
-          .merchant-products .table { display: flex; flex-direction: column; }
+          .merchant-products .table {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+          }
           .merchant-products .product-row-meta { display: contents; }
           .merchant-products .row {
             display: grid;
-            grid-template-columns: 1.6fr 0.6fr 0.6fr 0.8fr;
+            grid-template-columns: minmax(220px, 1.7fr) minmax(90px, 0.6fr) minmax(100px, 0.7fr) minmax(150px, 0.9fr);
             gap: 12px;
             padding: 14px 16px;
             align-items: center;
             border-top: 1px solid var(--border);
           }
           .merchant-products .row.head { background: var(--surface); font-weight: 900; border-top: none; }
+          .merchant-products .row.head > div { color: var(--text-secondary); }
           .merchant-products .productCell { display: flex; gap: 12px; align-items: center; min-width: 0; }
           .merchant-products .product-text { min-width: 0; }
           .merchant-products .product-name { font-weight: 900; color: var(--text-primary); }
@@ -283,10 +288,24 @@ const MerchantProducts = () => {
             overflow: hidden;
             border: 1px solid rgba(245,192,0,0.25);
           }
-          .merchant-products .price-value { font-weight: 800; font-variant-numeric: tabular-nums; }
+          .merchant-products .cell-price,
+          .merchant-products .cell-status {
+            justify-self: center;
+          }
+          .merchant-products .price-value {
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+          }
           .merchant-products .cell-status { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
           .merchant-products .archived-hint { font-size: 0.78rem; color: #c0392b; margin-top: 4px; font-weight: 700; line-height: 1.35; }
-          .merchant-products .actions { display: flex; gap: 10px; justify-content: flex-start; flex-wrap: wrap; }
+          .merchant-products .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            min-width: 0;
+          }
           .merchant-products .iconBtn {
             border: 1px solid var(--border);
             background: var(--white);
@@ -303,6 +322,9 @@ const MerchantProducts = () => {
 
           @media (max-width: 900px) {
             .merchant-products .row.head { display: none; }
+            .merchant-products .merchant-products-table {
+              border-radius: 16px;
+            }
             .merchant-products .table {
               background: var(--surface);
               padding: 10px 8px 14px;
@@ -330,6 +352,15 @@ const MerchantProducts = () => {
               align-items: start;
               width: 100%;
             }
+            .merchant-products .cell-price,
+            .merchant-products .cell-status {
+              justify-self: stretch;
+              background: var(--surface);
+              border: 1px solid var(--border);
+              border-radius: 12px;
+              padding: 10px 12px;
+            }
+            .merchant-products .cell-status { align-items: flex-start; }
             .merchant-products .productCell { align-items: flex-start; }
             .merchant-products .product-thumb-wrap { width: 120px; max-width: 55vw; }
             .merchant-products .thumb-empty { height: 100px; border-radius: 16px; }
@@ -343,7 +374,11 @@ const MerchantProducts = () => {
               text-transform: none;
               letter-spacing: 0.02em;
             }
-            .merchant-products .actions { justify-content: flex-end; padding-top: 4px; border-top: 1px dashed var(--border); }
+            .merchant-products .actions {
+              justify-content: flex-end;
+              padding-top: 8px;
+              border-top: 1px dashed var(--border);
+            }
             .merchant-products .iconBtn { min-width: 44px; min-height: 44px; padding: 10px; }
           }
 

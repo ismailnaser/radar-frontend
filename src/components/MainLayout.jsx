@@ -1,15 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Menu, MapPin, User, UserPlus, Home as HomeIcon, Map as MapIcon, Megaphone, Store, SlidersHorizontal, Search as SearchIcon, LayoutDashboard, Users, Tags, ChevronRight, Bell, Briefcase } from 'lucide-react';
+import { Menu, MapPin, User, UserPlus, Home as HomeIcon, Map as MapIcon, Megaphone, Store, Search as SearchIcon, LayoutDashboard, Users, Tags, ChevronRight, Briefcase } from 'lucide-react';
 import { useMapExplore } from '../context/MapExploreContext';
 import { useAdminPendingCounts } from '../context/AdminPendingCountsContext';
-import { useAdminNotifications } from '../context/AdminNotificationsContext';
-import { useAlert } from './AlertProvider';
 import { getPublicAnnouncements } from '../api/data';
-import InstallPwaButton from './InstallPwaButton';
-
 const MainLayout = ({ children }) => {
   const location = useLocation();
   const { pathname } = location;
@@ -19,13 +14,7 @@ const MainLayout = ({ children }) => {
   const { requestUserLocation, locating, searchQuery, setSearchQuery } = useMapExplore();
   const mobileSearchInputRef = useRef(null);
   const mobileSearchNavDebounceRef = useRef(null);
-  const { showAlert } = useAlert();
   const [announcements, setAnnouncements] = useState([]);
-  const [adminNotifsOpen, setAdminNotifsOpen] = useState(false);
-  const [isNarrowScreen, setIsNarrowScreen] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches,
-  );
-  const adminNotifs = useAdminNotifications();
 
   useEffect(() => {
     if (pathname !== '/search') return;
@@ -65,26 +54,6 @@ const MainLayout = ({ children }) => {
     return () => window.clearTimeout(t);
   }, [isSidebarOpen]);
 
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 720px)');
-    const onChange = () => setIsNarrowScreen(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-
-  useEffect(() => {
-    if (!adminNotifsOpen || !isNarrowScreen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const onKey = (e) => {
-      if (e.key === 'Escape') setAdminNotifsOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [adminNotifsOpen, isNarrowScreen]);
   /** زائر صريح: لا يُعامل كجلسة عضو حتى لو بقي توكن قديماً في التخزين */
   const isGuestUser = localStorage.getItem('isGuest') === 'true';
   const hasToken = !!localStorage.getItem('token');
@@ -163,76 +132,9 @@ const MainLayout = ({ children }) => {
 
   const nextForAuth = `${location.pathname}${location.search}${location.hash || ''}`;
 
-  useEffect(() => {
-    setAdminNotifsOpen(false);
-  }, [pathname]);
-
-  const adminNotifsPanelInner = isAdminUser && adminNotifs && (
-    <>
-      <div className="admin-notifs-pop__head">
-        <strong>الإشعارات</strong>
-        <button
-          type="button"
-          className="btn-toggle"
-          onClick={async () => {
-            try {
-              await Promise.resolve(adminNotifs.pollOnce?.());
-            } catch {
-              await showAlert('تعذر التحديث. حاول لاحقاً.', 'خطأ');
-            }
-          }}
-        >
-          تحديث
-        </button>
-      </div>
-      <div className="admin-notifs-list">
-        {(adminNotifs.items || [])
-          .slice()
-          .reverse()
-          .slice(0, 12)
-          .map((n) => {
-            const type = n?.event_type;
-            const rid = n?.related_id;
-            const href =
-              type === 'ad_request' && rid != null
-                ? `/admin/ads/${rid}`
-                : type === 'subscription_renewal'
-                  ? '/admin/subscriptions'
-                  : type === 'community_point'
-                    ? '/admin/community'
-                    : '/admin';
-            return (
-              <button
-                key={n.id}
-                type="button"
-                className="admin-notifs-item"
-                onClick={() => {
-                  setAdminNotifsOpen(false);
-                  navigate(href);
-                }}
-                title="فتح الطلب"
-              >
-                <div className="admin-notifs-item__title">{n.title}</div>
-                {n.body ? <div className="admin-notifs-item__body">{n.body}</div> : null}
-                <div className="admin-notifs-item__meta">
-                  <span>{n.event_type_label || n.event_type}</span>
-                  <span className="muted small">{new Date(n.created_at).toLocaleString('ar')}</span>
-                </div>
-              </button>
-            );
-          })}
-        {!adminNotifs.items || adminNotifs.items.length === 0 ? (
-          <div className="muted small" style={{ padding: 10 }}>
-            لا إشعارات بعد.
-          </div>
-        ) : null}
-      </div>
-    </>
-  );
-
   return (
     <div
-      className={`layout-container${isSidebarOpen ? ' sidebar-open' : ''}${pathname === '/map' ? ' layout-container--map' : ''}`}
+      className={`layout-container${isSidebarOpen ? ' sidebar-open' : ''}${pathname === '/map' ? ' layout-container--map' : ''}${pathname === '/' ? ' layout-container--home' : ''}`}
       dir="rtl"
       lang="ar"
     >
@@ -259,79 +161,17 @@ const MainLayout = ({ children }) => {
             </Link>
           </div>
 
-          <div className="header-center">
-            <InstallPwaButton />
-          </div>
-
           <div className="header-left">
-            {isAdminUser && adminNotifs ? (
-              <div className="admin-notifs">
-                <button
-                  type="button"
-                  className="admin-notifs-btn"
-                  aria-label="إشعارات الإدارة"
-                  title="إشعارات الإدارة"
-                  aria-expanded={adminNotifsOpen}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAdminNotifsOpen((prev) => {
-                      const next = !prev;
-                      if (next) adminNotifs.markAllRead?.();
-                      return next;
-                    });
-                    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-                      void Notification.requestPermission().catch(() => {});
-                    }
-                  }}
-                >
-                  <Bell size={20} strokeWidth={2} aria-hidden />
-                  {adminNotifs.unreadCount > 0 ? (
-                    <span className="admin-notifs-badge">
-                      {adminNotifs.unreadCount > 99 ? '99+' : adminNotifs.unreadCount}
-                    </span>
-                  ) : null}
-                </button>
-                {!isNarrowScreen && adminNotifsOpen ? (
-                  <div className="admin-notifs-pop admin-notifs-pop--dropdown" role="dialog" aria-modal="true" aria-label="إشعارات الإدارة">
-                    {adminNotifsPanelInner}
-                  </div>
-                ) : null}
-                {isNarrowScreen &&
-                  adminNotifsOpen &&
-                  typeof document !== 'undefined' &&
-                  createPortal(
-                    <>
-                      <button
-                        type="button"
-                        className="admin-notifs-backdrop"
-                        aria-label="إغلاق الإشعارات"
-                        onClick={() => setAdminNotifsOpen(false)}
-                      />
-                      <div
-                        className="admin-notifs-sheet"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label="إشعارات الإدارة"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="admin-notifs-sheet__handle" aria-hidden />
-                        {adminNotifsPanelInner}
-                      </div>
-                    </>,
-                    document.body,
-                  )}
-              </div>
-            ) : null}
-
             {isAuthenticated ? (
-              <div
+              <Link
+                to={userType === 'admin' ? '/admin' : '/settings'}
                 className="header-user-pill header-user-pill--member"
                 title={displayName || 'حسابي'}
                 aria-label={`المستخدم: ${displayName || 'حسابي'}`}
               >
                 <User size={18} strokeWidth={1.85} aria-hidden className="header-user-pill__ico" />
                 <span className="header-user-pill__name">{displayName || 'حسابي'}</span>
-              </div>
+              </Link>
             ) : (
               <Link
                 to={`/register?next=${encodeURIComponent(nextForAuth)}`}
@@ -355,9 +195,6 @@ const MainLayout = ({ children }) => {
               navigate('/search');
             }}
           >
-            <Link to="/categories" className="header-mobile-search__filter" aria-label="فلترة">
-              <SlidersHorizontal size={18} strokeWidth={2} aria-hidden />
-            </Link>
             <form
               className="header-mobile-search__bar"
               role="search"
@@ -578,14 +415,14 @@ const MainLayout = ({ children }) => {
         .main-header {
           display: flex;
           flex-direction: column;
-          align-items: center;
-          padding: 6px 10px 8px;
+          align-items: stretch;
+          padding: 8px 10px 10px;
           gap: 0;
           margin-inline: 0;
           margin-top: 2px;
-          background: linear-gradient(180deg, #ffffff 0%, #fffef8 100%);
-          box-shadow: 0 3px 18px rgba(26, 29, 38, 0.06);
-          border: 1px solid rgba(232, 230, 224, 0.92);
+          background: #ffffff;
+          box-shadow: 0 4px 22px rgba(26, 29, 38, 0.07);
+          border: 1px solid rgba(232, 230, 224, 0.95);
           border-radius: 0 0 22px 22px;
           position: sticky;
           top: 0;
@@ -605,13 +442,13 @@ const MainLayout = ({ children }) => {
         }
         .site-announcement{
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           gap: 10px;
-          padding: 10px 12px;
-          border-radius: 16px;
-          border: 1px solid rgba(2, 119, 189, 0.22);
-          background: linear-gradient(135deg, rgba(230, 239, 232, 0.92) 0%, rgba(255,255,255,0.95) 100%);
-          box-shadow: 0 8px 24px rgba(26, 29, 38, 0.06);
+          padding: 10px 16px;
+          border-radius: 999px;
+          border: 1px solid rgba(100, 181, 246, 0.35);
+          background: linear-gradient(135deg, #e3f2fd 0%, #f5fbff 55%, #ffffff 100%);
+          box-shadow: 0 4px 18px rgba(26, 29, 38, 0.06);
           color: var(--secondary);
         }
         .site-announcement__msg{
@@ -713,9 +550,9 @@ const MainLayout = ({ children }) => {
         }
 
         .main-header__primary {
-          display: grid;
-          grid-template-columns: auto 1fr auto;
+          display: flex;
           align-items: center;
+          justify-content: space-between;
           gap: 10px;
           width: 100%;
           min-width: 0;
@@ -731,64 +568,14 @@ const MainLayout = ({ children }) => {
           flex-wrap: nowrap;
         }
 
-        .header-center{
-          justify-self: center;
-          min-width: 0;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        /* الصفحة الرئيسية على الجوال: صف ثانٍ كامل لعرض زر التثبيت دون تداخل مع الشعار/الحساب */
-        @media (max-width: 720px) {
-          .main-header--shopper-market.main-header--home .main-header__primary {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            grid-template-rows: auto auto;
-            gap: 8px 10px;
-            align-items: center;
-          }
-          .main-header--shopper-market.main-header--home .header-right {
-            grid-column: 1;
-            grid-row: 1;
-            min-width: 0;
-          }
-          .main-header--shopper-market.main-header--home .header-left {
-            grid-column: 2;
-            grid-row: 1;
-            padding-inline-end: 0;
-          }
-          .main-header--shopper-market.main-header--home .header-center {
-            grid-column: 1 / -1;
-            grid-row: 2;
-            justify-self: stretch;
-            width: 100%;
-          }
-          .main-header--shopper-market.main-header--home .pwa-install {
-            width: 100%;
-            max-width: none;
-          }
-          .main-header--shopper-market.main-header--home .pwa-install__btn {
-            width: 100%;
-            max-width: none;
-            min-height: 44px;
-            padding: 10px 12px;
-          }
-          .main-header--shopper-market.main-header--home .pwa-install__btn-txt {
-            display: inline;
-          }
-        }
-
         .header-left{
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          /* الصفحة RTL: end = أقصى اليسار */
-          justify-self: end;
           min-width: 0;
-          /* زيح أزرار اليسار للداخل قليلاً */
-          padding-inline-end: 12px;
           flex-wrap: nowrap;
+          flex-shrink: 0;
+          padding-inline-end: 4px;
         }
 
         .header-user-pill{
@@ -807,6 +594,8 @@ const MainLayout = ({ children }) => {
           min-width: 0;
           flex: 0 1 auto;
           text-align: center;
+          text-decoration: none;
+          box-sizing: border-box;
         }
         .header-user-pill--member {
           max-width: min(340px, 46vw);
@@ -987,156 +776,6 @@ const MainLayout = ({ children }) => {
           color: var(--secondary);
         }
 
-        .admin-notifs{
-          position: relative;
-          display: inline-flex;
-          align-items: center;
-          margin-inline-start: 0;
-          overflow: visible;
-          z-index: 1350;
-        }
-        .admin-notifs-btn{
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 44px;
-          height: 44px;
-          border-radius: 999px;
-          border: 1px solid rgba(232, 230, 224, 0.95);
-          background: rgba(255,255,255,0.92);
-          cursor: pointer;
-          position: relative;
-          box-shadow: var(--shadow-sm);
-          color: var(--secondary);
-        }
-        .admin-notifs-badge{
-          position: absolute;
-          top: -6px;
-          inset-inline-start: -6px;
-          min-width: 20px;
-          height: 20px;
-          padding: 0 6px;
-          border-radius: 999px;
-          background: #e74c3c;
-          color: #fff;
-          font-weight: 900;
-          font-size: 0.72rem;
-          line-height: 20px;
-          text-align: center;
-          border: 2px solid #fff;
-        }
-        .admin-notifs-pop--dropdown{
-          display: flex;
-          flex-direction: column;
-          position: absolute;
-          top: calc(100% + 8px);
-          inset-inline-end: 0;
-          width: min(420px, calc(100vw - 24px));
-          max-width: calc(100vw - 20px);
-          background: rgba(255,255,255,0.98);
-          border: 1px solid rgba(232, 230, 224, 0.95);
-          border-radius: 18px;
-          box-shadow: 0 18px 46px rgba(26, 29, 38, 0.18);
-          overflow: hidden;
-          z-index: 5000;
-          box-sizing: border-box;
-        }
-        .admin-notifs-backdrop{
-          position: fixed;
-          inset: 0;
-          z-index: 8000;
-          border: none;
-          padding: 0;
-          margin: 0;
-          cursor: pointer;
-          background: rgba(14, 16, 22, 0.45);
-          -webkit-backdrop-filter: blur(4px);
-          backdrop-filter: blur(4px);
-          touch-action: manipulation;
-        }
-        .admin-notifs-sheet{
-          position: fixed;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          z-index: 8010;
-          display: flex;
-          flex-direction: column;
-          max-height: min(82dvh, 580px);
-          background: rgba(255,255,255,0.98);
-          border-radius: 20px 20px 0 0;
-          box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.22);
-          padding-bottom: env(safe-area-inset-bottom, 0px);
-          box-sizing: border-box;
-          overflow: hidden;
-          touch-action: pan-y;
-        }
-        .admin-notifs-sheet__handle{
-          width: 40px;
-          height: 5px;
-          border-radius: 999px;
-          background: rgba(26, 29, 38, 0.2);
-          margin: 10px auto 6px;
-          flex-shrink: 0;
-        }
-        .admin-notifs-sheet .admin-notifs-list{
-          flex: 1;
-          min-height: 0;
-          max-height: none;
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
-          overscroll-behavior: contain;
-        }
-        .admin-notifs-pop__head{
-          display:flex;
-          align-items:center;
-          justify-content: space-between;
-          gap: 10px;
-          padding: 10px 12px;
-          background: var(--surface);
-          border-bottom: 1px solid rgba(232, 230, 224, 0.95);
-        }
-        .admin-notifs-list{
-          max-height: 360px;
-          overflow: auto;
-        }
-        .admin-notifs-item{
-          width: 100%;
-          text-align: right;
-          background: transparent;
-          border: none;
-          padding: 10px 12px;
-          border-bottom: 1px solid rgba(232, 230, 224, 0.85);
-          cursor: pointer;
-        }
-        .admin-notifs-item:hover{ background: rgba(26,29,38,0.04); }
-        .admin-notifs-item:active{ background: rgba(26,29,38,0.06); }
-        .admin-notifs-item:focus-visible{
-          outline: 2px solid rgba(245, 192, 0, 0.55);
-          outline-offset: -2px;
-        }
-        .admin-notifs-item:last-child{ border-bottom: none; }
-        .admin-notifs-item__title{
-          font-weight: 950;
-          color: var(--secondary);
-          margin-bottom: 4px;
-        }
-        .admin-notifs-item__body{
-          color: var(--text-secondary);
-          font-weight: 800;
-          line-height: 1.55;
-          margin-bottom: 6px;
-        }
-        .admin-notifs-item__meta{
-          display:flex;
-          align-items:center;
-          justify-content: space-between;
-          gap: 10px;
-          color: var(--text-secondary);
-          font-weight: 800;
-          font-size: 0.82rem;
-        }
-
         .header-user-status {
           display: none;
           align-items: center;
@@ -1166,22 +805,13 @@ const MainLayout = ({ children }) => {
         .main-header--shopper-market .header-mobile-search {
           display: flex;
           align-items: center;
-          gap: 0;
+          gap: 10px;
           margin-top: 8px;
           margin-inline: calc(-1 * clamp(8px, 2.2vw, 22px));
           padding-inline: clamp(8px, 2.2vw, 22px);
           position: relative;
-          /* Ensure it's on top and clickable on mobile */
           z-index: 1205;
           pointer-events: auto !important;
-        }
-        @media (min-width: 721px) {
-          .main-header--shopper-market .header-mobile-search {
-            display: none !important;
-          }
-        }
-        .main-header--shopper-market .header-mobile-search__filter {
-          display: none;
         }
         .main-header--shopper-market .header-mobile-search__bar {
           flex: 1;
@@ -1636,6 +1266,7 @@ const MainLayout = ({ children }) => {
         .content {
           flex: 1;
           padding: 0;
+          padding-top: clamp(12px, 2.2vw, 20px);
           padding-inline: env(safe-area-inset-left, 0) env(safe-area-inset-right, 0);
           padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
           background: var(--background);
@@ -1650,6 +1281,7 @@ const MainLayout = ({ children }) => {
 
         .content.content--home {
           padding: 0;
+          padding-top: clamp(12px, 2.2vw, 20px);
           padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
         }
 
@@ -1751,10 +1383,14 @@ const MainLayout = ({ children }) => {
 
         .header-nav {
           display: none;
-          margin-top: 6px;
-          padding: 6px 6px 4px;
+          margin-top: 8px;
+          padding: 8px 0 6px;
           border-top: 1px solid rgba(232, 230, 224, 0.75);
           gap: 8px;
+          width: 100%;
+          max-width: none;
+          align-self: stretch;
+          box-sizing: border-box;
         }
         .header-nav-item {
           appearance: none;
@@ -1784,9 +1420,9 @@ const MainLayout = ({ children }) => {
         }
         .header-nav-item--active {
           color: var(--secondary);
-          background: linear-gradient(135deg, rgba(255, 204, 0, 0.22) 0%, rgba(255, 204, 0, 0.10) 100%);
-          border-color: rgba(245, 192, 0, 0.55);
-          box-shadow: var(--shadow-gold);
+          background: #fff9e6;
+          border-color: rgba(255, 204, 0, 0.45);
+          box-shadow: 0 2px 12px rgba(255, 204, 0, 0.18);
         }
         .header-nav-item:active { transform: scale(0.99); }
 

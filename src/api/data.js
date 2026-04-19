@@ -245,14 +245,6 @@ export const getPublicAnnouncements = async () => {
   return response.data;
 };
 
-// إشعارات الأدمن داخل التطبيق
-export const getAdminNotifications = async (sinceId = null) => {
-  const params = {};
-  if (sinceId != null && String(sinceId).trim() !== '') params.since_id = String(sinceId);
-  const response = await api.get('users/admin/notifications/', { params });
-  return response.data;
-};
-
 export const getPrimaryAdminAnnouncements = async () => {
   const response = await api.get('users/admin/announcements/');
   return response.data;

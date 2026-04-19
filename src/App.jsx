@@ -54,10 +54,8 @@ import AdminAnnouncements from './pages/admin/AdminAnnouncements'
 import AdminCategoryManagement from './pages/admin/AdminCategoryManagement'
 import SettingsPage from './pages/Settings'
 import { AlertProvider } from './components/AlertProvider'
-import { UnauthorizedSessionBridge } from './components/UnauthorizedSessionBridge'
 import { MapExploreProvider } from './context/MapExploreContext'
 import { AdminPendingCountsProvider } from './context/AdminPendingCountsContext'
-import { AdminNotificationsProvider } from './context/AdminNotificationsContext'
 import { InAppBrowserPrompt } from './components/InAppBrowserPrompt'
 import { pingAppOpen } from './api/data'
 
@@ -181,12 +179,9 @@ function AppLayout() {
   return (
     <MapExploreProvider>
       <AlertProvider>
-        <UnauthorizedSessionBridge />
         <AdminPendingCountsProvider>
-        <AdminNotificationsProvider>
         <InAppBrowserPrompt />
         <Outlet />
-        </AdminNotificationsProvider>
         </AdminPendingCountsProvider>
       </AlertProvider>
     </MapExploreProvider>

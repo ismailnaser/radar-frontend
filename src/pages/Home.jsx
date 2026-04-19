@@ -358,6 +358,8 @@ function sponsoredOfferBadge(ad) {
 }
 
 const SPONSORED_PER_PAGE = 6;
+/** شبكة الإعلانات الممولة في الرئيسية (مثل صفحة المتاجر) */
+const SPONSORED_GRID_PAGE_SIZE = 12;
 const STORES_PER_PAGE_DESKTOP = 12;
 const STORES_PER_PAGE_MOBILE = 8;
 const SPONSORED_ROTATE_MS = 5 * 60 * 1000;
@@ -369,7 +371,6 @@ const Home = () => {
   const { showAlert, showPrompt, showSelect } = useAlert();
   const storesSectionRef = useRef(null);
   const communityBelowRef = useRef(null);
-  const exclusiveRailRef = useRef(null);
   const browseScrollRef = useRef(null);
   const {
     userMapLocation,
@@ -408,6 +409,9 @@ const Home = () => {
   );
   const [sponsoredAds, setSponsoredAds] = useState([]);
   const [sponsoredLoading, setSponsoredLoading] = useState(true);
+  /** فلترة إعلانات الصفحة الرئيسية حسب أقسام المتاجر (متعدد) */
+  const [exclusiveOfferCategoryIds, setExclusiveOfferCategoryIds] = useState([]);
+  const [sponsoredGridPage, setSponsoredGridPage] = useState(1);
   const [sponsoredFavByAdId, setSponsoredFavByAdId] = useState({});
   const [communityPoints, setCommunityPoints] = useState([]);
   const [communityPointsLoading, setCommunityPointsLoading] = useState(false);
@@ -429,8 +433,6 @@ const Home = () => {
     };
   }, []);
 
-  const [exclusiveDotsCount, setExclusiveDotsCount] = useState(0);
-  const [exclusiveDotActive, setExclusiveDotActive] = useState(0);
   const [browseDotsCount, setBrowseDotsCount] = useState(0);
   const [browseDotActive, setBrowseDotActive] = useState(0);
 
@@ -479,10 +481,6 @@ const Home = () => {
       window.removeEventListener('resize', recalc);
     };
   }, []);
-
-  useEffect(() => {
-    return wireScrollDots(exclusiveRailRef.current, '.home-exclusive-card', setExclusiveDotsCount, setExclusiveDotActive);
-  }, [wireScrollDots, filterMode, sponsoredLoading, sponsoredAds.length]);
 
   useEffect(() => {
     return wireScrollDots(browseScrollRef.current, '.home-browse-item', setBrowseDotsCount, setBrowseDotActive);
@@ -562,6 +560,35 @@ const Home = () => {
     if (offset === 0) return list;
     return [...list.slice(offset), ...list.slice(0, offset)];
   }, [sponsoredAds, sponsoredRotateSlot]);
+
+  const filteredExclusiveAds = useMemo(() => {
+    const list = Array.isArray(rotatedSponsoredAds) ? rotatedSponsoredAds : [];
+    if (!exclusiveOfferCategoryIds?.length) return list;
+    const allowed = new Set(exclusiveOfferCategoryIds.map((x) => Number(x)));
+    return list.filter((ad) => {
+      const cid = ad.store_category_id != null ? Number(ad.store_category_id) : NaN;
+      return Number.isFinite(cid) && allowed.has(cid);
+    });
+  }, [rotatedSponsoredAds, exclusiveOfferCategoryIds]);
+
+  const sponsoredGridTotalPages = Math.max(
+    1,
+    Math.ceil(filteredExclusiveAds.length / SPONSORED_GRID_PAGE_SIZE),
+  );
+  const safeSponsoredGridPage = Math.min(sponsoredGridPage, sponsoredGridTotalPages);
+
+  const pagedExclusiveAds = useMemo(() => {
+    const start = (safeSponsoredGridPage - 1) * SPONSORED_GRID_PAGE_SIZE;
+    return filteredExclusiveAds.slice(start, start + SPONSORED_GRID_PAGE_SIZE);
+  }, [filteredExclusiveAds, safeSponsoredGridPage]);
+
+  useEffect(() => {
+    setSponsoredGridPage((p) => Math.min(p, sponsoredGridTotalPages));
+  }, [sponsoredGridTotalPages]);
+
+  useEffect(() => {
+    setSponsoredGridPage(1);
+  }, [exclusiveOfferCategoryIds]);
 
   useEffect(() => {
     setSponsoredPage(1);
@@ -674,10 +701,16 @@ const Home = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (filterMode !== 'stores') {
+        if (!cancelled) {
+          setSponsoredAds([]);
+          setSponsoredLoading(false);
+        }
+        return;
+      }
       try {
         if (!cancelled) setSponsoredLoading(true);
-        const offerCat = filterMode === 'stores' ? selectedCategoryId : null;
-        const data = await getOffers(offerCat);
+        const data = await getOffers(null);
         if (!cancelled) setSponsoredAds(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error(e);
@@ -689,7 +722,7 @@ const Home = () => {
     return () => {
       cancelled = true;
     };
-  }, [filterMode, selectedCategoryId]);
+  }, [filterMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -941,9 +974,10 @@ const Home = () => {
       <div className="home-container">
         {isMerchantOnHome ? (
           <div
-            className="card"
+            className="card home-merchant-banner"
             role="status"
             style={{
+              marginTop: 6,
               marginBottom: 18,
               padding: '14px 16px',
               display: 'flex',
@@ -1035,76 +1069,104 @@ const Home = () => {
 
         <div className="home-top-grid">
           {filterMode === 'stores' ? (
-            <section className="home-top-grid__exclusive home-exclusive" aria-label="عروض حصرية">
-              <div className="home-exclusive-head">
-                <div className="home-exclusive-head-text">
-                  <h2 className="home-exclusive-title">عروض مميزة من المتاجر</h2>
-                  <p className="home-exclusive-sub">إعلانات ممولة — اضغط البطاقة لفتح المتجر</p>
+            <section className="home-top-grid__exclusive home-sponsored-block" aria-label="إعلانات ممولة">
+              <div className="home-sponsored-head">
+                <div className="home-sponsored-head-text">
+                  <h2 className="home-sponsored-title">إعلانات ممولة من المتاجر</h2>
+                  <p className="home-sponsored-sub">عرض شبكي مثل المتاجر — اضغط البطاقة لفتح صفحة المتجر</p>
+                  <div className="home-sponsored-controls">
+                    <FiltersDropdown
+                      buttonLabel="فلاتر"
+                      title="تصفية الإعلانات حسب قسم المتجر"
+                      allLabel="كل الأقسام"
+                      options={(categories || []).map((c) => ({ id: c.id, label: c.name }))}
+                      selectedIds={exclusiveOfferCategoryIds}
+                      onChangeSelectedIds={(ids) =>
+                        setExclusiveOfferCategoryIds(Array.isArray(ids) ? ids : [])
+                      }
+                    />
+                  </div>
                 </div>
-                <Link to="/offers" className="home-exclusive-more">
+                <Link to="/offers" className="home-sponsored-more">
                   عرض المزيد
                   <ChevronLeft size={18} aria-hidden />
                 </Link>
               </div>
-              <div className="home-exclusive-rail" role="list" ref={exclusiveRailRef}>
-                {sponsoredLoading ? (
-                  <>
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="home-exclusive-skel" aria-hidden />
-                    ))}
-                  </>
-                ) : rotatedSponsoredAds.length === 0 ? (
-                  <div className="home-exclusive-empty">لا توجد عروض ممولة حالياً.</div>
-                ) : (
-                  rotatedSponsoredAds.slice(0, 10).map((ad) => {
-                    const img = visualImageUrls(ad)[0] || null;
-                    return (
-                      <Link
-                        key={ad.id}
-                        to={`/stores/${ad.store}`}
-                        className="home-exclusive-card"
-                        role="listitem"
-                        aria-label={`${ad.title} — ${ad.store_name}`}
-                      >
-                        <div
-                          className="home-exclusive-cover"
-                          style={img ? { backgroundImage: `url(${img})` } : undefined}
-                          aria-hidden
-                        />
-                        <span className="home-exclusive-badge">إعلان ممول</span>
-                        <div className="home-exclusive-meta">
-                          <div className="home-exclusive-ad-title">{ad.title}</div>
-                          <div className="home-exclusive-store">{ad.store_name}</div>
-                          {Number(ad.product_price) > 0 ? (
-                            <div className="home-exclusive-price">{Number(ad.product_price).toFixed(2)} ₪</div>
-                          ) : null}
-                        </div>
-                      </Link>
-                    );
-                  })
-                )}
-              </div>
-              {exclusiveDotsCount > 1 ? (
-                <div className="scroll-dots" aria-label="التنقل بين العروض" role="tablist">
-                  {Array.from({ length: exclusiveDotsCount }).slice(0, 12).map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`scroll-dot${i === exclusiveDotActive ? ' scroll-dot--active' : ''}`}
-                      aria-label={`عرض ${i + 1}`}
-                      aria-selected={i === exclusiveDotActive}
-                      onClick={() => {
-                        const rail = exclusiveRailRef.current;
-                        if (!rail) return;
-                        const items = Array.from(rail.querySelectorAll('.home-exclusive-card'));
-                        const el = items[i];
-                        if (!el) return;
-                        rail.scrollTo({ left: Math.max(0, el.offsetLeft - 12), behavior: 'smooth' });
-                      }}
-                    />
+              {sponsoredLoading ? (
+                <div className="home-sponsored-grid" role="list">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="home-sponsored-skel" aria-hidden />
                   ))}
                 </div>
-              ) : null}
+              ) : filteredExclusiveAds.length === 0 ? (
+                <div className="home-sponsored-empty">لا توجد إعلانات ضمن الفلاتر الحالية.</div>
+              ) : (
+                <>
+                  <div className="home-sponsored-grid" role="list">
+                    {pagedExclusiveAds.map((ad) => {
+                      const img = visualImageUrls(ad)[0] || null;
+                      return (
+                        <Link
+                          key={ad.id}
+                          to={`/stores/${ad.store}`}
+                          className="home-sponsored-card"
+                          role="listitem"
+                          aria-label={`${ad.title} — ${ad.store_name}`}
+                        >
+                          <div className="home-sponsored-card__thumb" aria-hidden>
+                            {img ? (
+                              <img className="home-sponsored-card__img" src={img} alt="" />
+                            ) : (
+                              <span className="home-sponsored-card__ph">📣</span>
+                            )}
+                          </div>
+                          <div className="home-sponsored-card__body">
+                            <div className="home-sponsored-card__badge">إعلان ممول</div>
+                            <div className="home-sponsored-card__adtitle">{ad.title}</div>
+                            <div className="home-sponsored-card__meta">
+                              <span className="home-sponsored-card__store">{ad.store_name}</span>
+                              {ad.store_category_name ? (
+                                <>
+                                  <span className="home-sponsored-card__dot" aria-hidden />
+                                  <span>{ad.store_category_name}</span>
+                                </>
+                              ) : null}
+                            </div>
+                            {Number(ad.product_price) > 0 ? (
+                              <div className="home-sponsored-card__price">
+                                {Number(ad.product_price).toFixed(2)} ₪
+                              </div>
+                            ) : null}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                  {sponsoredGridTotalPages > 1 ? (
+                    <div className="home-sponsored-pager" aria-label="تصفح الإعلانات">
+                      <button
+                        type="button"
+                        onClick={() => setSponsoredGridPage((p) => Math.max(1, p - 1))}
+                        disabled={safeSponsoredGridPage <= 1}
+                      >
+                        السابق
+                      </button>
+                      <span>
+                        {safeSponsoredGridPage} / {sponsoredGridTotalPages}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSponsoredGridPage((p) => Math.min(sponsoredGridTotalPages, p + 1))
+                        }
+                        disabled={safeSponsoredGridPage >= sponsoredGridTotalPages}
+                      >
+                        التالي
+                      </button>
+                    </div>
+                  ) : null}
+                </>
+              )}
             </section>
           ) : null}
         </div>
@@ -1556,11 +1618,11 @@ const Home = () => {
             position: relative;
             margin-bottom: 14px;
             margin-top: 2px;
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--section-warm-edge);
-            box-shadow: 0 6px 28px rgba(26, 29, 38, 0.07);
+            border-radius: 22px;
+            border: 1px solid rgba(255, 213, 79, 0.35);
+            box-shadow: 0 8px 32px rgba(26, 29, 38, 0.08);
             overflow: hidden;
-            background: var(--section-warm);
+            background: linear-gradient(165deg, #fffef5 0%, #fff9e6 42%, #fffdf0 100%);
           }
 
           .home-exclusive {
@@ -1779,11 +1841,10 @@ const Home = () => {
             inset: 0;
             pointer-events: none;
             background:
-              radial-gradient(ellipse 85% 65% at 18% 22%, rgba(255, 204, 0, 0.22) 0%, transparent 58%),
-              radial-gradient(ellipse 70% 55% at 92% 78%, rgba(93, 64, 55, 0.08) 0%, transparent 52%),
-              radial-gradient(ellipse 50% 40% at 72% 12%, rgba(2, 119, 189, 0.07) 0%, transparent 45%),
-              linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 249, 230, 0.95) 45%, rgba(255, 252, 240, 1) 100%);
-            filter: saturate(1.05);
+              radial-gradient(ellipse 90% 70% at 15% 18%, rgba(255, 210, 0, 0.35) 0%, transparent 55%),
+              radial-gradient(ellipse 65% 50% at 88% 82%, rgba(255, 235, 160, 0.45) 0%, transparent 50%),
+              linear-gradient(168deg, rgba(255, 253, 245, 0.9) 0%, rgba(255, 249, 230, 0.98) 50%, rgba(255, 252, 238, 1) 100%);
+            filter: saturate(1.08);
           }
           .home-hero-inner {
             position: relative;
@@ -1856,12 +1917,7 @@ const Home = () => {
             font-weight: 500;
           }
 
-          /* موبايل/تابلت صغير: شيل الهيرو لأن البحث موجود في الهيدر */
           @media (max-width: 768px) {
-            /* على الشاشات الصغيرة: مربع "ماذا تبحث" غير لازم لأن البحث بالناف بار */
-            .home-hero {
-              display: none;
-            }
             .home-hero-inner {
               padding: 12px 12px 14px;
               gap: 10px;
@@ -1886,10 +1942,6 @@ const Home = () => {
             }
             .home-hero-search-input::placeholder {
               font-size: 0.86rem;
-            }
-            /* شيل البحث القديم على الشاشات الصغيرة (الآن البحث في الهيدر) */
-            .home-hero-search {
-              display: none;
             }
           }
 
@@ -2074,6 +2126,223 @@ const Home = () => {
           }
           .home-top-grid__exclusive {
             min-width: 0;
+          }
+
+          .home-sponsored-block {
+            border-radius: 22px;
+            border: 1px solid rgba(232, 230, 224, 0.95);
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 6px 22px rgba(26, 29, 38, 0.06);
+            padding: 14px 12px 16px;
+          }
+          .home-sponsored-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+          }
+          .home-sponsored-head-text {
+            flex: 1;
+            min-width: min(100%, 280px);
+          }
+          .home-sponsored-title {
+            margin: 0 0 6px;
+            font-size: 1.05rem;
+            font-weight: 900;
+            color: var(--secondary);
+          }
+          .home-sponsored-sub {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+            font-weight: 600;
+          }
+          .home-sponsored-controls {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+          }
+          .home-sponsored-more {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 900;
+            color: var(--secondary);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--primary-light);
+            border: 1px solid rgba(245, 192, 0, 0.45);
+            flex-shrink: 0;
+          }
+          .home-sponsored-more:hover {
+            filter: brightness(1.03);
+          }
+          .home-sponsored-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+          }
+          @media (min-width: 720px) {
+            .home-sponsored-grid {
+              grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+          }
+          @media (min-width: 1100px) {
+            .home-sponsored-grid {
+              grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+          }
+          .home-sponsored-card {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            text-decoration: none;
+            color: inherit;
+            border-radius: 16px;
+            border: 1px solid rgba(232, 230, 224, 0.95);
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 10px 26px rgba(26, 29, 38, 0.05);
+            overflow: hidden;
+            min-width: 0;
+          }
+          .home-sponsored-card:hover {
+            border-color: rgba(245, 192, 0, 0.45);
+            box-shadow: 0 16px 40px rgba(245, 192, 0, 0.14);
+          }
+          .home-sponsored-card__thumb {
+            order: -1;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            max-height: 140px;
+            background: rgba(26, 29, 38, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid rgba(232, 230, 224, 0.85);
+          }
+          .home-sponsored-card__img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          .home-sponsored-card__ph {
+            font-size: 2rem;
+            opacity: 0.85;
+          }
+          .home-sponsored-card__body {
+            padding: 10px 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+          }
+          .home-sponsored-card__badge {
+            align-self: flex-start;
+            font-size: 0.68rem;
+            font-weight: 900;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(255, 204, 0, 0.88);
+            color: #111;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+          }
+          .home-sponsored-card__adtitle {
+            font-weight: 950;
+            font-size: 0.88rem;
+            color: var(--secondary);
+            line-height: 1.25;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+          .home-sponsored-card__meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+          }
+          .home-sponsored-card__store {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+            max-width: 100%;
+          }
+          .home-sponsored-card__dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(26, 29, 38, 0.25);
+            flex-shrink: 0;
+          }
+          .home-sponsored-card__price {
+            font-weight: 950;
+            font-size: 0.82rem;
+            color: var(--secondary);
+            background: var(--primary-light);
+            border: 1px solid rgba(245, 192, 0, 0.35);
+            padding: 5px 9px;
+            border-radius: 999px;
+            align-self: flex-start;
+          }
+          .home-sponsored-skel {
+            border-radius: 16px;
+            min-height: 200px;
+            background: linear-gradient(
+              90deg,
+              rgba(232, 230, 224, 0.65),
+              rgba(245, 243, 238, 0.8),
+              rgba(232, 230, 224, 0.65)
+            );
+            background-size: 220% 100%;
+            animation: homeExclusiveShimmer 1.25s ease-in-out infinite;
+            border: 1px solid rgba(232, 230, 224, 0.95);
+          }
+          .home-sponsored-empty {
+            padding: 16px;
+            text-align: center;
+            border-radius: 16px;
+            border: 1px dashed rgba(232, 230, 224, 0.95);
+            color: var(--text-secondary);
+            font-weight: 800;
+            font-size: 0.88rem;
+          }
+          .home-sponsored-pager {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 12px;
+          }
+          .home-sponsored-pager button {
+            border-radius: 12px;
+            border: 1px solid rgba(232, 230, 224, 0.95);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: var(--secondary);
+            font-weight: 900;
+            padding: 9px 14px;
+            cursor: pointer;
+            font-family: inherit;
+          }
+          .home-sponsored-pager button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+          }
+          .home-sponsored-pager span {
+            font-weight: 900;
+            color: var(--text-secondary);
+            font-size: 0.88rem;
           }
 
           .home-offers-section--split {

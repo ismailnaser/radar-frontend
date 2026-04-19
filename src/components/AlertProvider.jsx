@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useLayoutEffect, useRef } from 'react';
+import { registerUnauthorizedLogoutConfirm } from '../api/auth';
 import CustomModal from './ui/CustomModal';
 
 const noopAlert = async () => {};
@@ -137,6 +138,19 @@ export const AlertProvider = ({ children }) => {
   const closeModule = () => {
     setModalConfig(prev => ({ ...prev, isOpen: false }));
   };
+
+  const showConfirmRef = useRef(showConfirm);
+  showConfirmRef.current = showConfirm;
+
+  useLayoutEffect(() => {
+    registerUnauthorizedLogoutConfirm(async () =>
+      showConfirmRef.current(
+        'تم قطع الجلسة أو انتهت صلاحية الدخول (أحياناً بعد الرجوع في المتصفح). هل تريد الانتقال إلى صفحة تسجيل الدخول؟',
+        'تسجيل الخروج',
+      ),
+    );
+    return () => registerUnauthorizedLogoutConfirm(null);
+  }, []);
 
   return (
     <AlertContext.Provider value={{ showAlert, showConfirm, showPrompt, showSelect }}>

@@ -1,7 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import MainLayout from '../../components/MainLayout';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createMerchantProduct, getMerchantProduct, updateMerchantProduct } from '../../api/data';
+import {
+  createMerchantProduct,
+  exportMerchantProductsExcel,
+  getMerchantProduct,
+  importMerchantProductsExcel,
+  updateMerchantProduct,
+} from '../../api/data';
 import { useAlert } from '../../components/AlertProvider';
 import { formatApiError } from '../../utils/apiErrors';
 import CustomInput from '../../components/ui/CustomInput';
@@ -10,7 +16,7 @@ import ImageCarousel from '../../components/ImageCarousel';
 import GalleryThumbRow from '../../components/GalleryThumbRow';
 import { visualImageUrls } from '../../utils/productImages';
 import { mergeNewGalleryFiles } from '../../utils/galleryFiles';
-import { Package, Image as ImageIcon, FileText, Sparkles } from 'lucide-react';
+import { Package, Image as ImageIcon, FileText, Sparkles, Download, Upload } from 'lucide-react';
 
 const ShekelIcon = () => (
   <span
@@ -46,6 +52,8 @@ const MerchantProductForm = () => {
   /** ملفات جديدة تُرسل مع الطلب؛ تُختار على دفعات ويُدمج الاختيار حتى 5 */
   const [replacementFiles, setReplacementFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [excelImporting, setExcelImporting] = useState(false);
+  const excelImportInputRef = useRef(null);
 
   const newBlobUrls = useMemo(() => replacementFiles.map((f) => URL.createObjectURL(f)), [replacementFiles]);
 
@@ -149,10 +157,93 @@ const MerchantProductForm = () => {
     await showAlert('تم حذف السطر.', 'تم');
   };
 
+  const handleExcelExport = async () => {
+    try {
+      const blob = await exportMerchantProductsExcel();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `منتجات_رادار_${new Date().toLocaleDateString('ar-EG').replace(/\//g, '-')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch {
+      void showAlert('تعذر تصدير الملف. حاول مرة أخرى.', 'خطأ');
+    }
+  };
+
+  const handleExcelImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setExcelImporting(true);
+    try {
+      const res = await importMerchantProductsExcel(file);
+      await showAlert(res.message || 'تم استيراد المنتجات.', 'تم');
+      navigate('/merchant/products');
+    } catch (err) {
+      const msg =
+        err.response?.data?.error || 'فشل استيراد الملف. تأكد من صيغة .xlsx والأعمدة كما في ملف التصدير.';
+      void showAlert(msg, 'خطأ');
+    } finally {
+      setExcelImporting(false);
+      e.target.value = '';
+    }
+  };
+
   return (
     <MainLayout>
       <div className="merchant-product-form">
         <h1 style={{ marginBottom: 14, fontSize: '1.8rem' }}>{isEdit ? 'تعديل منتج' : 'إضافة منتج'}</h1>
+
+        {!isEdit ? (
+          <div
+            className="card merchant-excel-card"
+            style={{ maxWidth: 720, margin: '0 auto 16px', position: 'relative' }}
+          >
+            <div style={{ fontWeight: 900, marginBottom: 8, fontSize: '1.02rem' }}>استيراد وتصدير Excel</div>
+            <p style={{ margin: '0 0 12px', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <strong>تصدير:</strong> ينزّل ملفاً فيه كل منتجات متجرك الحالية بأعمدة جاهزة (اسم، سعر، وصف، تفاصيل، حالة).
+              <br />
+              <strong>استيراد:</strong> يضيف <strong>منتجاً جديداً</strong> لكل صف بيانات بعد صف العناوين — لا يعدّل
+              المنتجات الموجودة. يُفضّل استخدام ملفاً صدرته من هنا كقالب.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+              <button
+                type="button"
+                className="iconBtn"
+                onClick={() => void handleExcelExport()}
+                style={{ gap: 8 }}
+              >
+                <Download size={18} />
+                تصدير ملف Excel
+              </button>
+              <input
+                ref={excelImportInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                className="merchant-excel-file-input"
+                aria-hidden
+                tabIndex={-1}
+                onChange={(e) => void handleExcelImport(e)}
+              />
+              <button
+                type="button"
+                className="iconBtn"
+                disabled={excelImporting}
+                onClick={() => excelImportInputRef.current?.click()}
+                style={{ gap: 8 }}
+              >
+                <Upload size={18} />
+                {excelImporting ? 'جاري الاستيراد…' : 'استيراد ملف Excel'}
+              </button>
+            </div>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)', lineHeight: 1.55 }}>
+              الصف الأول في الملف للعناوين؛ تبدأ البيانات من الصف الثاني. للتفاصيل الدقيقة راجع صفحة «منتجاتي» بعد
+              الاستيراد.
+            </p>
+          </div>
+        ) : null}
 
         <div className="card" style={{ maxWidth: 720, margin: '0 auto' }}>
           <form onSubmit={submit}>
@@ -361,6 +452,14 @@ const MerchantProductForm = () => {
           .iconBtn { border: 1px solid var(--border); background: var(--white); padding: 10px 14px; border-radius: 14px; font-weight: 900; color: var(--secondary); display: inline-flex; align-items: center; gap: 8px; }
           .iconBtn:hover { background: var(--primary-light); }
           .merchant-file-pick-label input[type=file]::-webkit-file-upload-button { cursor: pointer; }
+          .merchant-excel-card .iconBtn:disabled { opacity: 0.65; cursor: wait; }
+          .merchant-excel-file-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+          }
         `}} />
       </div>
     </MainLayout>

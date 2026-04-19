@@ -55,15 +55,16 @@
   -webkit-touch-callout: none;
 }
 
-/* إزالة الخلفية الزرقاء عند الضغط على أي عنصر */
-a, button, input, select, textarea,
-[role="button"], [tabindex],
-label, summary, details,
-div, span, li, img, svg, path,
-nav, header, footer, section, article {
+/* لمس: بدون وميض أزرق — الـ outline يبقى للكيبورد فقط */
+a,
+button,
+input,
+select,
+textarea,
+[role='button'],
+label,
+summary {
   -webkit-tap-highlight-color: transparent !important;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
-  outline: none;
 }
 
 /* فقط focus-visible (من الكيبورد) يُظهر outline */
