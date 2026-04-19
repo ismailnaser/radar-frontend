@@ -58,6 +58,7 @@ import { UnauthorizedSessionBridge } from './components/UnauthorizedSessionBridg
 import { MapExploreProvider } from './context/MapExploreContext'
 import { AdminPendingCountsProvider } from './context/AdminPendingCountsContext'
 import { AdminNotificationsProvider } from './context/AdminNotificationsContext'
+import { InAppBrowserPrompt } from './components/InAppBrowserPrompt'
 import { pingAppOpen } from './api/data'
 
 // Helper to check if user is logged in
@@ -183,6 +184,7 @@ function AppLayout() {
         <UnauthorizedSessionBridge />
         <AdminPendingCountsProvider>
         <AdminNotificationsProvider>
+        <InAppBrowserPrompt />
         <Outlet />
         </AdminNotificationsProvider>
         </AdminPendingCountsProvider>
