@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Maximize2, Star, UserX, X } from 'lucide-react';
 import L from 'leaflet';
 import { MapContainer, Marker, Popup, Tooltip, useMap, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import '../../components/maps/leafletIconFix';
 import BasemapLayersControl from './BasemapLayersControl';
 import LeafletInvalidateOnLayout from './LeafletInvalidateOnLayout';

@@ -18,6 +18,37 @@
     <meta name="description" content="تطبيق رادار هو دليلك الشامل لاستكشاف المتاجر والمطاعم والخدمات القريبة منك. تسوق أونلاين، ابحث عن المنتجات، وتواصل مع التجار بسهولة من خلال خريطتنا التفاعلية." />
     <meta name="keywords" content="رادار, دليلك, غزة, تسوق, متاجر قريبة, خريطة المتاجر, تسوق إلكتروني, مطاعم قريبة, تطبيق رادار" />
     <meta name="author" content="Radar App" />
+    <style>
+      :root {
+        --background: #f5f6f8;
+        --text-primary: #1a1d26;
+        --font-family: "Tajawal", "Cairo", "Segoe UI", Tahoma, sans-serif;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background: var(--background);
+        color: var(--text-primary);
+        font-family: var(--font-family);
+      }
+      #root {
+        min-height: 100vh;
+      }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;600;700;800;900&display=swap"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <link rel="preload" href="/src/styles/theme.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;600;700;800;900&display=swap" />
+      <link rel="stylesheet" href="/src/styles/theme.css" />
+    </noscript>
 
     <!-- Open Graph (Facebook, WhatsApp, LinkedIn, Instagram) -->
     <meta property="og:type" content="website" />

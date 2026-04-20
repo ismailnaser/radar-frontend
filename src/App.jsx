@@ -207,7 +207,7 @@ function AppLayout() {
         <AdminNotificationsProvider>
         <ScrollToTopOnRouteChange />
         <InAppBrowserPrompt />
-        <Suspense fallback={<div style={{ padding: 16 }}>جاري تحميل الصفحة…</div>}>
+        <Suspense fallback={<div style={{ minHeight: '70vh', padding: 16 }}>جاري تحميل الصفحة…</div>}>
           <Outlet />
         </Suspense>
         </AdminNotificationsProvider>
