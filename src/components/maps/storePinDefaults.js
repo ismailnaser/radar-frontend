@@ -19,6 +19,7 @@ const EXACT_NAME_TO_KEY = {
   /** إملاء شائعة بدون همزة على الألف */
   الكترونيات: 'electronics',
   'أدوات بناء': 'hardware',
+  'عطارة وبهارات': 'spices',
   'بيع بالجملة': 'wholesale',
   'تجارة الجملة': 'wholesale',
   'بيع جمله': 'wholesale',

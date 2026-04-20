@@ -172,6 +172,28 @@ const ShopperOrMerchantRoute = ({ children }) => {
   return children;
 };
 
+function ScrollToTopOnRouteChange() {
+  const { pathname, search, hash } = useLocation();
+
+  useEffect(() => {
+    // Keep native anchor behavior when navigating to a hash target.
+    if (hash) return;
+
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+
+    if (typeof document !== 'undefined') {
+      const contentEl = document.querySelector('.content');
+      if (contentEl && typeof contentEl.scrollTo === 'function') {
+        contentEl.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      }
+    }
+  }, [pathname, search, hash]);
+
+  return null;
+}
+
 function AppLayout() {
   useEffect(() => {
     pingAppOpen().catch(() => {});
@@ -182,6 +204,7 @@ function AppLayout() {
       <AlertProvider>
         <AdminPendingCountsProvider>
         <AdminNotificationsProvider>
+        <ScrollToTopOnRouteChange />
         <InAppBrowserPrompt />
         <Outlet />
         </AdminNotificationsProvider>
