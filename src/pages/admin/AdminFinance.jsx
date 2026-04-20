@@ -166,7 +166,7 @@ export default function AdminFinance() {
                         <td>
                           {r.receipt_image ? (
                             <a href={r.receipt_image} target="_blank" rel="noreferrer" className="fin-receipt">
-                              <img src={r.receipt_image} alt="إشعار التحويل" loading="lazy" />
+                              <img src={r.receipt_image} alt="إشعار التحويل" loading="lazy" width="260" height="260" />
                             </a>
                           ) : (
                             <span className="muted small">—</span>
@@ -227,7 +227,7 @@ export default function AdminFinance() {
 
                     {r.receipt_image ? (
                       <a href={r.receipt_image} target="_blank" rel="noreferrer" className="fin-card__receipt">
-                        <img src={r.receipt_image} alt="إشعار التحويل" loading="lazy" />
+                        <img src={r.receipt_image} alt="إشعار التحويل" loading="lazy" width="260" height="260" />
                         <span>فتح إشعار التحويل</span>
                       </a>
                     ) : null}

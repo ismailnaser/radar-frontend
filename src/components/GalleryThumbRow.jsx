@@ -34,7 +34,7 @@ export default function GalleryThumbRow({ urls = [], max = 5 }) {
               boxSizing: 'border-box',
             }}
           >
-            <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" width="120" height="120" />
             <span
               style={{
                 position: 'absolute',

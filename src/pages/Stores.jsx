@@ -196,7 +196,7 @@ export default function StoresPage() {
                   </div>
                   <div className="store-card__thumb" aria-hidden>
                     {visual.type === 'image' ? (
-                      <img className="store-card__thumb-img" src={visual.url} alt="" />
+                      <img className="store-card__thumb-img" src={visual.url} alt="" loading="lazy" width="800" height="800" />
                     ) : (
                       <span className="store-card__thumb-emoji" style={{ background: visual.bg }}>
                         {visual.emoji}

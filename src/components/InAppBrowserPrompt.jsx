@@ -31,7 +31,7 @@ export function InAppBrowserPrompt() {
   return (
     <div className="in-app-overlay">
       <div className="in-app-modal">
-        <img src="/logo.png" alt="Radar Logo" className="in-app-logo" />
+        <img src="/logo.png" alt="Radar Logo" className="in-app-logo" loading="lazy" width="96" height="96" />
         
         <h2>تجربة أسرع لك!</h2>
         <p>لتثبيت التطبيق والحصول على أفضل تجربة مستخدم:</p>

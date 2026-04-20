@@ -236,7 +236,7 @@ const SearchPage = () => {
                     </div>
                     <div className="search-page-card-thumb">
                       {visual.type === 'image' ? (
-                        <img className="search-page-card-thumb-img" src={visual.url} alt="" />
+                        <img className="search-page-card-thumb-img" src={visual.url} alt="" loading="lazy" width="800" height="800" />
                       ) : (
                         <span className="search-page-card-thumb-emoji" style={{ background: visual.bg }}>
                           {visual.emoji}

@@ -15,7 +15,7 @@ function ImgThumb({ src, alt }) {
   if (!src) return <span className="muted small">—</span>;
   return (
     <a className="cat-thumb" href={src} target="_blank" rel="noreferrer" title="فتح الصورة">
-      <img src={src} alt={alt || 'صورة'} loading="lazy" />
+      <img src={src} alt={alt || 'صورة'} loading="lazy" width="88" height="88" />
     </a>
   );
 }

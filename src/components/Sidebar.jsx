@@ -196,7 +196,7 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
       <div className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-brand">
-            <img src="/logo.png" alt="رادار" className="sidebar-brand-img" />
+            <img src="/logo.png" alt="رادار" className="sidebar-brand-img" loading="lazy" width="96" height="96" />
             <span className="sidebar-brand-caption">لوحة التنقّل</span>
             <div className="sidebar-pwa-wrap">
               <InstallPwaButton />

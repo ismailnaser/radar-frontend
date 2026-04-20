@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { Suspense, lazy, useEffect } from 'react'
 import {
   createBrowserRouter,
   createRoutesFromElements,
@@ -9,56 +9,57 @@ import {
   useLocation,
   useParams,
 } from 'react-router-dom'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPasswordConfirm from './pages/ResetPasswordConfirm'
-import Home from './pages/Home'
-import Dashboard from './pages/Dashboard'
-import MerchantDashboard from './pages/merchant/Dashboard'
-import MerchantProducts from './pages/merchant/Products'
-import MerchantProductForm from './pages/merchant/ProductForm'
-import MerchantAds from './pages/merchant/Ads'
-import MerchantMySponsoredAds from './pages/merchant/MySponsoredAds'
-import MerchantSubscription from './pages/merchant/Subscription'
-import MerchantStoreSettings from './pages/merchant/StoreSettings'
-import MerchantCompleteProfile from './pages/merchant/MerchantCompleteProfile'
-import MerchantProfile from './pages/merchant/Profile'
-import Categories from './pages/Categories'
-import Services from './pages/Services'
-import ServicesCategory from './pages/ServicesCategory'
-import SuggestCommunityService from './pages/SuggestCommunityService'
-import Carts from './pages/Carts'
-import CartDetails from './pages/CartDetails'
-import Offers from './pages/Offers'
-import Search from './pages/Search'
-import Favorites from './pages/Favorites'
-import Contact from './pages/Contact'
-import UserGuide from './pages/UserGuide'
-import Verification from './pages/Verification'
-import StoreProfile from './pages/StoreProfile'
-import SharedCart from './pages/SharedCart'
-import MapPage from './pages/Map'
-import StoresPage from './pages/Stores'
-import AdminHome from './pages/admin/AdminHome'
-import AdminAccounts from './pages/admin/AdminAccounts'
-import AdminAds from './pages/admin/AdminAds'
-import AdminAdReview from './pages/admin/AdminAdReview'
-import AdminSubscriptions from './pages/admin/AdminSubscriptions'
-import AdminStores from './pages/admin/AdminStores'
-import AdminCommunity from './pages/admin/AdminCommunity'
-import AdminUsers from './pages/admin/AdminUsers'
-import AdminFinance from './pages/admin/AdminFinance'
-import AdminPayments from './pages/admin/AdminPayments'
-import AdminAnnouncements from './pages/admin/AdminAnnouncements'
-import AdminCategoryManagement from './pages/admin/AdminCategoryManagement'
-import SettingsPage from './pages/Settings'
 import { AlertProvider } from './components/AlertProvider'
 import { MapExploreProvider } from './context/MapExploreContext'
 import { AdminPendingCountsProvider } from './context/AdminPendingCountsContext'
 import { AdminNotificationsProvider } from './context/AdminNotificationsContext'
 import { InAppBrowserPrompt } from './components/InAppBrowserPrompt'
 import { pingAppOpen } from './api/data'
+
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPasswordConfirm = lazy(() => import('./pages/ResetPasswordConfirm'));
+const Home = lazy(() => import('./pages/Home'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const MerchantDashboard = lazy(() => import('./pages/merchant/Dashboard'));
+const MerchantProducts = lazy(() => import('./pages/merchant/Products'));
+const MerchantProductForm = lazy(() => import('./pages/merchant/ProductForm'));
+const MerchantAds = lazy(() => import('./pages/merchant/Ads'));
+const MerchantMySponsoredAds = lazy(() => import('./pages/merchant/MySponsoredAds'));
+const MerchantSubscription = lazy(() => import('./pages/merchant/Subscription'));
+const MerchantStoreSettings = lazy(() => import('./pages/merchant/StoreSettings'));
+const MerchantCompleteProfile = lazy(() => import('./pages/merchant/MerchantCompleteProfile'));
+const MerchantProfile = lazy(() => import('./pages/merchant/Profile'));
+const Categories = lazy(() => import('./pages/Categories'));
+const Services = lazy(() => import('./pages/Services'));
+const ServicesCategory = lazy(() => import('./pages/ServicesCategory'));
+const SuggestCommunityService = lazy(() => import('./pages/SuggestCommunityService'));
+const Carts = lazy(() => import('./pages/Carts'));
+const CartDetails = lazy(() => import('./pages/CartDetails'));
+const Offers = lazy(() => import('./pages/Offers'));
+const Search = lazy(() => import('./pages/Search'));
+const Favorites = lazy(() => import('./pages/Favorites'));
+const Contact = lazy(() => import('./pages/Contact'));
+const UserGuide = lazy(() => import('./pages/UserGuide'));
+const Verification = lazy(() => import('./pages/Verification'));
+const StoreProfile = lazy(() => import('./pages/StoreProfile'));
+const SharedCart = lazy(() => import('./pages/SharedCart'));
+const MapPage = lazy(() => import('./pages/Map'));
+const StoresPage = lazy(() => import('./pages/Stores'));
+const AdminHome = lazy(() => import('./pages/admin/AdminHome'));
+const AdminAccounts = lazy(() => import('./pages/admin/AdminAccounts'));
+const AdminAds = lazy(() => import('./pages/admin/AdminAds'));
+const AdminAdReview = lazy(() => import('./pages/admin/AdminAdReview'));
+const AdminSubscriptions = lazy(() => import('./pages/admin/AdminSubscriptions'));
+const AdminStores = lazy(() => import('./pages/admin/AdminStores'));
+const AdminCommunity = lazy(() => import('./pages/admin/AdminCommunity'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminFinance = lazy(() => import('./pages/admin/AdminFinance'));
+const AdminPayments = lazy(() => import('./pages/admin/AdminPayments'));
+const AdminAnnouncements = lazy(() => import('./pages/admin/AdminAnnouncements'));
+const AdminCategoryManagement = lazy(() => import('./pages/admin/AdminCategoryManagement'));
+const SettingsPage = lazy(() => import('./pages/Settings'));
 
 // Helper to check if user is logged in
 const isAuthenticated = () => !!localStorage.getItem('token');
@@ -206,7 +207,9 @@ function AppLayout() {
         <AdminNotificationsProvider>
         <ScrollToTopOnRouteChange />
         <InAppBrowserPrompt />
-        <Outlet />
+        <Suspense fallback={<div style={{ padding: 16 }}>جاري تحميل الصفحة…</div>}>
+          <Outlet />
+        </Suspense>
         </AdminNotificationsProvider>
         </AdminPendingCountsProvider>
       </AlertProvider>

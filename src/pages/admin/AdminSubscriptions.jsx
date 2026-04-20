@@ -103,7 +103,7 @@ function AdminSubscriptions() {
                   <div className="admin-card-media">
                     {r.receipt_image ? (
                       <a href={r.receipt_image} target="_blank" rel="noopener noreferrer">
-                        <img src={r.receipt_image} alt="إشعار الدفع" />
+                        <img src={r.receipt_image} alt="إشعار الدفع" loading="lazy" width="260" height="260" />
                       </a>
                     ) : (
                       <span className="muted">لا صورة</span>

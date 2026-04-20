@@ -182,7 +182,7 @@ export default function MySponsoredAds() {
                         <div className="my-ad-receipt">
                           <strong>إشعار الدفع</strong>
                           <a href={ad.payment_receipt_image} target="_blank" rel="noreferrer">
-                            <img src={ad.payment_receipt_image} alt="إشعار الدفع" className="receipt-thumb" />
+                            <img src={ad.payment_receipt_image} alt="إشعار الدفع" className="receipt-thumb" loading="lazy" width="220" height="220" />
                           </a>
                         </div>
                       ) : null}

@@ -254,7 +254,7 @@ const MainLayout = ({ children }) => {
             ) : null}
 
             <Link to="/" className="brand-block brand-block--toolbar" title="رادار — الرئيسية">
-              <img className="brand-block-logo brand-block-logo--toolbar" src="/logo.png" alt="رادار" />
+              <img className="brand-block-logo brand-block-logo--toolbar" src="/logo.png" alt="رادار" loading="lazy" width="64" height="64" />
             </Link>
           </div>
 

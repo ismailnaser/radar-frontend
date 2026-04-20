@@ -1,0 +1,1 @@
+const o={medical:"🏥",education:"📚",food:"🍲",water:"💧",institution:"🤝"},n={medical:"#c62828",education:"#4527a0",food:"#e65100",water:"#0277bd",institution:"#5d4037"};function e(t){return o[t]||"✨"}function i(t){return n[t]||"#1ebea5"}export{e as a,i as c};

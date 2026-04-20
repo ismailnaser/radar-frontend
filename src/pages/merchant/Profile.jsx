@@ -36,7 +36,7 @@ const MerchantProfile = () => {
           ) : (
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div className="logoBox">
-                {profile?.logo ? <img src={profile.logo} alt="logo" /> : <ImageIcon size={22} />}
+                {profile?.logo ? <img src={profile.logo} alt="logo" loading="lazy" width="120" height="120" /> : <ImageIcon size={22} />}
               </div>
               <div style={{ flex: 1, minWidth: 240 }}>
                 <div

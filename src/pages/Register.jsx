@@ -173,7 +173,7 @@ const Register = () => {
     <MainLayout>
       <div className="auth-page">
         <div className="auth-card" style={{ maxWidth: 420 }}>
-          <img className="auth-logo" src="/logo.png" alt="رادار" />
+          <img className="auth-logo" src="/logo.png" alt="رادار" loading="lazy" width="160" height="160" />
 
           <h1 className="auth-title" style={{ marginBottom: '6px' }}>
             إنشاء حساب

@@ -68,7 +68,7 @@ export default function ImageCarousel({
 
   return (
     <div className={`radar-image-carousel ${className || ''}`.trim()} style={wrapStyle}>
-      <img src={list[idx]} alt={alt} style={imgStyle} />
+      <img src={list[idx]} alt={alt} style={imgStyle} loading="lazy" width="800" height="800" />
 
       {n > 1 ? (
         <>

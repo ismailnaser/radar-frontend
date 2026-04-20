@@ -203,7 +203,7 @@ const MerchantSubscription = () => {
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                   <div className="thumbLg">
-                    {preview ? <img src={preview} alt="receipt" /> : <ImageIcon size={22} />}
+                    {preview ? <img src={preview} alt="receipt" loading="lazy" width="120" height="120" /> : <ImageIcon size={22} />}
                   </div>
                   <div>
                     <div style={{ fontWeight: 900 }}>إشعار الدفع</div>

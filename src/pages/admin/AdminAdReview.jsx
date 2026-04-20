@@ -92,6 +92,8 @@ function AdminAdReview() {
                     className="admin-review-receipt-img"
                     onError={() => setReceiptBroken(true)}
                     loading="lazy"
+                    width="900"
+                    height="900"
                     referrerPolicy="no-referrer"
                   />
                 </div>

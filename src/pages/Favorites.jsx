@@ -467,7 +467,7 @@ const Favorites = () => {
                             }}
                           >
                             {s.logo ? (
-                              <img src={s.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <img src={s.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" width="88" height="88" />
                             ) : (
                               <Store size={22} color="var(--text-secondary)" />
                             )}

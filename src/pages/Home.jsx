@@ -1063,7 +1063,7 @@ const Home = () => {
                         <article key={ad.id} className="home-sponsored-card" role="listitem" aria-label={`${ad.title} — ${ad.store_name}`}>
                           <div className="home-sponsored-card__thumb" aria-hidden>
                             {img ? (
-                              <img className="home-sponsored-card__img" src={img} alt="" />
+                              <img className="home-sponsored-card__img" src={img} alt="" loading="lazy" width="800" height="800" />
                             ) : (
                               <span className="home-sponsored-card__ph">📣</span>
                             )}
@@ -1525,7 +1525,7 @@ const Home = () => {
                           </div>
                           <div className="nearby-card-thumb">
                             {visual.type === 'image' ? (
-                              <img className="nearby-card-thumb-img" src={visual.url} alt="" />
+                              <img className="nearby-card-thumb-img" src={visual.url} alt="" loading="lazy" width="800" height="800" />
                             ) : (
                               <span className="nearby-card-thumb-emoji" style={{ background: visual.bg }}>
                                 {visual.emoji}

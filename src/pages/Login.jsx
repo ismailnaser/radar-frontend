@@ -124,7 +124,7 @@ const Login = () => {
             رادار — محلاتك القريبة على الخريطة
           </div>
 
-          <img className="auth-logo" src="/logo.png" alt="رادار" />
+          <img className="auth-logo" src="/logo.png" alt="رادار" loading="lazy" width="160" height="160" />
 
           <h1 className="auth-title">مرحباً بعودتك</h1>
           <p className="auth-sub">سجّل الدخول لمزامنة سلتك والعروض والمفضلة.</p>

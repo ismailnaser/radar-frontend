@@ -559,6 +559,9 @@ const StoreProfile = () => {
                         src={store.logo}
                         alt=""
                         className="store-profile-hero-logo-img"
+                        loading="lazy"
+                        width="220"
+                        height="220"
                       />
                     ) : (
                       <Store size={40} color="var(--text-secondary)" />

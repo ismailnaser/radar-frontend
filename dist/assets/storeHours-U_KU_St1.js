@@ -1,0 +1,1 @@
+function s(t){if(!t||typeof t!="object")return!1;for(let r=0;r<7;r++){const o=t[String(r)]??t[r];if(Array.isArray(o))for(const n of o){if(!n||typeof n!="object")continue;const e=String(n.start??"").trim(),i=String(n.end??"").trim();if(e&&i)return!0}}return!1}export{s};

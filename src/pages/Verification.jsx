@@ -65,6 +65,9 @@ const Verification = () => {
                         <img
                             src="/logo.png"
                             alt="رادار"
+                            loading="lazy"
+                            width="220"
+                            height="220"
                             style={{ width: '220px', maxWidth: '100%', objectFit: 'contain' }}
                         />
                     </div>

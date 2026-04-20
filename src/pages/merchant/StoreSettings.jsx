@@ -501,6 +501,9 @@ const MerchantStoreSettings = () => {
                   <img
                     src={logoPreview}
                     alt=""
+                    loading="lazy"
+                    width="120"
+                    height="120"
                     style={{
                       width: 120,
                       height: 120,

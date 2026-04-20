@@ -44,7 +44,7 @@ const Categories = () => {
                 <Link key={cat.id} to={`/?category=${cat.id}`} className="categories-card">
                   {cat.image ? (
                     <span className="categories-card-photo-wrap">
-                      <img className="categories-card-photo" src={cat.image} alt="" loading="lazy" />
+                      <img className="categories-card-photo" src={cat.image} alt="" loading="lazy" width="320" height="220" />
                     </span>
                   ) : (
                     <span className="categories-card-emoji" style={{ background: pin.bg }}>

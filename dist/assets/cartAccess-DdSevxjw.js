@@ -1,0 +1,1 @@
+function t(){if(!localStorage.getItem("token")||localStorage.getItem("isGuest")==="true")return!1;const e=localStorage.getItem("user_type")||"shopper";return e==="shopper"||e==="merchant"||e==="admin"}export{t as c};
