@@ -18,6 +18,7 @@ const MerchantProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [importImages, setImportImages] = useState([]);
 
   const refresh = async () => {
     setLoading(true);
@@ -65,7 +66,7 @@ const MerchantProducts = () => {
     
     setImporting(true);
     try {
-      const res = await importMerchantProductsExcel(file);
+      const res = await importMerchantProductsExcel(file, importImages);
       await showAlert(res.message, 'تم الاستيراد');
       if (res.skipped?.length || res.errors?.length) {
         console.warn('Import issues:', res);
@@ -76,6 +77,7 @@ const MerchantProducts = () => {
       await showAlert(msg, 'خطأ');
     } finally {
       setImporting(false);
+      setImportImages([]);
       e.target.value = ''; // Reset input
     }
   };
@@ -86,7 +88,9 @@ const MerchantProducts = () => {
       '1. العمود الأول: اسم المنتج (مطلوب)\n' +
       '2. العمود الثاني: السعر (رقم)\n' +
       '3. العمود الثالث: وصف المنتج\n' +
-      '4. العمود الرابع: تفاصيل المنتج (افصل بينها بـ |)\n\n' +
+      '4. العمود الرابع: تفاصيل المنتج (افصل بينها بـ |)\n' +
+      '5. العمود الخامس: أسماء الصور (افصل بينها بـ |) مثل: img1.jpg|img2.jpg\n' +
+      'ثم ارفع نفس الصور من زر "اختيار صور".\n\n' +
       'تأكد من البدء من الصف الثاني (الصف الأول للعناوين).',
       'تعليمات الاستيراد'
     );
@@ -106,6 +110,25 @@ const MerchantProducts = () => {
               <Download size={18} />
               تصدير إكسل
             </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                className="btn-secondary"
+                style={{ width: 'auto', display: 'inline-flex', gap: 8, alignItems: 'center', background: 'var(--white)', color: 'var(--secondary)', border: '1px solid var(--border)' }}
+                onClick={() => document.getElementById('excel-images-input').click()}
+                type="button"
+              >
+                <ImageIcon size={18} />
+                {importImages.length > 0 ? `تم اختيار ${importImages.length} صورة` : 'اختيار صور'}
+              </button>
+              <input
+                id="excel-images-input"
+                type="file"
+                accept="image/*,.jpg,.jpeg,.png,.webp,.heif,.heic"
+                multiple
+                style={{ display: 'none' }}
+                onChange={(e) => setImportImages(Array.from(e.target.files || []))}
+              />
+            </div>
             <div style={{ position: 'relative' }}>
               <button 
                 disabled={importing}

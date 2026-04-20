@@ -265,6 +265,7 @@ const COMMUNITY_SLUG_BROWSE_VISUAL = {
 const PIN_KEY_BROWSE_VISUAL = {
   mini_mall: { Icon: Warehouse, tone: '#6a1b9a' },
   supermarket: { Icon: ShoppingCart, tone: '#2e7d32' },
+  wholesale: { Icon: Warehouse, tone: '#455a64' },
   greengrocer: { Icon: Sprout, tone: '#43a047' },
   butcher: { Icon: Beef, tone: '#c62828' },
   fish: { Icon: Fish, tone: '#0277bd' },
@@ -858,6 +859,8 @@ const Home = () => {
     !!localStorage.getItem('token') && !isGuestVisitor && localStorage.getItem('user_type') === 'merchant';
   const canUseOfferFavorites =
     !!localStorage.getItem('token') && !isGuestVisitor;
+  const canUseCarts = canUseShoppingCarts();
+  const sponsoredIsFavorite = (ad) => !!sponsoredFavByAdId[ad.id];
 
   useEffect(() => {
     if (filterMode !== 'community' || isMerchantOnHome) return;
@@ -1024,7 +1027,7 @@ const Home = () => {
               <div className="home-sponsored-head">
                 <div className="home-sponsored-head-text">
                   <h2 className="home-sponsored-title">إعلانات ممولة من المتاجر</h2>
-                  <p className="home-sponsored-sub">عرض شبكي مثل المتاجر — اضغط البطاقة لفتح صفحة المتجر</p>
+                  <p className="home-sponsored-sub">اضغط البطاقة لفتح صفحة المتجر</p>
                   <div className="home-sponsored-controls">
                     <FiltersDropdown
                       buttonLabel="فلاتر"
@@ -1057,19 +1060,44 @@ const Home = () => {
                     {pagedExclusiveAds.map((ad) => {
                       const img = visualImageUrls(ad)[0] || null;
                       return (
-                        <Link
-                          key={ad.id}
-                          to={`/stores/${ad.store}`}
-                          className="home-sponsored-card"
-                          role="listitem"
-                          aria-label={`${ad.title} — ${ad.store_name}`}
-                        >
+                        <article key={ad.id} className="home-sponsored-card" role="listitem" aria-label={`${ad.title} — ${ad.store_name}`}>
                           <div className="home-sponsored-card__thumb" aria-hidden>
                             {img ? (
                               <img className="home-sponsored-card__img" src={img} alt="" />
                             ) : (
                               <span className="home-sponsored-card__ph">📣</span>
                             )}
+                            <button
+                              type="button"
+                              className={`home-sponsored-card__cartbtn${canUseCarts ? '' : ' home-sponsored-card__cartbtn--muted'}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                void addSponsoredToCart(ad);
+                              }}
+                              title="إضافة إلى السلة"
+                              aria-label="إضافة إلى السلة"
+                            >
+                              <ShoppingCart size={17} strokeWidth={2} aria-hidden />
+                            </button>
+                            <button
+                              type="button"
+                              className={`home-sponsored-card__favbtn${canUseOfferFavorites ? '' : ' home-sponsored-card__favbtn--muted'}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                void addSponsoredToFavorites(ad);
+                              }}
+                              title={ad.product ? '' : 'يُزال من المفضلة عند انتهاء الإعلان'}
+                              aria-label={sponsoredIsFavorite(ad) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
+                            >
+                              <Heart
+                                size={18}
+                                strokeWidth={2}
+                                color="#e91e63"
+                                fill={sponsoredIsFavorite(ad) ? '#e91e63' : 'none'}
+                              />
+                            </button>
                           </div>
                           <div className="home-sponsored-card__body">
                             <div className="home-sponsored-card__badge">إعلان ممول</div>
@@ -1088,8 +1116,11 @@ const Home = () => {
                                 {Number(ad.product_price).toFixed(2)} ₪
                               </div>
                             ) : null}
+                            <Link to={`/stores/${ad.store}`} className="home-sponsored-card__storebtn">
+                              عرض المتجر
+                            </Link>
                           </div>
-                        </Link>
+                        </article>
                       );
                     })}
                   </div>
@@ -2084,6 +2115,7 @@ const Home = () => {
             align-items: center;
             justify-content: center;
             border-bottom: 1px solid rgba(232, 230, 224, 0.85);
+            position: relative;
           }
           .home-sponsored-card__img {
             width: 100%;
@@ -2094,6 +2126,42 @@ const Home = () => {
             font-size: 2rem;
             opacity: 0.85;
           }
+          .home-sponsored-card__cartbtn{
+            position: absolute;
+            top: 8px;
+            inset-inline-start: 8px;
+            z-index: 3;
+            width: 34px;
+            height: 34px;
+            border-radius: 11px;
+            border: 1px solid rgba(245,192,0,0.5);
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 6px 18px rgba(26, 29, 38, 0.12);
+            color: var(--secondary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+          }
+          .home-sponsored-card__cartbtn--muted { opacity: 0.88; }
+          .home-sponsored-card__favbtn{
+            position: absolute;
+            top: 8px;
+            inset-inline-end: 8px;
+            z-index: 3;
+            width: 34px;
+            height: 34px;
+            border-radius: 11px;
+            border: 1px solid rgba(233, 30, 99, 0.38);
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 6px 18px rgba(26, 29, 38, 0.12);
+            color: #e91e63;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+          }
+          .home-sponsored-card__favbtn--muted { opacity: 0.88; }
           .home-sponsored-card__body {
             padding: 10px 10px 12px;
             display: flex;
@@ -2153,6 +2221,20 @@ const Home = () => {
             padding: 5px 9px;
             border-radius: 999px;
             align-self: flex-start;
+          }
+          .home-sponsored-card__storebtn{
+            margin-top: auto;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 12px;
+            border: 1.5px solid var(--primary);
+            background: var(--white);
+            color: var(--secondary);
+            font-weight: 900;
+            font-size: 0.76rem;
+            padding: 8px 10px;
+            box-sizing: border-box;
           }
           .home-sponsored-skel {
             border-radius: 16px;

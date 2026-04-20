@@ -137,10 +137,15 @@ export const exportMerchantProductsExcel = async () => {
   return response.data;
 };
 
-/** استيراد منتجات من ملف Excel */
-export const importMerchantProductsExcel = async (file) => {
+/** استيراد منتجات من ملف Excel مع صور اختيارية من الجهاز */
+export const importMerchantProductsExcel = async (file, images = []) => {
   const fd = new FormData();
   fd.append('file', file);
+  if (Array.isArray(images)) {
+    images.forEach((img) => {
+      if (img) fd.append('images', img);
+    });
+  }
   const response = await api.post('products/merchant/products/import-excel/', fd);
   return response.data;
 };

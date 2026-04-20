@@ -54,6 +54,8 @@ const MerchantProductForm = () => {
   const [loading, setLoading] = useState(false);
   const [excelImporting, setExcelImporting] = useState(false);
   const excelImportInputRef = useRef(null);
+  const excelImagesInputRef = useRef(null);
+  const [excelImportImages, setExcelImportImages] = useState([]);
 
   const newBlobUrls = useMemo(() => replacementFiles.map((f) => URL.createObjectURL(f)), [replacementFiles]);
 
@@ -178,7 +180,7 @@ const MerchantProductForm = () => {
     if (!file) return;
     setExcelImporting(true);
     try {
-      const res = await importMerchantProductsExcel(file);
+      const res = await importMerchantProductsExcel(file, excelImportImages);
       await showAlert(res.message || 'تم استيراد المنتجات.', 'تم');
       navigate('/merchant/products');
     } catch (err) {
@@ -187,6 +189,7 @@ const MerchantProductForm = () => {
       void showAlert(msg, 'خطأ');
     } finally {
       setExcelImporting(false);
+      setExcelImportImages([]);
       e.target.value = '';
     }
   };
@@ -203,11 +206,59 @@ const MerchantProductForm = () => {
           >
             <div style={{ fontWeight: 900, marginBottom: 8, fontSize: '1.02rem' }}>استيراد وتصدير Excel</div>
             <p style={{ margin: '0 0 12px', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              <strong>تصدير:</strong> ينزّل ملفاً فيه كل منتجات متجرك الحالية بأعمدة جاهزة (اسم، سعر، وصف، تفاصيل، حالة).
+              <strong>تصدير:</strong> ينزّل ملفاً جاهزاً كقالب.
               <br />
               <strong>استيراد:</strong> يضيف <strong>منتجاً جديداً</strong> لكل صف بيانات بعد صف العناوين — لا يعدّل
               المنتجات الموجودة. يُفضّل استخدام ملفاً صدرته من هنا كقالب.
             </p>
+            <div
+              style={{
+                margin: '0 0 12px',
+                padding: '10px 12px',
+                borderRadius: 12,
+                border: '1px solid var(--border)',
+                background: 'rgba(255,255,255,0.78)',
+                fontSize: '0.84rem',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.75,
+              }}
+            >
+              <strong style={{ color: 'var(--secondary)' }}>ترتيب الأعمدة في Excel (من اليسار إلى اليمين):</strong>
+              <br />
+              1) اسم المنتج (مطلوب)
+              <br />
+              2) السعر (مطلوب)
+              <br />
+              3) وصف المنتج (اختياري)
+              <br />
+              4) تفاصيل المنتج حتى {MAX_PRODUCT_FEATURES} (اختياري)
+              <br />
+              5) صور المنتج حتى {MAX_GALLERY} (اختياري)
+              <br />
+              <br />
+              <strong style={{ color: 'var(--secondary)' }}>طريقة الفصل:</strong>
+              <br />
+              - في عمود <strong>تفاصيل المنتج</strong>: افصل كل تفصيل بعلامة <strong>|</strong>
+              {' '}مثل: <code>صنع يدوي | بدون سكر | حجم كبير</code>
+              <br />
+              <strong style={{ color: 'var(--secondary)' }}>شرح عمود صور المنتج:</strong>
+              <br />
+              1) في خلية الصور اكتب <strong>اسم ملف الصورة</strong> كما هو في جهازك (بدون مسار وبدون رابط).
+              <br />
+              2) إذا عندك أكثر من صورة لنفس المنتج، افصل الأسماء بعلامة <strong>|</strong>.
+              <br />
+              3) قبل الضغط على الاستيراد، اضغط <strong>اختيار صور من الجهاز</strong> وارفع نفس الصور الي كتبت اسمائها في Excel.
+              <br />
+              4) يجب أن يتطابق الاسم المكتوب في Excel مع اسم الملف المرفوع (الحروف الكبيرة/الصغيرة لا تفرق).
+              <br />
+              مثال صحيح داخل خلية واحدة:
+              <br />
+              <code>bread1.jpg | bread2.png | Bread3.WEBP</code>
+              <br />
+              مثال خاطئ:
+              <br />
+              <code>https://site.com/bread1.jpg</code> (هذا رابط، وليس اسم ملف من جهازك).
+            </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
               <button
                 type="button"
@@ -227,6 +278,29 @@ const MerchantProductForm = () => {
                 tabIndex={-1}
                 onChange={(e) => void handleExcelImport(e)}
               />
+              <input
+                ref={excelImagesInputRef}
+                type="file"
+                accept="image/*,.jpg,.jpeg,.png,.webp,.heif,.heic"
+                multiple
+                className="merchant-excel-file-input"
+                aria-hidden
+                tabIndex={-1}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  setExcelImportImages(files);
+                }}
+              />
+              <button
+                type="button"
+                className="iconBtn"
+                disabled={excelImporting}
+                onClick={() => excelImagesInputRef.current?.click()}
+                style={{ gap: 8 }}
+              >
+                <ImageIcon size={18} />
+                {excelImportImages.length > 0 ? `تم اختيار ${excelImportImages.length} صورة` : 'اختيار صور من الجهاز'}
+              </button>
               <button
                 type="button"
                 className="iconBtn"
@@ -239,8 +313,8 @@ const MerchantProductForm = () => {
               </button>
             </div>
             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-light)', lineHeight: 1.55 }}>
-              الصف الأول في الملف للعناوين؛ تبدأ البيانات من الصف الثاني. للتفاصيل الدقيقة راجع صفحة «منتجاتي» بعد
-              الاستيراد.
+              الصف الأول في الملف للعناوين، وتبدأ البيانات من الصف الثاني. الحد الأقصى للتفاصيل {MAX_PRODUCT_FEATURES}
+              {' '}وللصور {MAX_GALLERY} لكل منتج. اسم الصورة في العمود يجب أن يطابق اسم الملف المرفوع.
             </p>
           </div>
         ) : null}
