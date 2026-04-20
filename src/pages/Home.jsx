@@ -60,7 +60,6 @@ import {
   Scale,
   KeyRound,
   Stethoscope,
-  Search,
   Warehouse,
   Candy,
   Croissant,
@@ -485,15 +484,6 @@ const Home = () => {
   useEffect(() => {
     return wireScrollDots(browseScrollRef.current, '.home-browse-item', setBrowseDotsCount, setBrowseDotActive);
   }, [wireScrollDots, filterMode, categoriesLoading, communityCatsLoading, categories.length, communityCategories.length]);
-
-  const runHeroSearch = useCallback(
-    (e) => {
-      if (e && typeof e.preventDefault === 'function') e.preventDefault();
-      const t = searchQuery.trim();
-      navigate(t ? `/search?q=${encodeURIComponent(t)}` : '/search');
-    },
-    [navigate, searchQuery]
-  );
 
   useEffect(() => {
     setFilterMode(parseFilterMode(`?${searchParams.toString()}`));
@@ -1021,48 +1011,9 @@ const Home = () => {
               <div className="home-hero-copy">
                 <h1 className="home-hero-title">ماذا تبحث عنه اليوم؟</h1>
                 <p className="home-hero-sub">
-                  تصفّح الأقسام، العروض، والمتاجر القريبة — ابحث من مربع البحث أدناه، ثم استخدم الخريطة لمطابقة
-                  المواقع.
+                  تصفّح الأقسام، العروض، والمتاجر القريبة، واستخدم الخريطة لمطابقة المواقع بسهولة.
                 </p>
               </div>
-              <form className="home-hero-search" onSubmit={runHeroSearch}>
-                <div className="home-hero-search-bar">
-                  <Search size={20} strokeWidth={1.85} className="home-hero-search-ico" aria-hidden />
-                  <input
-                    type="search"
-                    className="home-hero-search-input"
-                    placeholder="ابحث عن متجر أو قسم…"
-                    value={searchQuery}
-                    readOnly
-                    onFocus={() => navigate('/search')}
-                    aria-label="بحث في رادار"
-                    enterKeyHint="search"
-                  />
-                  <FiltersDropdown
-                    className="filters-dd--home-hero"
-                    buttonClassName="home-hero-filter-btn"
-                    buttonLabel="فلترة"
-                    title="فلترة حسب الأقسام"
-                    allLabel="كل الأقسام"
-                    requireConfirm
-                    confirmLabel="تأكيد"
-                    options={(categories || []).map((c) => ({ id: c.id, label: c.name }))}
-                    selectedIds={selectedCategoryIds}
-                    onChangeSelectedIds={(ids) => {
-                      const next = new URLSearchParams(searchParams);
-                      next.delete('filter');
-                      next.delete('cc');
-                      const picks = Array.isArray(ids) ? ids.filter((x) => x != null && String(x).trim() !== '') : [];
-                      if (picks.length === 0) next.delete('category');
-                      else next.set('category', picks.join(','));
-                      setSearchParams(next, { replace: true });
-                    }}
-                  />
-                  <button type="submit" className="home-hero-submit-btn" aria-label="تنفيذ البحث">
-                    <Search size={20} strokeWidth={1.85} aria-hidden />
-                  </button>
-                </div>
-              </form>
             </div>
           </section>
         ) : null}
@@ -1877,46 +1828,6 @@ const Home = () => {
             max-width: 34em;
             font-weight: 600;
           }
-          .home-hero-search {
-            margin: 0;
-            width: 100%;
-          }
-          .home-hero-search-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 4px 6px 4px 14px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.92);
-            border: 1.5px solid rgba(255, 255, 255, 0.85);
-            box-shadow:
-              0 4px 24px rgba(26, 29, 38, 0.08),
-              0 1px 0 rgba(255, 255, 255, 0.9) inset;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-          }
-          .home-hero-search-ico {
-            flex-shrink: 0;
-            color: var(--text-light);
-            opacity: 0.9;
-          }
-          .home-hero-search-input {
-            flex: 1;
-            min-width: 0;
-            border: none !important;
-            background: transparent !important;
-            box-shadow: none !important;
-            padding: 0.65rem 0.2rem !important;
-            font-size: 0.95rem;
-            font-weight: 600;
-            font-family: inherit;
-            color: var(--text-primary);
-          }
-          .home-hero-search-input::placeholder {
-            color: var(--text-light);
-            font-weight: 500;
-          }
-
           @media (max-width: 768px) {
             .home-hero-inner {
               padding: 12px 12px 14px;
@@ -1933,16 +1844,6 @@ const Home = () => {
               line-height: 1.55;
               max-width: 30em;
             }
-            .home-hero-search-bar {
-              padding: 3px 5px 3px 12px;
-            }
-            .home-hero-search-input {
-              padding: 0.55rem 0.15rem !important;
-              font-size: 0.9rem;
-            }
-            .home-hero-search-input::placeholder {
-              font-size: 0.86rem;
-            }
           }
 
           /* على الشاشات الكبيرة: زر "الكل" في شريط الفئات غير لازم */
@@ -1951,49 +1852,6 @@ const Home = () => {
               display: none;
             }
           }
-          .home-hero-filter-btn {
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            color: var(--secondary);
-            background: var(--surface);
-            border: 1.5px solid var(--border);
-            text-decoration: none;
-            transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
-          }
-          .filters-dd--home-hero .filters-dd__btn > span{
-            display:none;
-          }
-          .home-hero-filter-btn:hover {
-            background: rgba(255, 204, 0, 0.14);
-            border-color: rgba(255, 204, 0, 0.45);
-          }
-          .home-hero-submit-btn {
-            flex-shrink: 0;
-            width: 46px;
-            height: 46px;
-            border: none;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background: linear-gradient(145deg, var(--primary) 0%, var(--primary-hover) 100%);
-            color: var(--secondary);
-            box-shadow: var(--shadow-gold);
-            transition: filter 0.15s ease, transform 0.12s ease;
-          }
-          .home-hero-submit-btn:hover {
-            filter: brightness(1.05);
-          }
-          .home-hero-submit-btn:active {
-            transform: scale(0.96);
-          }
-
           .home-mode-strip {
             display: flex;
             justify-content: center;

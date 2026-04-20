@@ -87,7 +87,7 @@ const MerchantLocationPicker = ({ value, onChange }) => {
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ fontWeight: 900 }}>حدد موقع المتجر</div>
+        <div style={{ fontWeight: 900 }}>حدد موقع المتجر (اختياري)</div>
         <CustomButton
           variant="secondary"
           onClick={useMyLocation}
@@ -120,7 +120,7 @@ const MerchantLocationPicker = ({ value, onChange }) => {
         )}
       </MapContainer>
       <div style={{ padding: 12, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5 }}>
-        اضغط على الخريطة لتحديد الموقع، أو استخدم «موقعي الحالي» (يجب السماح بالموقع الدقيق).
+        هذه الخطوة اختيارية. اضغط على الخريطة لتحديد الموقع، أو استخدم «موقعي الحالي» (يجب السماح بالموقع الدقيق).
         إن خزّن المتصفح موقعاً قديماً أو كانت الدقة ضعيفة قد تختلف النقطة — جرّب مرة أخرى بعد تفعيل الـ GPS أو صحّح بالنقر على الخريطة.
         يُحفظ الموقع عند الضغط على حفظ في أعلى النموذج.
       </div>

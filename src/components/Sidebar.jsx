@@ -170,6 +170,7 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
   };
 
   const pendingCountForPath = (path) => {
+    if (path === '/admin' && pendingTotal > 0) return pendingTotal;
     if (path === '/admin/ads' && pendingAds > 0) return pendingAds;
     if (path === '/admin/subscriptions' && pendingRenewals > 0) return pendingRenewals;
     if (path === '/admin/community' && pendingCommunityPoints > 0) return pendingCommunityPoints;

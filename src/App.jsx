@@ -56,6 +56,7 @@ import SettingsPage from './pages/Settings'
 import { AlertProvider } from './components/AlertProvider'
 import { MapExploreProvider } from './context/MapExploreContext'
 import { AdminPendingCountsProvider } from './context/AdminPendingCountsContext'
+import { AdminNotificationsProvider } from './context/AdminNotificationsContext'
 import { InAppBrowserPrompt } from './components/InAppBrowserPrompt'
 import { pingAppOpen } from './api/data'
 
@@ -180,8 +181,10 @@ function AppLayout() {
     <MapExploreProvider>
       <AlertProvider>
         <AdminPendingCountsProvider>
+        <AdminNotificationsProvider>
         <InAppBrowserPrompt />
         <Outlet />
+        </AdminNotificationsProvider>
         </AdminPendingCountsProvider>
       </AlertProvider>
     </MapExploreProvider>

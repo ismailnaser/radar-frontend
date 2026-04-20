@@ -148,7 +148,11 @@ const MerchantStoreSettings = () => {
         const fd = new FormData();
         fd.append('store_name', common.store_name);
         fd.append('description', common.description || '');
-        fd.append('categories', JSON.stringify(common.categories || []));
+        // DRF multipart expects repeated pk values for many-to-many fields, not a JSON string.
+        (common.categories || []).forEach((catId) => {
+          const n = Number(catId);
+          if (Number.isFinite(n)) fd.append('categories', String(n));
+        });
         fd.append('location_address', common.location_address);
         fd.append('contact_whatsapp', common.contact_whatsapp);
         fd.append('business_hours_note', common.business_hours_note);

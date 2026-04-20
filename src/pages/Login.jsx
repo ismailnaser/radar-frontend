@@ -194,7 +194,7 @@ const Login = () => {
             </CustomButton>
           </form>
 
-          <GoogleLoginButton onCredential={handleGoogleCredential} disabled={loading} />
+          <GoogleLoginButton onCredential={handleGoogleCredential} disabled={loading} matchAuthButtonSize />
 
           <p className="auth-footer-link">
             لا تملك حساباً؟ <Link to={`/register?next=${encodeURIComponent(nextUrl || '/')}`}>إنشاء حساب</Link>

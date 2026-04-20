@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Menu, MapPin, User, UserPlus, Home as HomeIcon, Map as MapIcon, Megaphone, Store, Search as SearchIcon, LayoutDashboard, Users, Tags, ChevronRight, Briefcase } from 'lucide-react';
+import { Menu, MapPin, User, UserPlus, Home as HomeIcon, Map as MapIcon, Megaphone, Store, Search as SearchIcon, LayoutDashboard, Users, Tags, ChevronRight, Briefcase, Bell } from 'lucide-react';
 import { useMapExplore } from '../context/MapExploreContext';
 import { useAdminPendingCounts } from '../context/AdminPendingCountsContext';
+import { useAdminNotifications } from '../context/AdminNotificationsContext';
+import { useAlert } from './AlertProvider';
 import { getPublicAnnouncements } from '../api/data';
 const MainLayout = ({ children }) => {
   const location = useLocation();
@@ -15,6 +18,12 @@ const MainLayout = ({ children }) => {
   const mobileSearchInputRef = useRef(null);
   const mobileSearchNavDebounceRef = useRef(null);
   const [announcements, setAnnouncements] = useState([]);
+  const [adminNotifsOpen, setAdminNotifsOpen] = useState(false);
+  const [isNarrowScreen, setIsNarrowScreen] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches,
+  );
+  const adminNotifs = useAdminNotifications();
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     if (pathname !== '/search') return;
@@ -53,6 +62,27 @@ const MainLayout = ({ children }) => {
     }, 320);
     return () => window.clearTimeout(t);
   }, [isSidebarOpen]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 720px)');
+    const onChange = () => setIsNarrowScreen(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!adminNotifsOpen || !isNarrowScreen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => {
+      if (e.key === 'Escape') setAdminNotifsOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [adminNotifsOpen, isNarrowScreen]);
 
   /** زائر صريح: لا يُعامل كجلسة عضو حتى لو بقي توكن قديماً في التخزين */
   const isGuestUser = localStorage.getItem('isGuest') === 'true';
@@ -132,6 +162,73 @@ const MainLayout = ({ children }) => {
 
   const nextForAuth = `${location.pathname}${location.search}${location.hash || ''}`;
 
+  useEffect(() => {
+    setAdminNotifsOpen(false);
+  }, [pathname]);
+
+  const adminNotifsPanelInner = isAdminUser && adminNotifs && (
+    <>
+      <div className="admin-notifs-pop__head">
+        <strong>الإشعارات</strong>
+        <button
+          type="button"
+          className="btn-toggle"
+          onClick={async () => {
+            try {
+              await Promise.resolve(adminNotifs.pollOnce?.());
+            } catch {
+              await showAlert('تعذر التحديث. حاول لاحقاً.', 'خطأ');
+            }
+          }}
+        >
+          تحديث
+        </button>
+      </div>
+      <div className="admin-notifs-list">
+        {(adminNotifs.items || [])
+          .slice()
+          .reverse()
+          .slice(0, 12)
+          .map((n) => {
+            const type = n?.event_type;
+            const rid = n?.related_id;
+            const href =
+              type === 'ad_request' && rid != null
+                ? `/admin/ads/${rid}`
+                : type === 'subscription_renewal'
+                  ? '/admin/subscriptions'
+                  : type === 'community_point'
+                    ? '/admin/community'
+                    : '/admin';
+            return (
+              <button
+                key={n.id}
+                type="button"
+                className="admin-notifs-item"
+                onClick={() => {
+                  setAdminNotifsOpen(false);
+                  navigate(href);
+                }}
+                title="فتح الطلب"
+              >
+                <div className="admin-notifs-item__title">{n.title}</div>
+                {n.body ? <div className="admin-notifs-item__body">{n.body}</div> : null}
+                <div className="admin-notifs-item__meta">
+                  <span>{n.event_type_label || n.event_type}</span>
+                  <span className="muted small">{new Date(n.created_at).toLocaleString('ar')}</span>
+                </div>
+              </button>
+            );
+          })}
+        {!adminNotifs.items || adminNotifs.items.length === 0 ? (
+          <div className="muted small" style={{ padding: 10 }}>
+            لا إشعارات بعد.
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
+
   return (
     <div
       className={`layout-container${isSidebarOpen ? ' sidebar-open' : ''}${pathname === '/map' ? ' layout-container--map' : ''}${pathname === '/' ? ' layout-container--home' : ''}`}
@@ -183,6 +280,62 @@ const MainLayout = ({ children }) => {
                 <span className="header-register-btn__txt">+ تسجيل</span>
               </Link>
             )}
+
+            {isAdminUser && adminNotifs ? (
+              <div className="admin-notifs">
+                <button
+                  type="button"
+                  className="admin-notifs-btn"
+                  aria-label="إشعارات الإدارة"
+                  title="إشعارات الإدارة"
+                  aria-expanded={adminNotifsOpen}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAdminNotifsOpen((prev) => {
+                      const next = !prev;
+                      if (next) adminNotifs.markAllRead?.();
+                      return next;
+                    });
+                  }}
+                >
+                  <Bell size={20} strokeWidth={2} aria-hidden />
+                  {adminNotifs.unreadCount > 0 ? (
+                    <span className="admin-notifs-badge">
+                      {adminNotifs.unreadCount > 99 ? '99+' : adminNotifs.unreadCount}
+                    </span>
+                  ) : null}
+                </button>
+                {!isNarrowScreen && adminNotifsOpen ? (
+                  <div className="admin-notifs-pop admin-notifs-pop--dropdown" role="dialog" aria-modal="true" aria-label="إشعارات الإدارة">
+                    {adminNotifsPanelInner}
+                  </div>
+                ) : null}
+                {isNarrowScreen &&
+                  adminNotifsOpen &&
+                  typeof document !== 'undefined' &&
+                  createPortal(
+                    <>
+                      <button
+                        type="button"
+                        className="admin-notifs-backdrop"
+                        aria-label="إغلاق الإشعارات"
+                        onClick={() => setAdminNotifsOpen(false)}
+                      />
+                      <div
+                        className="admin-notifs-sheet"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="إشعارات الإدارة"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="admin-notifs-sheet__handle" aria-hidden />
+                        {adminNotifsPanelInner}
+                      </div>
+                    </>,
+                    document.body,
+                  )}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -774,6 +927,157 @@ const MainLayout = ({ children }) => {
           background: rgba(255, 204, 0, 0.16);
           border-color: rgba(255, 204, 0, 0.5);
           color: var(--secondary);
+        }
+
+        .admin-notifs{
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          margin-inline-start: 0;
+          overflow: visible;
+          z-index: 1350;
+        }
+        .admin-notifs-btn{
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          border-radius: 999px;
+          border: 1px solid rgba(232, 230, 224, 0.95);
+          background: rgba(255,255,255,0.92);
+          cursor: pointer;
+          position: relative;
+          box-shadow: var(--shadow-sm);
+          color: var(--secondary);
+        }
+        .admin-notifs-badge{
+          position: absolute;
+          top: -6px;
+          inset-inline-start: -6px;
+          min-width: 20px;
+          height: 20px;
+          padding: 0 6px;
+          border-radius: 999px;
+          background: #e74c3c;
+          color: #fff;
+          font-weight: 900;
+          font-size: 0.72rem;
+          line-height: 20px;
+          text-align: center;
+          border: 2px solid #fff;
+        }
+        .admin-notifs-pop--dropdown{
+          display: flex;
+          flex-direction: column;
+          position: absolute;
+          top: calc(100% + 8px);
+          inset-inline-end: 0;
+          width: min(420px, calc(100vw - 24px));
+          max-width: calc(100vw - 20px);
+          background: rgba(255,255,255,0.98);
+          border: 1px solid rgba(232, 230, 224, 0.95);
+          border-radius: 18px;
+          box-shadow: 0 18px 46px rgba(26, 29, 38, 0.18);
+          overflow: hidden;
+          z-index: 5000;
+          box-sizing: border-box;
+        }
+        .admin-notifs-backdrop{
+          position: fixed;
+          inset: 0;
+          z-index: 8000;
+          border: none;
+          padding: 0;
+          margin: 0;
+          cursor: pointer;
+          background: rgba(14, 16, 22, 0.45);
+          -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
+          touch-action: manipulation;
+        }
+        .admin-notifs-sheet{
+          position: fixed;
+          left: 50%;
+          top: 86px;
+          transform: translateX(-50%);
+          z-index: 8010;
+          display: flex;
+          flex-direction: column;
+          width: min(420px, calc(100vw - 28px));
+          max-height: min(70dvh, 520px);
+          background: rgba(255,255,255,0.98);
+          border-radius: 18px;
+          box-shadow: 0 18px 46px rgba(26, 29, 38, 0.22);
+          padding-bottom: 0;
+          box-sizing: border-box;
+          overflow: hidden;
+          touch-action: pan-y;
+        }
+        .admin-notifs-sheet__handle{
+          width: 40px;
+          height: 5px;
+          border-radius: 999px;
+          background: rgba(26, 29, 38, 0.2);
+          margin: 10px auto 6px;
+          flex-shrink: 0;
+        }
+        .admin-notifs-sheet .admin-notifs-list{
+          flex: 1;
+          min-height: 0;
+          max-height: none;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+        }
+        .admin-notifs-pop__head{
+          display:flex;
+          align-items:center;
+          justify-content: space-between;
+          gap: 10px;
+          padding: 10px 12px;
+          background: var(--surface);
+          border-bottom: 1px solid rgba(232, 230, 224, 0.95);
+        }
+        .admin-notifs-list{
+          max-height: 360px;
+          overflow: auto;
+        }
+        .admin-notifs-item{
+          width: 100%;
+          text-align: right;
+          background: transparent;
+          border: none;
+          padding: 10px 12px;
+          border-bottom: 1px solid rgba(232, 230, 224, 0.85);
+          cursor: pointer;
+        }
+        .admin-notifs-item:hover{ background: rgba(26,29,38,0.04); }
+        .admin-notifs-item:active{ background: rgba(26,29,38,0.06); }
+        .admin-notifs-item:focus-visible{
+          outline: 2px solid rgba(245, 192, 0, 0.55);
+          outline-offset: -2px;
+        }
+        .admin-notifs-item:last-child{ border-bottom: none; }
+        .admin-notifs-item__title{
+          font-weight: 950;
+          color: var(--secondary);
+          margin-bottom: 4px;
+        }
+        .admin-notifs-item__body{
+          color: var(--text-secondary);
+          font-weight: 800;
+          line-height: 1.55;
+          margin-bottom: 6px;
+        }
+        .admin-notifs-item__meta{
+          display:flex;
+          align-items:center;
+          justify-content: space-between;
+          gap: 10px;
+          color: var(--text-secondary);
+          font-weight: 800;
+          font-size: 0.82rem;
         }
 
         .header-user-status {

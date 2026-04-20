@@ -297,6 +297,13 @@ const Register = () => {
             >
               سجل الآن
             </CustomButton>
+
+            <GoogleLoginButton
+              onCredential={handleGoogleCredential}
+              disabled={loading}
+              matchAuthButtonSize
+              style={{ marginTop: 10 }}
+            />
           </form>
 
           <div className="flex-center" style={{ margin: '15px 0' }}>
@@ -315,10 +322,6 @@ const Register = () => {
           >
             تصفح كزائر
           </CustomButton>
-
-          <div style={{ marginTop: 14 }}>
-            <GoogleLoginButton onCredential={handleGoogleCredential} disabled={loading} />
-          </div>
 
           <p className="auth-footer-link">
             لديك حساب بالفعل؟ <Link to={`/login?next=${encodeURIComponent(nextUrl || '/')}`}>تسجيل الدخول</Link>

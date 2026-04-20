@@ -10,6 +10,15 @@ import { useAlert } from '../../components/AlertProvider';
 import { getCategories, getMerchantStoreProfile, updateMerchantStoreProfile } from '../../api/data';
 import { formatApiError } from '../../utils/apiErrors';
 
+function normalizeOptionalCoords(lat, lng) {
+  const latN = Number(lat);
+  const lngN = Number(lng);
+  if (!Number.isFinite(latN) || !Number.isFinite(lngN)) return null;
+  // (0,0) or very close is almost always invalid here; treat as "no location selected".
+  if (Math.abs(latN) < 0.25 && Math.abs(lngN) < 0.25) return null;
+  return [latN, lngN];
+}
+
 export default function MerchantCompleteProfile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -52,9 +61,8 @@ export default function MerchantCompleteProfile() {
               ? [Number(p.category)].filter((x) => Number.isFinite(x))
               : [];
         setSelectedCategoryIds(Array.from(new Set(ids)));
-        if (Number.isFinite(Number(p.latitude)) && Number.isFinite(Number(p.longitude))) {
-          setPickedLocation([Number(p.latitude), Number(p.longitude)]);
-        }
+        const safeCoords = normalizeOptionalCoords(p.latitude, p.longitude);
+        if (safeCoords) setPickedLocation(safeCoords);
       } catch (e) {
         if (!cancelled) {
           await showAlert(formatApiError(e, 'تعذر تحميل بيانات المتجر.'), 'خطأ');
@@ -86,8 +94,9 @@ export default function MerchantCompleteProfile() {
       return;
     }
 
-    const latToSave = pickedLocation?.[0] ?? null;
-    const lngToSave = pickedLocation?.[1] ?? null;
+    const safeCoords = normalizeOptionalCoords(pickedLocation?.[0], pickedLocation?.[1]);
+    const latToSave = safeCoords?.[0] ?? null;
+    const lngToSave = safeCoords?.[1] ?? null;
 
     setSaving(true);
     try {
