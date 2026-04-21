@@ -1,557 +1,256 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import InstallPwaButton from './InstallPwaButton';
-import { Menu, MapPin, User, UserPlus, Home as HomeIcon, Map as MapIcon, Megaphone, Store, Search as SearchIcon, LayoutDashboard, Users, Tags, ChevronRight, Briefcase, Bell } from 'lucide-react';
-import { useMapExplore } from '../context/MapExploreContext';
-import { useAdminPendingCounts } from '../context/AdminPendingCountsContext';
-import { useAdminNotifications } from '../context/AdminNotificationsContext';
-import { useAlert } from './AlertProvider';
-import { getPublicAnnouncements } from '../api/data';
-const MainLayout = ({ children }) => {
-  const location = useLocation();
-  const { pathname } = location;
-  const navigate = useNavigate();
-  const [urlSearchParams] = useSearchParams();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { requestUserLocation, locating, searchQuery, setSearchQuery } = useMapExplore();
-  const mobileSearchInputRef = useRef(null);
-  const mobileSearchNavDebounceRef = useRef(null);
-  const [announcements, setAnnouncements] = useState([]);
-  const [adminNotifsOpen, setAdminNotifsOpen] = useState(false);
-  const [isNarrowScreen, setIsNarrowScreen] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches,
-  );
-  const adminNotifs = useAdminNotifications();
-  const { showAlert } = useAlert();
-
-  useEffect(() => {
-    if (pathname !== '/search') return;
-    setSearchQuery(urlSearchParams.get('q') ?? '');
-  }, [pathname, urlSearchParams, setSearchQuery]);
-
-  useEffect(() => {
-    return () => {
-      if (mobileSearchNavDebounceRef.current) {
-        window.clearTimeout(mobileSearchNavDebounceRef.current);
-        mobileSearchNavDebounceRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    getPublicAnnouncements()
-      .then((d) => {
-        const list = Array.isArray(d?.results) ? d.results : [];
-        if (!cancelled) setAnnouncements(list);
-      })
-      .catch(() => {
-        if (!cancelled) setAnnouncements([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('radar-map-invalidate'));
-    }, 320);
-    return () => window.clearTimeout(t);
-  }, [isSidebarOpen]);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 720px)');
-    const onChange = () => setIsNarrowScreen(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-
-  useEffect(() => {
-    if (!adminNotifsOpen || !isNarrowScreen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const onKey = (e) => {
-      if (e.key === 'Escape') setAdminNotifsOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [adminNotifsOpen, isNarrowScreen]);
-
-  /** زائر صريح: لا يُعامل كجلسة عضو حتى لو بقي توكن قديماً في التخزين */
-  const isGuestUser = localStorage.getItem('isGuest') === 'true';
-  const hasToken = !!localStorage.getItem('token');
-  const isAuthenticated = hasToken && !isGuestUser;
-  const userName = localStorage.getItem('user_name') || '';
-  const userType = localStorage.getItem('user_type') || 'shopper';
-  const isAdminUser = isAuthenticated && userType === 'admin';
-
-  const isPrimaryAdmin = localStorage.getItem('is_primary_admin') === 'true';
-  const { pendingTotal } = useAdminPendingCounts();
-  const displayName =
-    userType === 'admin'
-      ? userName || (isPrimaryAdmin ? 'مدير أساسي' : 'مدير فرعي')
-      : userName || (isAuthenticated ? 'حسابي' : '');
-
-  const sidebarVariant =
-    isAuthenticated && userType === 'merchant'
-      ? 'merchant'
-      : isAuthenticated && userType === 'admin'
-        ? 'admin'
-        : 'shopper';
-
-  const isMerchantHomeContext =
-    isAuthenticated && userType === 'merchant' && pathname === '/merchant/dashboard';
-
-  const isAdminPanelContext =
-    isAuthenticated && userType === 'admin' && pathname.startsWith('/admin');
-
-  const hideHeaderOnMap = pathname === '/map';
-  /** إخفاء الناف العلوي: تسجيل الدخول وإنشاء الحساب فقط — الخريطة تخفي الهيدر على الموبايل بالـ CSS */
-  const hideMainHeader =
-    pathname === '/register' ||
-    pathname === '/login' ||
-    pathname === '/forgot-password' ||
-    pathname.startsWith('/password-reset/confirm') ||
-    pathname.startsWith('/reset-password/confirm');
-  /** الشريط السفلي الثابت يغطي أزرار أسفل بطاقة الدخول/التسجيل؛ نخفيه هناك مثل الهيدر */
-  const hideBottomNav =
-    pathname === '/register' ||
-    pathname === '/login' ||
-    pathname === '/forgot-password' ||
-    pathname.startsWith('/password-reset/confirm') ||
-    pathname.startsWith('/reset-password/confirm');
-  const hideHeaderLocationButton = pathname === '/';
-  const hideHeaderProfileFab =
-    pathname === '/register' ||
-    pathname === '/login' ||
-    pathname === '/forgot-password' ||
-    pathname.startsWith('/password-reset/confirm') ||
-    pathname.startsWith('/reset-password/confirm');
-  const storesTabActive = pathname === '/stores';
-  const adminHomeActive = pathname === '/admin';
-  const adminStoresActive = pathname === '/admin/stores';
-  const adminAdsActive = pathname === '/admin/ads';
-  const adminUsersActive = pathname === '/admin/users';
-
-  const showLayoutBack = pathname !== '/';
-  /** واجهة السوق الموحّدة (بدون لوحة الأدمن): نفس سلوك الموبايل على كل الشاشات */
-  const shopperMarketChrome = !isAdminPanelContext;
-
-  const handleLayoutBack = useCallback(() => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    if (pathname.startsWith('/admin')) {
-      navigate('/admin');
-      return;
-    }
-    if (pathname.startsWith('/merchant')) {
-      navigate('/merchant/dashboard');
-      return;
-    }
-    navigate('/');
-  }, [navigate, pathname]);
-
-  const nextForAuth = `${location.pathname}${location.search}${location.hash || ''}`;
-
-  useEffect(() => {
-    setAdminNotifsOpen(false);
-  }, [pathname]);
-
-  const adminNotifsPanelInner = isAdminUser && adminNotifs && (
-    <>
-      <div className="admin-notifs-pop__head">
-        <strong>الإشعارات</strong>
-        <button
-          type="button"
-          className="btn-toggle"
-          onClick={async () => {
-            try {
-              await Promise.resolve(adminNotifs.pollOnce?.());
-            } catch {
-              await showAlert('تعذر التحديث. حاول لاحقاً.', 'خطأ');
-            }
-          }}
-        >
-          تحديث
-        </button>
-      </div>
-      <div className="admin-notifs-list">
-        {(adminNotifs.items || [])
-          .slice()
-          .reverse()
-          .slice(0, 12)
-          .map((n) => {
-            const type = n?.event_type;
-            const rid = n?.related_id;
-            const href =
-              type === 'ad_request' && rid != null
-                ? `/admin/ads/${rid}`
-                : type === 'subscription_renewal'
-                  ? '/admin/subscriptions'
-                  : type === 'community_point'
-                    ? '/admin/community'
-                    : '/admin';
-            return (
-              <button
-                key={n.id}
-                type="button"
-                className="admin-notifs-item"
-                onClick={() => {
-                  setAdminNotifsOpen(false);
-                  navigate(href);
-                }}
-                title="فتح الطلب"
-              >
-                <div className="admin-notifs-item__title">{n.title}</div>
-                {n.body ? <div className="admin-notifs-item__body">{n.body}</div> : null}
-                <div className="admin-notifs-item__meta">
-                  <span>{n.event_type_label || n.event_type}</span>
-                  <span className="muted small">{new Date(n.created_at).toLocaleString('ar')}</span>
-                </div>
-              </button>
+import{f as t,a as Q,r as c,j as e,u as be,b as ge,ab as ue,L as l,m as je,c as _e,n as ze,ac as Ne,ad as Me,ae as Se}from"./index-DwwNkx36.js";const se=t("BarChart3",[["path",{d:"M3 3v18h18",key:"1s2lah"}],["path",{d:"M18 17V9",key:"2bz60n"}],["path",{d:"M13 17V5",key:"1frdt8"}],["path",{d:"M8 17v-3",key:"17ska0"}]]),Ae=t("Bell",[["path",{d:"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9",key:"1qo2s2"}],["path",{d:"M10.3 21a1.94 1.94 0 0 0 3.4 0",key:"qgo35s"}]]),Ce=t("BookOpen",[["path",{d:"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z",key:"vv98re"}],["path",{d:"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z",key:"1cyq3y"}]]),de=t("Briefcase",[["rect",{width:"20",height:"14",x:"2",y:"7",rx:"2",ry:"2",key:"eto64e"}],["path",{d:"M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16",key:"zwj3tp"}]]),le=t("ChevronRight",[["path",{d:"m9 18 6-6-6-6",key:"mthhwq"}]]),$e=t("ClipboardList",[["rect",{width:"8",height:"4",x:"8",y:"2",rx:"1",ry:"1",key:"tgr4d6"}],["path",{d:"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2",key:"116196"}],["path",{d:"M12 11h4",key:"1jrz19"}],["path",{d:"M12 16h4",key:"n85exb"}],["path",{d:"M8 11h.01",key:"1dfujw"}],["path",{d:"M8 16h.01",key:"18s6g9"}]]),H=t("CreditCard",[["rect",{width:"20",height:"14",x:"2",y:"5",rx:"2",key:"ynyp8z"}],["line",{x1:"2",x2:"22",y1:"10",y2:"10",key:"1b3vmo"}]]),Le=t("Download",[["path",{d:"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4",key:"ih7n3h"}],["polyline",{points:"7 10 12 15 17 10",key:"2ggqvy"}],["line",{x1:"12",x2:"12",y1:"15",y2:"3",key:"1vk2je"}]]),We=t("Heart",[["path",{d:"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z",key:"c3ymky"}]]),K=t("Home",[["path",{d:"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",key:"y5dka4"}],["polyline",{points:"9 22 9 12 15 12 15 22",key:"e2us08"}]]),D=t("LayoutDashboard",[["rect",{width:"7",height:"9",x:"3",y:"3",rx:"1",key:"10lvy0"}],["rect",{width:"7",height:"5",x:"14",y:"3",rx:"1",key:"16une8"}],["rect",{width:"7",height:"9",x:"14",y:"12",rx:"1",key:"1hutg5"}],["rect",{width:"7",height:"5",x:"3",y:"16",rx:"1",key:"ldoo1y"}]]),ce=t("LayoutGrid",[["rect",{width:"7",height:"7",x:"3",y:"3",rx:"1",key:"1g98yp"}],["rect",{width:"7",height:"7",x:"14",y:"3",rx:"1",key:"6d4xhi"}],["rect",{width:"7",height:"7",x:"14",y:"14",rx:"1",key:"nxv5o0"}],["rect",{width:"7",height:"7",x:"3",y:"14",rx:"1",key:"1bb6yr"}]]),Ie=t("LogIn",[["path",{d:"M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4",key:"u53s6r"}],["polyline",{points:"10 17 15 12 10 7",key:"1ail0h"}],["line",{x1:"15",x2:"3",y1:"12",y2:"12",key:"v6grx8"}]]),Pe=t("LogOut",[["path",{d:"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4",key:"1uf3rs"}],["polyline",{points:"16 17 21 12 16 7",key:"1gabdz"}],["line",{x1:"21",x2:"9",y1:"12",y2:"12",key:"1uyos4"}]]),pe=t("Map",[["polygon",{points:"3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21",key:"ok2ie8"}],["line",{x1:"9",x2:"9",y1:"3",y2:"18",key:"w34qz5"}],["line",{x1:"15",x2:"15",y1:"6",y2:"21",key:"volv9a"}]]),U=t("Megaphone",[["path",{d:"m3 11 18-5v12L3 14v-3z",key:"n962bs"}],["path",{d:"M11.6 16.8a3 3 0 1 1-5.8-1.6",key:"1yl0tm"}]]),q=t("Menu",[["line",{x1:"4",x2:"20",y1:"12",y2:"12",key:"1e0a9i"}],["line",{x1:"4",x2:"20",y1:"6",y2:"6",key:"1owob3"}],["line",{x1:"4",x2:"20",y1:"18",y2:"18",key:"yk5zj1"}]]),Ee=t("Package",[["path",{d:"m7.5 4.27 9 5.15",key:"1c824w"}],["path",{d:"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z",key:"hh9hay"}],["path",{d:"m3.3 7 8.7 5 8.7-5",key:"g66t2b"}],["path",{d:"M12 22V12",key:"d0xqtd"}]]),He=t("Phone",[["path",{d:"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z",key:"foiqr5"}]]),he=t("PlusCircle",[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["path",{d:"M8 12h8",key:"1wcyev"}],["path",{d:"M12 8v8",key:"napkw2"}]]),qe=t("Search",[["circle",{cx:"11",cy:"11",r:"8",key:"4ej97u"}],["path",{d:"m21 21-4.3-4.3",key:"1qie3q"}]]),T=t("Settings",[["path",{d:"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",key:"1qme2f"}],["circle",{cx:"12",cy:"12",r:"3",key:"1v7zrd"}]]),Te=t("Share2",[["circle",{cx:"18",cy:"5",r:"3",key:"gq8acd"}],["circle",{cx:"6",cy:"12",r:"3",key:"w7nqdw"}],["circle",{cx:"18",cy:"19",r:"3",key:"1xt0gg"}],["line",{x1:"8.59",x2:"15.42",y1:"13.51",y2:"17.49",key:"47mynk"}],["line",{x1:"15.41",x2:"8.59",y1:"6.51",y2:"10.49",key:"1n3mei"}]]),Ue=t("ShoppingBasket",[["path",{d:"m5 11 4-7",key:"116ra9"}],["path",{d:"m19 11-4-7",key:"cnml18"}],["path",{d:"M2 11h20",key:"3eubbj"}],["path",{d:"m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8c.9 0 1.8-.7 2-1.6l1.7-7.4",key:"1x2lvw"}],["path",{d:"m9 11 1 9",key:"1ojof7"}],["path",{d:"M4.5 15.5h15",key:"13mye1"}],["path",{d:"m15 11-1 9",key:"5wnq3a"}]]),F=t("Sparkles",[["path",{d:"m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z",key:"17u4zn"}],["path",{d:"M5 3v4",key:"bklmnn"}],["path",{d:"M19 17v4",key:"iiml17"}],["path",{d:"M3 5h4",key:"nem4j1"}],["path",{d:"M17 19h4",key:"lbex7p"}]]),W=t("Store",[["path",{d:"m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7",key:"ztvudi"}],["path",{d:"M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8",key:"1b2hhj"}],["path",{d:"M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4",key:"2ebpfo"}],["path",{d:"M2 7h20",key:"1fcdvo"}],["path",{d:"M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7",key:"jon5kx"}]]),De=t("Tag",[["path",{d:"M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z",key:"14b2ls"}],["path",{d:"M7 7h.01",key:"7u93v4"}]]),xe=t("Tags",[["path",{d:"M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z",key:"gt587u"}],["path",{d:"M6 9.01V9",key:"1flxpt"}],["path",{d:"m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19",key:"1cbfv1"}]]),Be=t("UserCircle",[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["circle",{cx:"12",cy:"10",r:"3",key:"ilqhr7"}],["path",{d:"M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662",key:"154egf"}]]),Oe=t("UserPlus",[["path",{d:"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",key:"1yyitq"}],["circle",{cx:"9",cy:"7",r:"4",key:"nufk8"}],["line",{x1:"19",x2:"19",y1:"8",y2:"14",key:"1bvyxn"}],["line",{x1:"22",x2:"16",y1:"11",y2:"11",key:"1shjgl"}]]),Ve=t("User",[["path",{d:"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2",key:"975kel"}],["circle",{cx:"12",cy:"7",r:"4",key:"17ys0d"}]]),I=t("Users",[["path",{d:"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",key:"1yyitq"}],["circle",{cx:"9",cy:"7",r:"4",key:"nufk8"}],["path",{d:"M22 21v-2a4 4 0 0 0-3-3.87",key:"kshegd"}],["path",{d:"M16 3.13a4 4 0 0 1 0 7.75",key:"1da9ce"}]]);function Re(){if(typeof window>"u")return!1;const s=window.navigator.userAgent||"";return/iPad|iPhone|iPod/.test(s)||s.includes("Mac")&&"ontouchend"in document}function Ge(){if(typeof window>"u")return!1;const s=window.navigator.userAgent||"";return/android/i.test(s)}function Fe(){if(typeof window>"u")return!1;const s=window.navigator.standalone===!0,n=window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches;return s||n}function fe({className:s=""}){const{showConfirm:n,showAlert:a}=Q(),[r,m]=c.useState(null),[b,_]=c.useState(!1),[A,C]=c.useState(!1);c.useEffect(()=>{_(Fe());const u=()=>_(!0);return window.addEventListener("appinstalled",u),()=>window.removeEventListener("appinstalled",u)},[]),c.useEffect(()=>{const u=f=>{f.preventDefault(),m(f)};return window.addEventListener("beforeinstallprompt",u),()=>window.removeEventListener("beforeinstallprompt",u)},[]);const x=c.useMemo(()=>b?"installed":r?"prompt":Re()?"ios":"manual",[b,r]);if(x==="installed")return null;const z=async()=>{var f;if(await n(x==="ios"?"عرض تعليمات إضافة رادار إلى الشاشة الرئيسية على آيفون/آيباد؟":"تثبيت تطبيق رادار على هذا الجهاز؟","تثبيت التطبيق")){if(x==="ios"){C(h=>!h),await a("اتبع التعليمات أسفل الزر لإضافة الموقع إلى الشاشة الرئيسية.","تلميح");return}if(x==="manual"){const h=Ge()?'إذا لم يظهر تثبيت تلقائي: افتح قائمة المتصفح (⋮) ثم اختر "Install app" أو "Add to Home screen".':'إذا لم يظهر تثبيت تلقائي: افتح قائمة المتصفح ثم اختر "Install app" أو "Add to Home screen".';await a(h,"تثبيت التطبيق");return}try{(f=r==null?void 0:r.prompt)==null||f.call(r);const h=await(r==null?void 0:r.userChoice);m(null),(h==null?void 0:h.outcome)==="accepted"?(_(!0),await a("تمت الموافقة على التثبيت. أكمل الخطوة من نافذة المتصفح إن ظهرت.","تم")):await a("تم إلغاء طلب التثبيت.","تنبيه")}catch{await a("تعذر إكمال التثبيت. حاول لاحقاً أو من متصفح آخر.","خطأ")}}};return e.jsxs("div",{className:`pwa-install ${s}`.trim(),children:[e.jsxs("button",{type:"button",className:"pwa-install__btn",onClick:z,children:[e.jsx("span",{className:"pwa-install__btn-ico","aria-hidden":!0,children:x==="ios"?e.jsx(Te,{size:18,strokeWidth:2}):e.jsx(Le,{size:18,strokeWidth:2})}),e.jsx("span",{className:"pwa-install__btn-txt",children:"تثبيت التطبيق"})]}),(x==="ios"||x==="manual")&&A?e.jsx("div",{className:"pwa-install__help",children:x==="ios"?e.jsxs(e.Fragment,{children:["على iPhone/iPad: افتح الموقع في Safari ثم اضغط زر المشاركة (Share) واختر",e.jsx("strong",{children:" “Add to Home Screen”"}),"."]}):e.jsxs(e.Fragment,{children:["إن لم يظهر تثبيت تلقائي: افتح قائمة المتصفح ثم اختر",e.jsx("strong",{children:" Install app"})," أو ",e.jsx("strong",{children:"Add to Home screen"}),"."]})}):null]})}const Z={};function Ze(){return String("http://127.0.0.1:8000").replace(/\/$/,"")}function me(){var n,a;const s=Z==null?void 0:Z.VITE_DJANGO_ADMIN_URL;if(s!=null&&String(s).trim()!=="")return String(s).trim();try{const r=((n=window==null?void 0:window.location)==null?void 0:n.origin)||"",m=((a=window==null?void 0:window.location)==null?void 0:a.hostname)||"",b=m==="localhost"||m==="127.0.0.1"||m==="::1"||m.endsWith(".local");if(r&&!b)return`${String(r).replace(/\/$/,"")}/api/admin/`}catch{}return`${Ze()}/api/admin/`}function Ke(s,n){return n?n==="/"?s==="/":s===n||s.startsWith(`${n}/`):!1}const Qe=({isOpen:s,toggleSidebar:n,variant:a="shopper"})=>{const r=be(),{pathname:m}=ge(),{showAlert:b,showConfirm:_}=Q(),{pendingAds:A,pendingRenewals:C,pendingCommunityPoints:x,pendingTotal:z}=ue(),u=localStorage.getItem("isGuest")==="true",h=!!localStorage.getItem("token")&&!u,$=localStorage.getItem("user_type")||"shopper",v=[{icon:e.jsx(K,{size:20}),label:"الرئيسية",path:"/"},{icon:e.jsx(De,{size:20}),label:"عروض حصرية",path:"/offers"},{icon:e.jsx(We,{size:20}),label:"المفضلة",path:"/favorites",protected:!0},{icon:e.jsx(Ue,{size:20}),label:"السلال",path:"/carts",protected:!0},{icon:e.jsx(ce,{size:20}),label:"الأقسام",path:"/categories"},{icon:e.jsx(F,{size:20}),label:"الخدمات المجتمعية",path:"/services"},{icon:e.jsx(Ce,{size:20}),label:"دليل المستخدم",path:"/guide"},{icon:e.jsx(He,{size:20}),label:"اتصل بنا",path:"/contact"},{kind:"section",label:"الإعدادات"},{icon:e.jsx(T,{size:20}),label:"إعدادات الحساب",path:"/settings",protected:!0}],N=[{kind:"section",label:"إدارة النظام"},{icon:e.jsx(D,{size:20}),label:"لوحة الإدارة",path:"/admin"},{kind:"external",icon:e.jsx(T,{size:20}),label:"Django Admin",href:me()},{icon:e.jsx(I,{size:20}),label:"المستخدمون",path:"/admin/users"},{icon:e.jsx(I,{size:20}),label:"إدارة المدراء",path:"/admin/accounts"},{icon:e.jsx(W,{size:20}),label:"المتاجر المشتركة",path:"/admin/stores"},{icon:e.jsx(se,{size:20}),label:"الأرباح والتحويلات",path:"/admin/finance"},{icon:e.jsx(H,{size:20}),label:"المدفوعات",path:"/admin/payments"},{icon:e.jsx(ce,{size:20}),label:"إدارة الأقسام",path:"/admin/categories"},{icon:e.jsx(U,{size:20}),label:"إدارة الإعلانات الممولة",path:"/admin/ads"},{icon:e.jsx(H,{size:20}),label:"إدارة الاشتراكات",path:"/admin/subscriptions"},{icon:e.jsx(F,{size:20}),label:"مراجعة الخدمات المجتمعية",path:"/admin/community"},{kind:"section",label:"إعدادات عامة"},{icon:e.jsx(U,{size:20}),label:"إعلان عام",path:"/admin/announcements"}],S=[{kind:"section",label:"إدارة النظام"},{icon:e.jsx(D,{size:20}),label:"لوحة الإدارة",path:"/admin"},{kind:"external",icon:e.jsx(T,{size:20}),label:"Django Admin",href:me()},{icon:e.jsx(I,{size:20}),label:"المستخدمون",path:"/admin/users"},{icon:e.jsx(U,{size:20}),label:"إدارة الإعلانات الممولة",path:"/admin/ads"},{icon:e.jsx(H,{size:20}),label:"إدارة الاشتراكات",path:"/admin/subscriptions"},{icon:e.jsx(F,{size:20}),label:"مراجعة الخدمات المجتمعية",path:"/admin/community"}],B=[{kind:"section",label:"إدارة المتجر"},{icon:e.jsx(se,{size:20}),label:"إحصائيات المتجر",path:"/merchant/dashboard",protected:!0},{icon:e.jsx(Ee,{size:20}),label:"منتجاتي",path:"/merchant/products",protected:!0},{icon:e.jsx(he,{size:20}),label:"إضافة منتج",path:"/merchant/products/new",protected:!0},{icon:e.jsx($e,{size:20}),label:"إعلاناتي الممولة",path:"/merchant/my-ads",protected:!0},{icon:e.jsx(he,{size:20}),label:"طلب إعلان ممول",path:"/merchant/ads",protected:!0},{icon:e.jsx(H,{size:20}),label:"الاشتراك",path:"/merchant/subscription",protected:!0},{icon:e.jsx(Be,{size:20}),label:"بروفايل المتجر",path:"/merchant/profile",protected:!0},{icon:e.jsx(T,{size:20}),label:"إعدادات المتجر",path:"/merchant/settings",protected:!0}],d=h?$==="admin"?"admin":$==="merchant"?"merchant":"shopper":"shopper",P=localStorage.getItem("is_primary_admin")==="true",M=d==="admin"?[...v,...P?N:S]:d==="merchant"?[...v,...B]:v,O=async()=>{if(!h){r("/login"),n();return}await _("تأكيد تسجيل الخروج من الحساب؟","تسجيل الخروج")&&(localStorage.removeItem("isGuest"),je(),r("/login"),n(),await b("تم تسجيل الخروج بنجاح.","تم"))},J=o=>o==="/admin"&&z>0?z:o==="/admin/ads"&&A>0?A:o==="/admin/subscriptions"&&C>0?C:o==="/admin/community"&&x>0?x:null,k=(o,g)=>{g.protected&&!h&&(o.preventDefault(),b("عذراً، يجب تسجيل الدخول والتحقق من حسابك لاستخدام هذه الميزة.","الوصول محدود"),r("/login")),n()};return e.jsxs(e.Fragment,{children:[s&&e.jsx("div",{className:"sidebar-overlay",onClick:n}),e.jsxs("div",{className:`sidebar ${s?"open":""}`,children:[e.jsx("div",{className:"sidebar-header",children:e.jsxs("div",{className:"sidebar-brand",children:[e.jsx("img",{src:"/logo.png",alt:"رادار",className:"sidebar-brand-img",loading:"lazy",width:"96",height:"96"}),e.jsx("span",{className:"sidebar-brand-caption",children:"لوحة التنقّل"}),e.jsx("div",{className:"sidebar-pwa-wrap",children:e.jsx(fe,{})})]})}),e.jsxs("div",{className:"sidebar-menu",children:[d==="merchant"&&e.jsx("div",{className:"sidebar-role-pill sidebar-role-pill--merchant",children:"تاجر"}),d==="admin"&&e.jsx("div",{className:`sidebar-role-pill sidebar-role-pill--admin${P?" sidebar-role-pill--primary":""}`,children:localStorage.getItem("is_primary_admin")==="true"?"مدير أساسي":"مدير فرعي"}),M.map((o,g)=>{if(o.kind==="section")return e.jsx("div",{className:"sidebar-section-title",children:o.label},`sec-${g}`);if(o.kind==="external")return e.jsxs("a",{href:o.href,className:"menu-item",onClick:()=>n(),title:"فتح لوحة Django Admin",children:[e.jsx("span",{className:"menu-icon-wrap",children:o.icon}),e.jsx("span",{className:"menu-label-row",children:e.jsx("span",{className:"menu-label",children:o.label})})]},`ext-${g}`);const j=d==="admin"?J(o.path):null,V=Ke(m,o.path);return e.jsxs(l,{to:o.path,className:`menu-item${V?" menu-item--active":""}`,onClick:w=>k(w,o),children:[e.jsx("span",{className:"menu-icon-wrap",children:o.icon}),e.jsxs("span",{className:"menu-label-row",children:[e.jsx("span",{className:"menu-label",children:o.label}),j!=null?e.jsx("span",{className:"sidebar-pending-badge",title:"طلبات قيد المراجعة",children:j>99?"99+":j}):null]})]},g)}),e.jsx("div",{className:"sidebar-footer",children:e.jsxs("button",{type:"button",className:"menu-item menu-item--logout",onClick:O,children:[e.jsx("span",{className:"menu-icon-wrap menu-icon-wrap--muted",children:h?e.jsx(Pe,{size:20}):e.jsx(Ie,{size:20})}),e.jsx("span",{className:`menu-label menu-label--logout${h?" menu-label--danger":""}`,children:h?"تسجيل الخروج":"تسجيل الدخول"})]})})]}),e.jsx("style",{dangerouslySetInnerHTML:{__html:`
+          .sidebar {
+            position: fixed;
+            top: 0;
+            width: min(300px, calc(100vw - 16px));
+            right: calc(-1 * min(300px, 100vw - 16px));
+            height: 100vh;
+            height: 100dvh;
+            background: linear-gradient(
+              200deg,
+              rgba(255, 255, 255, 0.92) 0%,
+              rgba(255, 249, 230, 0.55) 55%,
+              rgba(255, 255, 255, 0.92) 100%
             );
-          })}
-        {!adminNotifs.items || adminNotifs.items.length === 0 ? (
-          <div className="muted small" style={{ padding: 10 }}>
-            لا إشعارات بعد.
-          </div>
-        ) : null}
-      </div>
-    </>
-  );
+            box-shadow: -18px 0 60px rgba(30, 30, 46, 0.12);
+            transition: right 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1200;
+            padding: 0;
+            overflow-y: auto;
+            border-inline-start: 1px solid rgba(224, 223, 213, 0.9);
+            border-radius: 24px 0 0 24px;
+            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(14px);
+          }
 
-  return (
-    <div
-      className={`layout-container${isSidebarOpen ? ' sidebar-open' : ''}${pathname === '/map' ? ' layout-container--map' : ''}${pathname === '/' ? ' layout-container--home' : ''}`}
-      dir="rtl"
-      lang="ar"
-    >
-      {!hideMainHeader ? (
-      <header
-        className={`main-header main-header--market${shopperMarketChrome ? ' main-header--shopper-market' : ''}${pathname === '/' ? ' main-header--home' : ''}`}
-      >
-        <div className="main-header__primary">
-          <div className="header-right">
-            {showLayoutBack && !hideMainHeader ? (
-              <button
-                type="button"
-                className="header-back-btn"
-                onClick={handleLayoutBack}
-                aria-label="رجوع للخلف"
-                title="رجوع"
-              >
-                <ChevronRight size={22} strokeWidth={2.25} aria-hidden />
-              </button>
-            ) : null}
+          .sidebar.open {
+            right: 0;
+          }
 
-            <Link to="/" className="brand-block brand-block--toolbar" title="رادار — الرئيسية">
-              <img className="brand-block-logo brand-block-logo--toolbar" src="/logo.png" alt="رادار" loading="lazy" width="64" height="64" />
-            </Link>
-          </div>
+          .sidebar::-webkit-scrollbar { width: 0; }
+          .sidebar { scrollbar-width: none; }
 
-          {!isAdminPanelContext && pathname !== '/map' ? (
-            <div className="header-center">
-              <InstallPwaButton />
-            </div>
-          ) : null}
+          .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(22, 22, 32, 0.4);
+            backdrop-filter: blur(6px);
+            z-index: 1190;
+          }
 
-          <div className="header-left">
-            {isAuthenticated ? (
-              <Link
-                to={userType === 'admin' ? '/admin' : '/settings'}
-                className="header-user-pill header-user-pill--member"
-                title={displayName || 'حسابي'}
-                aria-label={`المستخدم: ${displayName || 'حسابي'}`}
-              >
-                <User size={18} strokeWidth={1.85} aria-hidden className="header-user-pill__ico" />
-                <span className="header-user-pill__name">{displayName || 'حسابي'}</span>
-              </Link>
-            ) : (
-              <Link
-                to={`/register?next=${encodeURIComponent(nextForAuth)}`}
-                className="header-register-btn"
-                aria-label="إنشاء حساب — تسجيل"
-                title="تسجيل"
-              >
-                <UserPlus size={18} strokeWidth={2} aria-hidden />
-                <span className="header-register-btn__txt">+ تسجيل</span>
-              </Link>
-            )}
+          .sidebar-header {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            padding: 20px 18px 16px;
+            background: linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.96) 0%,
+              rgba(255, 255, 255, 0.86) 70%,
+              rgba(255, 255, 255, 0) 100%
+            );
+            border-bottom: 1px solid rgba(224, 223, 213, 0.75);
+          }
 
-            {isAdminUser && adminNotifs ? (
-              <div className="admin-notifs">
-                <button
-                  type="button"
-                  className="admin-notifs-btn"
-                  aria-label="إشعارات الإدارة"
-                  title="إشعارات الإدارة"
-                  aria-expanded={adminNotifsOpen}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAdminNotifsOpen((prev) => {
-                      const next = !prev;
-                      if (next) adminNotifs.markAllRead?.();
-                      return next;
-                    });
-                  }}
-                >
-                  <Bell size={20} strokeWidth={2} aria-hidden />
-                  {adminNotifs.unreadCount > 0 ? (
-                    <span className="admin-notifs-badge">
-                      {adminNotifs.unreadCount > 99 ? '99+' : adminNotifs.unreadCount}
-                    </span>
-                  ) : null}
-                </button>
-                {!isNarrowScreen && adminNotifsOpen ? (
-                  <div className="admin-notifs-pop admin-notifs-pop--dropdown" role="dialog" aria-modal="true" aria-label="إشعارات الإدارة">
-                    {adminNotifsPanelInner}
-                  </div>
-                ) : null}
-                {isNarrowScreen &&
-                  adminNotifsOpen &&
-                  typeof document !== 'undefined' &&
-                  createPortal(
-                    <>
-                      <button
-                        type="button"
-                        className="admin-notifs-backdrop"
-                        aria-label="إغلاق الإشعارات"
-                        onClick={() => setAdminNotifsOpen(false)}
-                      />
-                      <div
-                        className="admin-notifs-sheet"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label="إشعارات الإدارة"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="admin-notifs-sheet__handle" aria-hidden />
-                        {adminNotifsPanelInner}
-                      </div>
-                    </>,
-                    document.body,
-                  )}
-              </div>
-            ) : null}
-          </div>
-        </div>
+          .sidebar-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+          }
 
-        {/* موبايل: شريط بحث مطابق للصورة (يُخفى في صفحة الخريطة لأن البحث موجود فوق الخريطة) */}
-        {!isAdminPanelContext && pathname !== '/map' ? (
-          <div
-            className="header-mobile-search"
-            aria-label="بحث سريع"
-            onClick={() => {
-              navigate('/search');
-            }}
-          >
-            <form
-              className="header-mobile-search__bar"
-              role="search"
-              aria-label="بحث"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate('/search');
-              }}
-              onSubmit={(e) => {
-                e.preventDefault();
-                const q = (searchQuery || '').trim();
-                navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
-              }}
-            >
-              <input
-                ref={mobileSearchInputRef}
-                className="header-mobile-search__input"
-                type="search"
-                value={searchQuery || ''}
-                readOnly
-                onFocus={() => navigate('/search')}
-                placeholder="ابحث عن متجر، منتج، أو قسم…"
-                aria-label="اكتب للبحث"
-                enterKeyHint="search"
-              />
-              <button type="submit" className="header-mobile-search__submit" aria-label="بحث">
-                <SearchIcon size={18} strokeWidth={2} aria-hidden />
-              </button>
-            </form>
-          </div>
-        ) : null}
+          .sidebar-brand-img {
+            height: 68px;
+            width: auto;
+            max-width: 220px;
+            object-fit: contain;
+          }
 
-        {!isAdminPanelContext ? (
-          <nav className="header-nav" aria-label="التنقل">
-            <Link to="/" className={`header-nav-item${pathname === '/' ? ' header-nav-item--active' : ''}`}>
-              <HomeIcon size={20} strokeWidth={2} aria-hidden />
-              <span>الرئيسية</span>
-            </Link>
-            <Link to="/map" className={`header-nav-item${pathname === '/map' ? ' header-nav-item--active' : ''}`}>
-              <MapIcon size={20} strokeWidth={2} aria-hidden />
-              <span>الخريطة</span>
-            </Link>
-            <Link to="/stores" className={`header-nav-item${storesTabActive ? ' header-nav-item--active' : ''}`}>
-              <Store size={20} strokeWidth={2} aria-hidden />
-              <span>المتاجر</span>
-            </Link>
-            <Link to="/services" className={`header-nav-item${pathname === '/services' ? ' header-nav-item--active' : ''}`}>
-              <Briefcase size={20} strokeWidth={2} aria-hidden />
-              <span>الخدمات</span>
-            </Link>
-            <button type="button" className="header-nav-item header-nav-item--menu" onClick={toggleSidebar} aria-label="القائمة">
-              <Menu size={20} strokeWidth={2} aria-hidden />
-              {isAdminUser && pendingTotal > 0 ? (
-                <span className="nav-menu-badge" aria-label={`طلبات معلّقة: ${pendingTotal}`}>
-                  {pendingTotal > 99 ? '99+' : pendingTotal}
-                </span>
-              ) : null}
-              <span>القائمة</span>
-            </button>
-          </nav>
-        ) : (
-          <nav className="header-nav header-nav--admin" aria-label="تنقل لوحة الإدارة">
-            <Link to="/admin" className={`header-nav-item${adminHomeActive ? ' header-nav-item--active' : ''}`}>
-              <LayoutDashboard size={20} strokeWidth={2} aria-hidden />
-              <span>لوحة</span>
-            </Link>
-            <Link to="/admin/stores" className={`header-nav-item${adminStoresActive ? ' header-nav-item--active' : ''}`}>
-              <Store size={20} strokeWidth={2} aria-hidden />
-              <span>متاجر</span>
-            </Link>
-            <Link to="/admin/ads" className={`header-nav-item${adminAdsActive ? ' header-nav-item--active' : ''}`}>
-              <Tags size={20} strokeWidth={2} aria-hidden />
-              <span>إعلانات</span>
-            </Link>
-            <Link to="/admin/users" className={`header-nav-item${adminUsersActive ? ' header-nav-item--active' : ''}`}>
-              <Users size={20} strokeWidth={2} aria-hidden />
-              <span>مستخدمون</span>
-            </Link>
-            <button type="button" className="header-nav-item header-nav-item--menu" onClick={toggleSidebar} aria-label="القائمة">
-              <Menu size={20} strokeWidth={2} aria-hidden />
-              {isAdminUser && pendingTotal > 0 ? (
-                <span className="nav-menu-badge" aria-label={`طلبات معلّقة: ${pendingTotal}`}>
-                  {pendingTotal > 99 ? '99+' : pendingTotal}
-                </span>
-              ) : null}
-              <span>القائمة</span>
-            </button>
-          </nav>
-        )}
-      </header>
-      ) : null}
+          .sidebar-brand-caption {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            letter-spacing: 0.02em;
+          }
 
-      {!hideMainHeader && pathname !== '/map' && announcements.length > 0 ? (
-        <div className="site-announcements" role="region" aria-label="إعلانات عامة">
-          {announcements.map((a) => (
-            <div key={a.id} className="site-announcement">
-              <Megaphone size={18} strokeWidth={2} aria-hidden />
-              <div className="site-announcement__msg">{a.message}</div>
-            </div>
-          ))}
-        </div>
-      ) : null}
+          .sidebar-pwa-wrap {
+            width: 100%;
+            margin-top: 10px;
+          }
+          .sidebar-pwa-wrap .pwa-install {
+            width: 100%;
+          }
+          .sidebar-pwa-wrap .pwa-install__btn {
+            max-width: none;
+            width: 100%;
+          }
 
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} variant={sidebarVariant} />
+          .sidebar-menu {
+            padding: 14px 14px calc(28px + 84px + env(safe-area-inset-bottom, 0px));
+          }
 
-      <main
-        className={`content${pathname === '/' ? ' content--home' : ''}${pathname === '/map' ? ' content--map' : ''}${hideBottomNav ? ' content--auth' : ''}`}
-      >
-        {showLayoutBack && hideHeaderOnMap ? (
-          <div className="layout-back-floating">
-            <button
-              type="button"
-              className="header-back-btn header-back-btn--floating"
-              onClick={handleLayoutBack}
-              aria-label="رجوع للخلف"
-              title="رجوع"
-            >
-              <ChevronRight size={22} strokeWidth={2.25} aria-hidden />
-            </button>
-          </div>
-        ) : null}
-        {children}
-        {pathname !== '/map' ? (
-          <footer className="site-footer" aria-label="تذييل الصفحة">
-            <div className="site-footer__inner" dir="ltr">
-              <span className="site-footer__label">Created by</span>
-              <div className="site-footer__people" aria-label="المساهمون">
-                <div className="site-footer__person">
-                  <div className="site-footer__name">ismail_nsr</div>
-                  <a className="site-footer__email" href="mailto:ismailnaser67@gmail.com">
-                    ismailnaser67@gmail.com
-                  </a>
-                </div>
-                <div className="site-footer__person">
-                  <div className="site-footer__name">lama_dirbi</div>
-                  <a className="site-footer__email" href="mailto:lamaadirbi@gmail.com">
-                    lamaadirbi@gmail.com
-                  </a>
-                </div>
-              </div>
-            </div>
-          </footer>
-        ) : null}
-      </main>
+          .sidebar-role-pill {
+            text-align: center;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 0.82rem;
+            margin-bottom: 16px;
+            border: 1px solid rgba(245, 192, 0, 0.4);
+            background: rgba(255, 244, 204, 0.45);
+            color: var(--secondary);
+          }
 
-      {!hideBottomNav ? (
-        !isAdminPanelContext ? (
-          <nav className="bottom-nav" aria-label="شريط التنقل السفلي">
-            <Link to="/" className={`bottom-nav-item${pathname === '/' ? ' bottom-nav-item--active' : ''}`}>
-              <HomeIcon size={22} strokeWidth={2} aria-hidden />
-              <span>الرئيسية</span>
-            </Link>
-            <Link to="/map" className={`bottom-nav-item${pathname === '/map' ? ' bottom-nav-item--active' : ''}`}>
-              <MapIcon size={22} strokeWidth={2} aria-hidden />
-              <span>الخريطة</span>
-            </Link>
-            <Link to="/stores" className={`bottom-nav-item${storesTabActive ? ' bottom-nav-item--active' : ''}`}>
-              <Store size={22} strokeWidth={2} aria-hidden />
-              <span>المتاجر</span>
-            </Link>
-            <Link to="/services" className={`bottom-nav-item${pathname === '/services' ? ' bottom-nav-item--active' : ''}`}>
-              <Briefcase size={22} strokeWidth={2} aria-hidden />
-              <span>الخدمات</span>
-            </Link>
-            <button type="button" className="bottom-nav-item" onClick={toggleSidebar} aria-label="القائمة">
-              <Menu size={22} strokeWidth={2} aria-hidden />
-              <span>القائمة</span>
-            </button>
-          </nav>
-        ) : (
-          <nav className="bottom-nav" aria-label="شريط الأدمن السفلي">
-            <Link to="/admin" className={`bottom-nav-item${adminHomeActive ? ' bottom-nav-item--active' : ''}`}>
-              <LayoutDashboard size={22} strokeWidth={2} aria-hidden />
-              <span>لوحة</span>
-            </Link>
-            <Link to="/admin/stores" className={`bottom-nav-item${adminStoresActive ? ' bottom-nav-item--active' : ''}`}>
-              <Store size={22} strokeWidth={2} aria-hidden />
-              <span>متاجر</span>
-            </Link>
-            <Link to="/admin/ads" className={`bottom-nav-item${adminAdsActive ? ' bottom-nav-item--active' : ''}`}>
-              <Tags size={22} strokeWidth={2} aria-hidden />
-              <span>إعلانات</span>
-            </Link>
-            <Link to="/admin/users" className={`bottom-nav-item${adminUsersActive ? ' bottom-nav-item--active' : ''}`}>
-              <Users size={22} strokeWidth={2} aria-hidden />
-              <span>مستخدمون</span>
-            </Link>
-            <button type="button" className="bottom-nav-item" onClick={toggleSidebar} aria-label="القائمة">
-              <Menu size={22} strokeWidth={2} aria-hidden />
-              <span>القائمة</span>
-            </button>
-          </nav>
-        )
-      ) : null}
+          .sidebar-role-pill--admin {
+            background: rgba(52, 152, 219, 0.08);
+            border-color: rgba(52, 152, 219, 0.35);
+          }
 
-      <style dangerouslySetInnerHTML={{ __html: `
+          .sidebar-role-pill--primary {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.15) 0%, rgba(255, 244, 204, 0.35) 100%);
+          }
+
+          .sidebar-section-title {
+            font-size: 0.7rem;
+            font-weight: 900;
+            color: var(--text-light);
+            letter-spacing: 0.06em;
+            margin: 20px 12px 10px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(224, 223, 213, 0.85);
+          }
+
+          .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 12px;
+            margin-bottom: 4px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+            color: var(--text-primary);
+            text-decoration: none;
+            border: 1px solid rgba(232, 230, 224, 0.72);
+            background: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset, 0 10px 26px rgba(26, 29, 38, 0.045);
+          }
+
+          .menu-item:hover {
+            background: rgba(255, 244, 204, 0.55);
+            border-color: rgba(245, 192, 0, 0.35);
+            color: var(--secondary);
+          }
+
+          .menu-item--active {
+            background: linear-gradient(135deg, rgba(245, 192, 0, 0.28) 0%, rgba(255, 255, 255, 0.9) 100%);
+            border-color: rgba(245, 192, 0, 0.45);
+            box-shadow: 0 2px 12px rgba(245, 192, 0, 0.15);
+            font-weight: 800;
+          }
+
+          .menu-item--active .menu-icon-wrap {
+            background: var(--white);
+            border-color: rgba(245, 192, 0, 0.5);
+            color: var(--secondary);
+          }
+
+          .menu-icon-wrap {
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(224, 223, 213, 0.92);
+            color: var(--secondary);
+          }
+
+          @media (min-width: 721px) {
+            .sidebar {
+              width: 340px;
+              right: -340px;
+              border-radius: 26px 0 0 26px;
+            }
+          }
+
+          @media (max-width: 420px) {
+            .sidebar-brand-img {
+              height: 60px;
+              max-width: 200px;
+            }
+          }
+
+          .menu-icon-wrap--muted {
+            color: var(--text-secondary);
+          }
+
+          .menu-label-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+          }
+
+          .menu-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            flex: 1;
+            min-width: 0;
+            line-height: 1.35;
+          }
+
+          .menu-item--active .menu-label {
+            font-weight: 800;
+          }
+
+          .menu-label--logout {
+            font-weight: 800;
+            color: var(--primary-hover);
+          }
+
+          .menu-label--danger {
+            color: #c0392b !important;
+          }
+
+          .sidebar-footer {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(224, 223, 213, 0.85);
+          }
+
+          .menu-item--logout {
+            width: 100%;
+            border: none;
+            font-family: inherit;
+            text-align: right;
+            background: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+          }
+
+          .menu-item--logout:hover {
+            background: rgba(255, 244, 204, 0.55);
+          }
+
+          .sidebar-pending-badge {
+            flex-shrink: 0;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 7px;
+            border-radius: 999px;
+            background: #e74c3c;
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 900;
+            line-height: 22px;
+            text-align: center;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+          }
+        `}})]})]})},Xe=({children:s})=>{const n=ge(),{pathname:a}=n,r=be(),[m]=_e(),[b,_]=c.useState(!1),{requestUserLocation:A,locating:C,searchQuery:x,setSearchQuery:z}=ze(),u=c.useRef(null),f=c.useRef(null),[h,$]=c.useState([]),[v,N]=c.useState(!1),[S,B]=c.useState(()=>typeof window<"u"&&window.matchMedia("(max-width: 720px)").matches),d=Ne(),{showAlert:P}=Q();c.useEffect(()=>{a==="/search"&&z(m.get("q")??"")},[a,m,z]),c.useEffect(()=>()=>{f.current&&(window.clearTimeout(f.current),f.current=null)},[]),c.useEffect(()=>{let i=!1;return Me().then(p=>{const y=Array.isArray(p==null?void 0:p.results)?p.results:[];i||$(y)}).catch(()=>{i||$([])}),()=>{i=!0}},[]);const M=()=>_(!b);c.useEffect(()=>{const i=window.setTimeout(()=>{window.dispatchEvent(new CustomEvent("radar-map-invalidate"))},320);return()=>window.clearTimeout(i)},[b]),c.useEffect(()=>{const i=window.matchMedia("(max-width: 720px)"),p=()=>B(i.matches);return i.addEventListener("change",p),()=>i.removeEventListener("change",p)},[]),c.useEffect(()=>{if(!v||!S)return;const i=document.body.style.overflow;document.body.style.overflow="hidden";const p=y=>{y.key==="Escape"&&N(!1)};return window.addEventListener("keydown",p),()=>{document.body.style.overflow=i,window.removeEventListener("keydown",p)}},[v,S]);const O=localStorage.getItem("isGuest")==="true",k=!!localStorage.getItem("token")&&!O,o=localStorage.getItem("user_name")||"",g=localStorage.getItem("user_type")||"shopper",j=k&&g==="admin",V=localStorage.getItem("is_primary_admin")==="true",{pendingTotal:w}=ue(),R=g==="admin"?o||(V?"مدير أساسي":"مدير فرعي"):o||(k?"حسابي":""),we=k&&g==="merchant"?"merchant":k&&g==="admin"?"admin":"shopper",L=k&&g==="admin"&&a.startsWith("/admin"),ve=a==="/map",G=a==="/register"||a==="/login"||a==="/forgot-password"||a.startsWith("/password-reset/confirm")||a.startsWith("/reset-password/confirm"),X=a==="/register"||a==="/login"||a==="/forgot-password"||a.startsWith("/password-reset/confirm")||a.startsWith("/reset-password/confirm");a==="/register"||a==="/login"||a==="/forgot-password"||a.startsWith("/password-reset/confirm")||a.startsWith("/reset-password/confirm");const Y=a==="/stores",ee=a==="/admin",ae=a==="/admin/stores",ie=a==="/admin/ads",te=a==="/admin/users",re=a!=="/",ye=!L,ne=c.useCallback(()=>{if(typeof window<"u"&&window.history.length>1){r(-1);return}if(a.startsWith("/admin")){r("/admin");return}if(a.startsWith("/merchant")){r("/merchant/dashboard");return}r("/")},[r,a]),ke=`${n.pathname}${n.search}${n.hash||""}`;c.useEffect(()=>{N(!1)},[a]);const oe=j&&d&&e.jsxs(e.Fragment,{children:[e.jsxs("div",{className:"admin-notifs-pop__head",children:[e.jsx("strong",{children:"الإشعارات"}),e.jsx("button",{type:"button",className:"btn-toggle",onClick:async()=>{var i;try{await Promise.resolve((i=d.pollOnce)==null?void 0:i.call(d))}catch{await P("تعذر التحديث. حاول لاحقاً.","خطأ")}},children:"تحديث"})]}),e.jsxs("div",{className:"admin-notifs-list",children:[(d.items||[]).slice().reverse().slice(0,12).map(i=>{const p=i==null?void 0:i.event_type,y=i==null?void 0:i.related_id,E=p==="ad_request"&&y!=null?`/admin/ads/${y}`:p==="subscription_renewal"?"/admin/subscriptions":p==="community_point"?"/admin/community":"/admin";return e.jsxs("button",{type:"button",className:"admin-notifs-item",onClick:()=>{N(!1),r(E)},title:"فتح الطلب",children:[e.jsx("div",{className:"admin-notifs-item__title",children:i.title}),i.body?e.jsx("div",{className:"admin-notifs-item__body",children:i.body}):null,e.jsxs("div",{className:"admin-notifs-item__meta",children:[e.jsx("span",{children:i.event_type_label||i.event_type}),e.jsx("span",{className:"muted small",children:new Date(i.created_at).toLocaleString("ar")})]})]},i.id)}),!d.items||d.items.length===0?e.jsx("div",{className:"muted small",style:{padding:10},children:"لا إشعارات بعد."}):null]})]});return e.jsxs("div",{className:`layout-container${b?" sidebar-open":""}${a==="/map"?" layout-container--map":""}${a==="/"?" layout-container--home":""}`,dir:"rtl",lang:"ar",children:[G?null:e.jsxs("header",{className:`main-header main-header--market${ye?" main-header--shopper-market":""}${a==="/"?" main-header--home":""}`,children:[e.jsxs("div",{className:"main-header__primary",children:[e.jsxs("div",{className:"header-right",children:[re&&!G?e.jsx("button",{type:"button",className:"header-back-btn",onClick:ne,"aria-label":"رجوع للخلف",title:"رجوع",children:e.jsx(le,{size:22,strokeWidth:2.25,"aria-hidden":!0})}):null,e.jsx(l,{to:"/",className:"brand-block brand-block--toolbar",title:"رادار — الرئيسية",children:e.jsx("img",{className:"brand-block-logo brand-block-logo--toolbar",src:"/logo.png",alt:"رادار",loading:"lazy",width:"64",height:"64"})})]}),!L&&a!=="/map"?e.jsx("div",{className:"header-center",children:e.jsx(fe,{})}):null,e.jsxs("div",{className:"header-left",children:[k?e.jsxs(l,{to:g==="admin"?"/admin":"/settings",className:"header-user-pill header-user-pill--member",title:R||"حسابي","aria-label":`المستخدم: ${R||"حسابي"}`,children:[e.jsx(Ve,{size:18,strokeWidth:1.85,"aria-hidden":!0,className:"header-user-pill__ico"}),e.jsx("span",{className:"header-user-pill__name",children:R||"حسابي"})]}):e.jsxs(l,{to:`/register?next=${encodeURIComponent(ke)}`,className:"header-register-btn","aria-label":"إنشاء حساب — تسجيل",title:"تسجيل",children:[e.jsx(Oe,{size:18,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{className:"header-register-btn__txt",children:"+ تسجيل"})]}),j&&d?e.jsxs("div",{className:"admin-notifs",children:[e.jsxs("button",{type:"button",className:"admin-notifs-btn","aria-label":"إشعارات الإدارة",title:"إشعارات الإدارة","aria-expanded":v,onClick:i=>{i.stopPropagation(),N(p=>{var E;const y=!p;return y&&((E=d.markAllRead)==null||E.call(d)),y})},children:[e.jsx(Ae,{size:20,strokeWidth:2,"aria-hidden":!0}),d.unreadCount>0?e.jsx("span",{className:"admin-notifs-badge",children:d.unreadCount>99?"99+":d.unreadCount}):null]}),!S&&v?e.jsx("div",{className:"admin-notifs-pop admin-notifs-pop--dropdown",role:"dialog","aria-modal":"true","aria-label":"إشعارات الإدارة",children:oe}):null,S&&v&&typeof document<"u"&&Se.createPortal(e.jsxs(e.Fragment,{children:[e.jsx("button",{type:"button",className:"admin-notifs-backdrop","aria-label":"إغلاق الإشعارات",onClick:()=>N(!1)}),e.jsxs("div",{className:"admin-notifs-sheet",role:"dialog","aria-modal":"true","aria-label":"إشعارات الإدارة",onClick:i=>i.stopPropagation(),children:[e.jsx("div",{className:"admin-notifs-sheet__handle","aria-hidden":!0}),oe]})]}),document.body)]}):null]})]}),!L&&a!=="/map"?e.jsx("div",{className:"header-mobile-search","aria-label":"بحث سريع",onClick:()=>{r("/search")},children:e.jsxs("form",{className:"header-mobile-search__bar",role:"search","aria-label":"بحث",onClick:i=>{i.preventDefault(),i.stopPropagation(),r("/search")},onSubmit:i=>{i.preventDefault();const p=(x||"").trim();r(p?`/search?q=${encodeURIComponent(p)}`:"/search")},children:[e.jsx("input",{ref:u,className:"header-mobile-search__input",type:"search",value:x||"",readOnly:!0,onFocus:()=>r("/search"),placeholder:"ابحث عن متجر، منتج، أو قسم…","aria-label":"اكتب للبحث",enterKeyHint:"search"}),e.jsx("button",{type:"submit",className:"header-mobile-search__submit","aria-label":"بحث",children:e.jsx(qe,{size:18,strokeWidth:2,"aria-hidden":!0})})]})}):null,L?e.jsxs("nav",{className:"header-nav header-nav--admin","aria-label":"تنقل لوحة الإدارة",children:[e.jsxs(l,{to:"/admin",className:`header-nav-item${ee?" header-nav-item--active":""}`,children:[e.jsx(D,{size:20,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"لوحة"})]}),e.jsxs(l,{to:"/admin/stores",className:`header-nav-item${ae?" header-nav-item--active":""}`,children:[e.jsx(W,{size:20,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"متاجر"})]}),e.jsxs(l,{to:"/admin/ads",className:`header-nav-item${ie?" header-nav-item--active":""}`,children:[e.jsx(xe,{size:20,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"إعلانات"})]}),e.jsxs(l,{to:"/admin/users",className:`header-nav-item${te?" header-nav-item--active":""}`,children:[e.jsx(I,{size:20,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"مستخدمون"})]}),e.jsxs("button",{type:"button",className:"header-nav-item header-nav-item--menu",onClick:M,"aria-label":"القائمة",children:[e.jsx(q,{size:20,strokeWidth:2,"aria-hidden":!0}),j&&w>0?e.jsx("span",{className:"nav-menu-badge","aria-label":`طلبات معلّقة: ${w}`,children:w>99?"99+":w}):null,e.jsx("span",{children:"القائمة"})]})]}):e.jsxs("nav",{className:"header-nav","aria-label":"التنقل",children:[e.jsxs(l,{to:"/",className:`header-nav-item${a==="/"?" header-nav-item--active":""}`,children:[e.jsx(K,{size:20,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"الرئيسية"})]}),e.jsxs(l,{to:"/map",className:`header-nav-item${a==="/map"?" header-nav-item--active":""}`,children:[e.jsx(pe,{size:20,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"الخريطة"})]}),e.jsxs(l,{to:"/stores",className:`header-nav-item${Y?" header-nav-item--active":""}`,children:[e.jsx(W,{size:20,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"المتاجر"})]}),e.jsxs(l,{to:"/services",className:`header-nav-item${a==="/services"?" header-nav-item--active":""}`,children:[e.jsx(de,{size:20,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"الخدمات"})]}),e.jsxs("button",{type:"button",className:"header-nav-item header-nav-item--menu",onClick:M,"aria-label":"القائمة",children:[e.jsx(q,{size:20,strokeWidth:2,"aria-hidden":!0}),j&&w>0?e.jsx("span",{className:"nav-menu-badge","aria-label":`طلبات معلّقة: ${w}`,children:w>99?"99+":w}):null,e.jsx("span",{children:"القائمة"})]})]})]}),!G&&a!=="/map"&&h.length>0?e.jsx("div",{className:"site-announcements",role:"region","aria-label":"إعلانات عامة",children:h.map(i=>e.jsxs("div",{className:"site-announcement",children:[e.jsx(U,{size:18,strokeWidth:2,"aria-hidden":!0}),e.jsx("div",{className:"site-announcement__msg",children:i.message})]},i.id))}):null,e.jsx(Qe,{isOpen:b,toggleSidebar:M,variant:we}),e.jsxs("main",{className:`content${a==="/"?" content--home":""}${a==="/map"?" content--map":""}${X?" content--auth":""}`,children:[re&&ve?e.jsx("div",{className:"layout-back-floating",children:e.jsx("button",{type:"button",className:"header-back-btn header-back-btn--floating",onClick:ne,"aria-label":"رجوع للخلف",title:"رجوع",children:e.jsx(le,{size:22,strokeWidth:2.25,"aria-hidden":!0})})}):null,s,a!=="/map"?e.jsx("footer",{className:"site-footer","aria-label":"تذييل الصفحة",children:e.jsxs("div",{className:"site-footer__inner",dir:"ltr",children:[e.jsx("span",{className:"site-footer__label",children:"Created by"}),e.jsxs("div",{className:"site-footer__people","aria-label":"المساهمون",children:[e.jsxs("div",{className:"site-footer__person",children:[e.jsx("div",{className:"site-footer__name",children:"ismail_nsr"}),e.jsx("a",{className:"site-footer__email",href:"mailto:ismailnaser67@gmail.com",children:"ismailnaser67@gmail.com"})]}),e.jsxs("div",{className:"site-footer__person",children:[e.jsx("div",{className:"site-footer__name",children:"lama_dirbi"}),e.jsx("a",{className:"site-footer__email",href:"mailto:lamaadirbi@gmail.com",children:"lamaadirbi@gmail.com"})]})]})]})}):null]}),X?null:L?e.jsxs("nav",{className:"bottom-nav","aria-label":"شريط الأدمن السفلي",children:[e.jsxs(l,{to:"/admin",className:`bottom-nav-item${ee?" bottom-nav-item--active":""}`,children:[e.jsx(D,{size:22,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"لوحة"})]}),e.jsxs(l,{to:"/admin/stores",className:`bottom-nav-item${ae?" bottom-nav-item--active":""}`,children:[e.jsx(W,{size:22,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"متاجر"})]}),e.jsxs(l,{to:"/admin/ads",className:`bottom-nav-item${ie?" bottom-nav-item--active":""}`,children:[e.jsx(xe,{size:22,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"إعلانات"})]}),e.jsxs(l,{to:"/admin/users",className:`bottom-nav-item${te?" bottom-nav-item--active":""}`,children:[e.jsx(I,{size:22,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"مستخدمون"})]}),e.jsxs("button",{type:"button",className:"bottom-nav-item",onClick:M,"aria-label":"القائمة",children:[e.jsx(q,{size:22,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"القائمة"})]})]}):e.jsxs("nav",{className:"bottom-nav","aria-label":"شريط التنقل السفلي",children:[e.jsxs(l,{to:"/",className:`bottom-nav-item${a==="/"?" bottom-nav-item--active":""}`,children:[e.jsx(K,{size:22,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"الرئيسية"})]}),e.jsxs(l,{to:"/map",className:`bottom-nav-item${a==="/map"?" bottom-nav-item--active":""}`,children:[e.jsx(pe,{size:22,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"الخريطة"})]}),e.jsxs(l,{to:"/stores",className:`bottom-nav-item${Y?" bottom-nav-item--active":""}`,children:[e.jsx(W,{size:22,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"المتاجر"})]}),e.jsxs(l,{to:"/services",className:`bottom-nav-item${a==="/services"?" bottom-nav-item--active":""}`,children:[e.jsx(de,{size:22,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"الخدمات"})]}),e.jsxs("button",{type:"button",className:"bottom-nav-item",onClick:M,"aria-label":"القائمة",children:[e.jsx(q,{size:22,strokeWidth:2,"aria-hidden":!0}),e.jsx("span",{children:"القائمة"})]})]}),e.jsx("style",{dangerouslySetInnerHTML:{__html:`
         .layout-container {
           min-height: 100vh;
           min-height: 100dvh;
@@ -1895,9 +1594,4 @@ const MainLayout = ({ children }) => {
           opacity: 0 !important;
           pointer-events: none !important;
         }
-      `}} />
-    </div>
-  );
-};
-
-export default MainLayout;
+      `}})]})};export{Ce as B,le as C,Le as D,We as H,ce as L,Xe as M,Ee as P,W as S,De as T,Ve as U,q as a,F as b,K as c,de as d,se as e,U as f,qe as g,he as h,Te as i,Ue as j,Ie as k,Oe as l,pe as m};
