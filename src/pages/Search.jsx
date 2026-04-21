@@ -5,6 +5,7 @@ import MainLayout from '../components/MainLayout';
 import { getNearbyStores, getCategories } from '../api/data';
 import { useMapExplore } from '../context/MapExploreContext';
 import { getStorePinDisplay } from '../components/maps/storePinDefaults';
+import { storeMatchesAnyCategory } from '../utils/storeCategories';
 import { storeHasWeeklyHoursSchedule } from '../utils/storeHours';
 import FiltersDropdown from '../components/ui/FiltersDropdown';
 
@@ -127,7 +128,7 @@ const SearchPage = () => {
   const filtered = useMemo(() => {
     let base = Array.isArray(stores) ? stores : [];
     if (selectedCategoryIds.length > 0) {
-      base = base.filter((s) => selectedCategoryIds.includes(Number(s.category)));
+      base = base.filter((s) => storeMatchesAnyCategory(s, selectedCategoryIds));
     }
     if (!ql) return base;
     return base.filter((s) => {

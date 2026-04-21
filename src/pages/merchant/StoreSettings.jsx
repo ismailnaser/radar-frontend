@@ -166,11 +166,15 @@ const MerchantStoreSettings = () => {
         const fd = new FormData();
         fd.append('store_name', common.store_name);
         fd.append('description', common.description || '');
-        // DRF multipart expects repeated pk values for many-to-many fields, not a JSON string.
-        (common.categories || []).forEach((catId) => {
-          const n = Number(catId);
-          if (Number.isFinite(n)) fd.append('categories', String(n));
-        });
+        // Send as JSON for stable parsing (avoids keeping only one value on some multipart parsers).
+        fd.append(
+          'categories',
+          JSON.stringify(
+            (common.categories || [])
+              .map((catId) => Number(catId))
+              .filter((n) => Number.isFinite(n))
+          )
+        );
         fd.append('location_address', common.location_address);
         fd.append('contact_whatsapp', common.contact_whatsapp);
         fd.append('business_hours_note', common.business_hours_note);
@@ -272,7 +276,7 @@ const MerchantStoreSettings = () => {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                   <div style={{ fontWeight: 950, color: 'var(--secondary)' }}>أقسام المتجر</div>
                   <FiltersDropdown
-                    buttonLabel="فلاتر"
+                    buttonLabel="اختر قسم متجرك"
                     title="اختر أقسام متجرك (يمكن أكثر من قسم)"
                     allLabel="بدون فلترة"
                     options={(allCategories || []).map((c) => ({ id: c.id, label: c.name }))}

@@ -102,6 +102,7 @@ import { storeHasWeeklyHoursSchedule } from '../utils/storeHours';
 import { formatApiError } from '../utils/apiErrors';
 import { canUseShoppingCarts } from '../utils/cartAccess';
 import { communityPointHasMapCoords, communityPointLatLng } from '../utils/communityPointCoords';
+import { storeMatchesAnyCategory } from '../utils/storeCategories';
 import FiltersDropdown from '../components/ui/FiltersDropdown';
 
 function haversineKm(a, b) {
@@ -805,7 +806,7 @@ const Home = () => {
     if (filterMode !== 'stores') return [];
     return (stores || []).filter((s) => {
       if (selectedCategoryId != null) {
-        if (s.category == null || Number(s.category) !== Number(selectedCategoryId)) {
+        if (!storeMatchesAnyCategory(s, [selectedCategoryId])) {
           return false;
         }
       }
