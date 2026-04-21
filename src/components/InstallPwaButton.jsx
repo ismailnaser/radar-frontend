@@ -25,7 +25,7 @@ function isInStandaloneMode() {
 }
 
 export default function InstallPwaButton({ className = '' }) {
-  const { showConfirm, showAlert } = useAlert();
+  const { showAlert } = useAlert();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installed, setInstalled] = useState(false);
   const [showIOSHelp, setShowIOSHelp] = useState(false);
@@ -60,16 +60,8 @@ export default function InstallPwaButton({ className = '' }) {
   if (mode === 'installed') return null;
 
   const onInstall = async () => {
-    const ok = await showConfirm(
-      mode === 'ios'
-        ? 'عرض تعليمات إضافة رادار إلى الشاشة الرئيسية على آيفون/آيباد؟'
-        : 'تثبيت تطبيق رادار على هذا الجهاز؟',
-      'تثبيت التطبيق'
-    );
-    if (!ok) return;
     if (mode === 'ios') {
-      setShowIOSHelp((v) => !v);
-      await showAlert('اتبع التعليمات أسفل الزر لإضافة الموقع إلى الشاشة الرئيسية.', 'تلميح');
+      await showAlert('التثبيت التلقائي غير مدعوم على iPhone/iPad من هذا الزر.', 'تنبيه');
       return;
     }
     const promptEvent =
@@ -92,13 +84,10 @@ export default function InstallPwaButton({ className = '' }) {
       return;
     }
     if (mode === 'manual') {
-      const manualMsg = isAndroid()
-        ? 'إذا لم يظهر تثبيت تلقائي: افتح قائمة المتصفح (⋮) ثم اختر "Install app" أو "Add to Home screen".'
-        : 'إذا لم يظهر تثبيت تلقائي: افتح قائمة المتصفح ثم اختر "Install app" أو "Add to Home screen".';
-      await showAlert(manualMsg, 'تثبيت التطبيق');
+      await showAlert('التثبيت التلقائي غير متاح حاليًا على هذا المتصفح.', 'تنبيه');
       return;
     }
-    await showAlert('هذا المتصفح لا يدعم نافذة التثبيت التلقائي حاليًا. استخدم التثبيت اليدوي من قائمة المتصفح.', 'تثبيت التطبيق');
+    await showAlert('التثبيت التلقائي غير متاح حاليًا على هذا المتصفح.', 'تنبيه');
   };
 
   return (
