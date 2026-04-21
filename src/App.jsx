@@ -44,6 +44,7 @@ const Contact = lazy(() => import('./pages/Contact'));
 const UserGuide = lazy(() => import('./pages/UserGuide'));
 const Verification = lazy(() => import('./pages/Verification'));
 const StoreProfile = lazy(() => import('./pages/StoreProfile'));
+const StoreItemDetails = lazy(() => import('./pages/StoreItemDetails'));
 const SharedCart = lazy(() => import('./pages/SharedCart'));
 const MapPage = lazy(() => import('./pages/Map'));
 const StoresPage = lazy(() => import('./pages/Stores'));
@@ -530,6 +531,12 @@ const router = createBrowserRouter(
           <Route path="/stores/:storeId" element={
             <VerificationRoute>
               <StoreProfile />
+            </VerificationRoute>
+          } />
+
+          <Route path="/stores/:storeId/item/:itemType/:itemId" element={
+            <VerificationRoute>
+              <StoreItemDetails />
             </VerificationRoute>
           } />
           

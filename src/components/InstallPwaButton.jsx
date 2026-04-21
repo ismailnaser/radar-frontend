@@ -8,6 +8,12 @@ function isIOS() {
   return /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document);
 }
 
+function isAndroid() {
+  if (typeof window === 'undefined') return false;
+  const ua = window.navigator.userAgent || '';
+  return /android/i.test(ua);
+}
+
 function isInStandaloneMode() {
   if (typeof window === 'undefined') return false;
   // iOS Safari standalone
@@ -45,10 +51,10 @@ export default function InstallPwaButton({ className = '' }) {
     if (installed) return 'installed';
     if (deferredPrompt) return 'prompt';
     if (isIOS()) return 'ios';
-    return 'none';
+    return 'manual';
   }, [installed, deferredPrompt]);
 
-  if (mode === 'none' || mode === 'installed') return null;
+  if (mode === 'installed') return null;
 
   const onInstall = async () => {
     const ok = await showConfirm(
@@ -61,6 +67,13 @@ export default function InstallPwaButton({ className = '' }) {
     if (mode === 'ios') {
       setShowIOSHelp((v) => !v);
       await showAlert('اتبع التعليمات أسفل الزر لإضافة الموقع إلى الشاشة الرئيسية.', 'تلميح');
+      return;
+    }
+    if (mode === 'manual') {
+      const manualMsg = isAndroid()
+        ? 'إذا لم يظهر تثبيت تلقائي: افتح قائمة المتصفح (⋮) ثم اختر "Install app" أو "Add to Home screen".'
+        : 'إذا لم يظهر تثبيت تلقائي: افتح قائمة المتصفح ثم اختر "Install app" أو "Add to Home screen".';
+      await showAlert(manualMsg, 'تثبيت التطبيق');
       return;
     }
     try {
@@ -86,10 +99,19 @@ export default function InstallPwaButton({ className = '' }) {
         </span>
         <span className="pwa-install__btn-txt">تثبيت التطبيق</span>
       </button>
-      {mode === 'ios' && showIOSHelp ? (
+      {(mode === 'ios' || mode === 'manual') && showIOSHelp ? (
         <div className="pwa-install__help">
-          على iPhone/iPad: افتح الموقع في Safari ثم اضغط زر المشاركة (Share) واختر
-          <strong> “Add to Home Screen”</strong>.
+          {mode === 'ios' ? (
+            <>
+              على iPhone/iPad: افتح الموقع في Safari ثم اضغط زر المشاركة (Share) واختر
+              <strong> “Add to Home Screen”</strong>.
+            </>
+          ) : (
+            <>
+              إن لم يظهر تثبيت تلقائي: افتح قائمة المتصفح ثم اختر
+              <strong> Install app</strong> أو <strong>Add to Home screen</strong>.
+            </>
+          )}
         </div>
       ) : null}
     </div>

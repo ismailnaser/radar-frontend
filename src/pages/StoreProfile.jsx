@@ -860,6 +860,13 @@ const StoreProfile = () => {
                       <div className="store-profile-sponsored-desc">
                         {ad.description}
                       </div>
+                      <button
+                        type="button"
+                        className="store-profile-open-details-btn"
+                        onClick={() => navigate(`/stores/${storeId}/item/sponsored/${ad.id}`)}
+                      >
+                        عرض التفاصيل
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -964,6 +971,13 @@ const StoreProfile = () => {
                           <div className="store-profile-product-price">{p.price} ₪</div>
 
                           {inQ != null && inQ > 0 && <div className="store-profile-in-cart">في السلة: {inQ}</div>}
+                          <button
+                            type="button"
+                            className="store-profile-open-details-btn"
+                            onClick={() => navigate(`/stores/${storeId}/item/product/${p.id}`)}
+                          >
+                            عرض التفاصيل
+                          </button>
 
                           <div className="flex-between store-profile-qty-row">
                             <button
@@ -1466,6 +1480,22 @@ const StoreProfile = () => {
           color: var(--text-secondary);
           margin-top: 4px;
           line-height: 1.55;
+        }
+        .store-profile-open-details-btn{
+          width: 100%;
+          margin-top: 10px;
+          border: 1px solid var(--border);
+          background: var(--white);
+          color: var(--secondary);
+          border-radius: 10px;
+          padding: 9px 12px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: background .15s ease, border-color .15s ease;
+        }
+        .store-profile-open-details-btn:hover{
+          border-color: rgba(255, 204, 0, 0.6);
+          background: var(--primary-light);
         }
         .store-profile-products-grid{
           display: grid;
