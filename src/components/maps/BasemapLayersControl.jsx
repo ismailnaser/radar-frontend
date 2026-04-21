@@ -1,6 +1,11 @@
 import React from 'react';
 import { LayersControl, TileLayer } from 'react-leaflet';
 
+const GAZA_TILE_BOUNDS = [
+  [31.20, 34.20],
+  [31.62, 34.62],
+];
+
 /**
  * طبقات خلفية لخرائط قطاع غزة — بيانات من OpenStreetMap ومزوّدين مجانيين.
  * المستخدم يقدر يبدّل من زر الطبقات أعلى اليمين لرؤية شوارع ومعالم أوضح.
@@ -14,6 +19,8 @@ export default function BasemapLayersControl() {
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
           maxNativeZoom={19}
+          noWrap
+          bounds={GAZA_TILE_BOUNDS}
         />
       </LayersControl.BaseLayer>
 
@@ -23,6 +30,8 @@ export default function BasemapLayersControl() {
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           subdomains="abcd"
           maxZoom={20}
+          noWrap
+          bounds={GAZA_TILE_BOUNDS}
         />
       </LayersControl.BaseLayer>
 
@@ -31,6 +40,8 @@ export default function BasemapLayersControl() {
           attribution="Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics"
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
           maxZoom={19}
+          noWrap
+          bounds={GAZA_TILE_BOUNDS}
         />
       </LayersControl.BaseLayer>
     </LayersControl>

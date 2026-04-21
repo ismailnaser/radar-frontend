@@ -22,6 +22,23 @@ import CustomButton from '../../components/ui/CustomButton';
 import { getRefinedGeolocationPosition } from '../../utils/geolocation';
 
 const DEFAULT_CENTER = [31.5, 34.4];
+const GAZA_BOUNDS = {
+  minLat: 31.20,
+  maxLat: 31.62,
+  minLng: 34.20,
+  maxLng: 34.62,
+};
+const GAZA_BOUNDS_EXPR = [
+  [GAZA_BOUNDS.minLat, GAZA_BOUNDS.minLng],
+  [GAZA_BOUNDS.maxLat, GAZA_BOUNDS.maxLng],
+];
+
+function isInsideGaza(lat, lng) {
+  const la = Number(lat);
+  const ln = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return false;
+  return la >= GAZA_BOUNDS.minLat && la <= GAZA_BOUNDS.maxLat && ln >= GAZA_BOUNDS.minLng && ln <= GAZA_BOUNDS.maxLng;
+}
 
 function AdminCommunity() {
   const { showAlert, showPrompt, showConfirm } = useAlert();
@@ -192,6 +209,10 @@ function AdminCommunity() {
       await showAlert('حدد الموقع على الخريطة.', 'تنبيه');
       return;
     }
+    if (!isInsideGaza(editPick[0], editPick[1])) {
+      await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
+      return;
+    }
 
     const payload = {
       category: Number(editCategory),
@@ -247,6 +268,10 @@ function AdminCommunity() {
     }
     if (!addPick) {
       await showAlert('حدد الموقع على الخريطة.', 'تنبيه');
+      return;
+    }
+    if (!isInsideGaza(addPick[0], addPick[1])) {
+      await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
       return;
     }
     const payload = {
@@ -305,6 +330,10 @@ function AdminCommunity() {
     setAddLocating(true);
     try {
       const r = await getRefinedGeolocationPosition({ maxWaitMs: 22000, goodEnoughM: 110 });
+      if (!isInsideGaza(r.latitude, r.longitude)) {
+        await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
+        return;
+      }
       setAddPick([r.latitude, r.longitude]);
       const acc = r.accuracy;
       if (acc != null && acc > 1200) {
@@ -583,12 +612,22 @@ function AdminCommunity() {
                   minZoom={10}
                   maxZoom={19}
                   scrollWheelZoom
+                  maxBounds={GAZA_BOUNDS_EXPR}
+                  maxBoundsViscosity={1.0}
                   style={{ height: 'clamp(240px, 48dvh, 360px)', width: '100%' }}
                 >
                   <BasemapLayersControl />
                   <LeafletInvalidateOnLayout />
                   <MapFlyToPosition position={addPick} />
-                  <MapClickPicker onPick={(la, lo) => setAddPick([la, lo])} />
+                  <MapClickPicker
+                    onPick={async (la, lo) => {
+                      if (!isInsideGaza(la, lo)) {
+                        await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
+                        return;
+                      }
+                      setAddPick([la, lo]);
+                    }}
+                  />
                   {addPick ? (
                     <Marker position={addPick}>
                       <Popup>موقع النقطة</Popup>
@@ -734,12 +773,22 @@ function AdminCommunity() {
                   minZoom={10}
                   maxZoom={19}
                   scrollWheelZoom
+                  maxBounds={GAZA_BOUNDS_EXPR}
+                  maxBoundsViscosity={1.0}
                   style={{ height: 'clamp(240px, 48dvh, 380px)', width: '100%' }}
                 >
                   <BasemapLayersControl />
                   <LeafletInvalidateOnLayout />
                   <MapFlyToPosition position={editPick} />
-                  <MapClickPicker onPick={(la, lo) => setEditPick([la, lo])} />
+                  <MapClickPicker
+                    onPick={async (la, lo) => {
+                      if (!isInsideGaza(la, lo)) {
+                        await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
+                        return;
+                      }
+                      setEditPick([la, lo]);
+                    }}
+                  />
                   {editPick ? (
                     <Marker position={editPick}>
                       <Popup>موقع النقطة</Popup>

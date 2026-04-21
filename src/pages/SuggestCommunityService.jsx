@@ -14,6 +14,23 @@ import '../components/maps/leafletIconFix';
 import CustomButton from '../components/ui/CustomButton';
 
 const DEFAULT_CENTER = [31.5, 34.4];
+const GAZA_BOUNDS = {
+  minLat: 31.20,
+  maxLat: 31.62,
+  minLng: 34.20,
+  maxLng: 34.62,
+};
+const GAZA_BOUNDS_EXPR = [
+  [GAZA_BOUNDS.minLat, GAZA_BOUNDS.minLng],
+  [GAZA_BOUNDS.maxLat, GAZA_BOUNDS.maxLng],
+];
+
+function isInsideGaza(lat, lng) {
+  const la = Number(lat);
+  const ln = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return false;
+  return la >= GAZA_BOUNDS.minLat && la <= GAZA_BOUNDS.maxLat && ln >= GAZA_BOUNDS.minLng && ln <= GAZA_BOUNDS.maxLng;
+}
 
 const SuggestCommunityService = () => {
   const navigate = useNavigate();
@@ -70,6 +87,10 @@ const SuggestCommunityService = () => {
       await showAlert('انقر على الخريطة لتحديد موقع النقطة.', 'تنبيه');
       return;
     }
+    if (!isInsideGaza(pick[0], pick[1])) {
+      await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
+      return;
+    }
     const payload = {
       category: Number(categoryId),
       title: title.trim(),
@@ -124,6 +145,10 @@ const SuggestCommunityService = () => {
     setLocating(true);
     try {
       const r = await getRefinedGeolocationPosition({ maxWaitMs: 22000, goodEnoughM: 110 });
+      if (!isInsideGaza(r.latitude, r.longitude)) {
+        await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
+        return;
+      }
       setPick([r.latitude, r.longitude]);
       const acc = r.accuracy;
       if (acc != null && acc > 1200) {
@@ -276,6 +301,16 @@ const SuggestCommunityService = () => {
               <CustomButton
                 type="button"
                 variant="secondary"
+                onClick={() => setMapExpanded(true)}
+                style={{ width: 'auto' }}
+                confirm={false}
+                showErrorAlert={false}
+              >
+                فتح الخريطة
+              </CustomButton>
+              <CustomButton
+                type="button"
+                variant="secondary"
                 loading={locating}
                 onClick={useMyLocationOnMap}
                 style={{ width: 'auto' }}
@@ -311,12 +346,22 @@ const SuggestCommunityService = () => {
                   minZoom={10}
                   maxZoom={19}
                   scrollWheelZoom
+                  maxBounds={GAZA_BOUNDS_EXPR}
+                  maxBoundsViscosity={1.0}
                   style={{ height: 'clamp(260px, 48dvh, 360px)', width: '100%' }}
                 >
                   <BasemapLayersControl />
                   <LeafletInvalidateOnLayout />
                   <MapFlyToPosition position={pick} />
-                  <MapClickPicker onPick={(lat, lng) => setPick([lat, lng])} />
+                  <MapClickPicker
+                    onPick={async (lat, lng) => {
+                      if (!isInsideGaza(lat, lng)) {
+                        await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
+                        return;
+                      }
+                      setPick([lat, lng]);
+                    }}
+                  />
                   {pick ? (
                     <Marker position={pick}>
                       <Popup>موقع النقطة المقترحة</Popup>
@@ -426,12 +471,22 @@ const SuggestCommunityService = () => {
                     minZoom={10}
                     maxZoom={19}
                     scrollWheelZoom
+                    maxBounds={GAZA_BOUNDS_EXPR}
+                    maxBoundsViscosity={1.0}
                     style={{ height: '100%', width: '100%' }}
                   >
                     <BasemapLayersControl />
                     <LeafletInvalidateOnLayout />
                     <MapFlyToPosition position={pick} />
-                    <MapClickPicker onPick={(lat, lng) => setPick([lat, lng])} />
+                    <MapClickPicker
+                      onPick={async (lat, lng) => {
+                        if (!isInsideGaza(lat, lng)) {
+                          await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
+                          return;
+                        }
+                        setPick([lat, lng]);
+                      }}
+                    />
                     {pick ? (
                       <Marker position={pick}>
                         <Popup>موقع النقطة المقترحة</Popup>

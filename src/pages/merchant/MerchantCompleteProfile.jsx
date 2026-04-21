@@ -19,6 +19,20 @@ function normalizeOptionalCoords(lat, lng) {
   return [latN, lngN];
 }
 
+const GAZA_BOUNDS = {
+  minLat: 31.20,
+  maxLat: 31.62,
+  minLng: 34.15,
+  maxLng: 34.62,
+};
+
+function isInsideGaza(lat, lng) {
+  const la = Number(lat);
+  const ln = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return false;
+  return la >= GAZA_BOUNDS.minLat && la <= GAZA_BOUNDS.maxLat && ln >= GAZA_BOUNDS.minLng && ln <= GAZA_BOUNDS.maxLng;
+}
+
 export default function MerchantCompleteProfile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -97,6 +111,10 @@ export default function MerchantCompleteProfile() {
     const safeCoords = normalizeOptionalCoords(pickedLocation?.[0], pickedLocation?.[1]);
     const latToSave = safeCoords?.[0] ?? null;
     const lngToSave = safeCoords?.[1] ?? null;
+    if (safeCoords && !isInsideGaza(latToSave, lngToSave)) {
+      await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
+      return;
+    }
 
     setSaving(true);
     try {

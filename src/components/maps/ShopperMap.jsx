@@ -37,6 +37,13 @@ const DEFAULT_ZOOM = 13;
 /** حدود قطاع غزة التقريبية (Lat/Lng) لمنع الخروج خارج المنطقة */
 const GAZA_BOUNDS = L.latLngBounds(L.latLng(31.20, 34.20), L.latLng(31.62, 34.62));
 
+function isInsideGazaBounds(lat, lng) {
+  const la = Number(lat);
+  const ln = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return false;
+  return GAZA_BOUNDS.contains(L.latLng(la, ln));
+}
+
 function MapPopupStoreRating({ store }) {
   const avgRaw = store?.rating_average != null ? Number(store.rating_average) : null;
   const n = store?.rating_count != null ? Number(store.rating_count) : 0;
@@ -416,6 +423,14 @@ const ShopperMap = ({
       (mapHeight.includes('100dvh') || mapHeight.includes('100vh') || mapHeight === '100%'));
 
   const handleManualMapPick = (lat, lng) => {
+    if (!isInsideGazaBounds(lat, lng)) {
+      try {
+        window.alert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.');
+      } catch {
+        // ignore
+      }
+      return;
+    }
     if (typeof onManualLocationPick === 'function') {
       onManualLocationPick(lat, lng);
     }

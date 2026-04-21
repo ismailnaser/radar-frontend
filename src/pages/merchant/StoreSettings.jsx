@@ -11,6 +11,19 @@ import MerchantLocationPicker from '../../components/maps/MerchantLocationPicker
 import FiltersDropdown from '../../components/ui/FiltersDropdown';
 
 const WEEKDAY_LABELS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+const GAZA_BOUNDS = {
+  minLat: 31.20,
+  maxLat: 31.62,
+  minLng: 34.15,
+  maxLng: 34.62,
+};
+
+function isInsideGaza(lat, lng) {
+  const la = Number(lat);
+  const ln = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return false;
+  return la >= GAZA_BOUNDS.minLat && la <= GAZA_BOUNDS.maxLat && ln >= GAZA_BOUNDS.minLng && ln <= GAZA_BOUNDS.maxLng;
+}
 
 const emptyWeeklyLines = () =>
   Array.from({ length: 7 }, () => ({
@@ -141,6 +154,11 @@ const MerchantStoreSettings = () => {
     try {
       const latToSave = pickedLocation?.[0] ?? (latitude === '' ? null : Number(latitude));
       const lngToSave = pickedLocation?.[1] ?? (longitude === '' ? null : Number(longitude));
+      if ((latToSave != null || lngToSave != null) && !isInsideGaza(latToSave, lngToSave)) {
+        await showAlert('أنت بتحاول تضيف موقع خارج حدود قطاع غزة.', 'تنبيه');
+        setSaving(false);
+        return;
+      }
       const common = buildCommonPayload(latToSave, lngToSave);
 
       let data;
