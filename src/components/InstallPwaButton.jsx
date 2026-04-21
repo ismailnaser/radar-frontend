@@ -38,10 +38,13 @@ export default function InstallPwaButton({ className = '' }) {
   }, []);
 
   useEffect(() => {
+    const cached = typeof window !== 'undefined' ? window.__radarDeferredInstallPrompt : null;
+    if (cached) setDeferredPrompt(cached);
     const onBeforeInstallPrompt = (e) => {
       // Chromium: امنع البانر الافتراضي وخزّن الحدث لإظهار زرنا
       e.preventDefault();
       setDeferredPrompt(e);
+      window.__radarDeferredInstallPrompt = e;
     };
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
     return () => window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
@@ -69,6 +72,25 @@ export default function InstallPwaButton({ className = '' }) {
       await showAlert('اتبع التعليمات أسفل الزر لإضافة الموقع إلى الشاشة الرئيسية.', 'تلميح');
       return;
     }
+    const promptEvent =
+      deferredPrompt || (typeof window !== 'undefined' ? window.__radarDeferredInstallPrompt : null);
+    if (promptEvent && typeof promptEvent.prompt === 'function') {
+      try {
+        promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
+        setDeferredPrompt(null);
+        if (typeof window !== 'undefined') window.__radarDeferredInstallPrompt = null;
+        if (choice?.outcome === 'accepted') {
+          setInstalled(true);
+          await showAlert('تمت الموافقة على التثبيت. أكمل الخطوة من نافذة المتصفح إن ظهرت.', 'تم');
+        } else {
+          await showAlert('تم إلغاء طلب التثبيت.', 'تنبيه');
+        }
+      } catch {
+        await showAlert('تعذر إكمال التثبيت. حاول لاحقاً أو من متصفح آخر.', 'خطأ');
+      }
+      return;
+    }
     if (mode === 'manual') {
       const manualMsg = isAndroid()
         ? 'إذا لم يظهر تثبيت تلقائي: افتح قائمة المتصفح (⋮) ثم اختر "Install app" أو "Add to Home screen".'
@@ -76,19 +98,7 @@ export default function InstallPwaButton({ className = '' }) {
       await showAlert(manualMsg, 'تثبيت التطبيق');
       return;
     }
-    try {
-      deferredPrompt?.prompt?.();
-      const choice = await deferredPrompt?.userChoice;
-      setDeferredPrompt(null);
-      if (choice?.outcome === 'accepted') {
-        setInstalled(true);
-        await showAlert('تمت الموافقة على التثبيت. أكمل الخطوة من نافذة المتصفح إن ظهرت.', 'تم');
-      } else {
-        await showAlert('تم إلغاء طلب التثبيت.', 'تنبيه');
-      }
-    } catch {
-      await showAlert('تعذر إكمال التثبيت. حاول لاحقاً أو من متصفح آخر.', 'خطأ');
-    }
+    await showAlert('هذا المتصفح لا يدعم نافذة التثبيت التلقائي حاليًا. استخدم التثبيت اليدوي من قائمة المتصفح.', 'تثبيت التطبيق');
   };
 
   return (
