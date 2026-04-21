@@ -455,7 +455,7 @@ export const pingAppOpen = async () => {
   return res.json();
 };
 
-export const addToCart = async (cartId, productId, quantity = 1, sponsoredAdId = null) => {
+export const addToCart = async (cartId, productId, quantity = 1, sponsoredAdId = null, note = '') => {
   const body = {
     cart: cartId,
     quantity,
@@ -465,6 +465,9 @@ export const addToCart = async (cartId, productId, quantity = 1, sponsoredAdId =
   }
   if (sponsoredAdId != null && sponsoredAdId !== '') {
     body.sponsored_ad = sponsoredAdId;
+  }
+  if (note != null && String(note).trim() !== '') {
+    body.note = String(note).trim();
   }
   const response = await api.post('orders/cart-items/', body);
   return response.data;

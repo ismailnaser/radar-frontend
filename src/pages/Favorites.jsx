@@ -72,12 +72,19 @@ const Favorites = () => {
       );
       return;
     }
-    pendingCartAddRef.current = payload;
-    setPendingCartAdd(payload);
+    const noteVal = await showPrompt(
+      'أضف ملاحظة على هذا المنتج داخل السلة (اختياري). اترك الحقل فارغاً إذا لا تريد.',
+      'مثال: بدون بصل / توصيل بعد العصر',
+      'ملاحظة على المنتج',
+      payload?.note || ''
+    );
+    const enrichedPayload = { ...payload, note: noteVal == null ? '' : String(noteVal).trim() };
+    pendingCartAddRef.current = enrichedPayload;
+    setPendingCartAdd(enrichedPayload);
     const carts = await getCarts();
     const list = Array.isArray(carts) ? carts : [];
     if (list.length === 0 && allowCreate) {
-      await createCartAndAddPending(payload, { isFirstCart: true });
+      await createCartAndAddPending(enrichedPayload, { isFirstCart: true });
       return;
     }
     const opts = list.map((c) => ({
@@ -113,7 +120,7 @@ const Favorites = () => {
     );
     if (!name || !String(name).trim()) return;
     const cart = await createCart(String(name).trim());
-    await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
+    await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null, p.note ?? '');
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
     setPendingCartAdd(null);
     pendingCartAddRef.current = null;
@@ -122,7 +129,7 @@ const Favorites = () => {
   const pickCartAndAddPending = async (cart) => {
     const p = pendingCartAddRef.current;
     if (!p) return;
-    await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
+    await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null, p.note ?? '');
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
     setPendingCartAdd(null);
     pendingCartAddRef.current = null;

@@ -106,6 +106,7 @@ export default function StoreItemDetails() {
     productId: isSponsored ? (item?.product ?? null) : item?.id,
     sponsoredAdId: isSponsored ? item?.id : null,
     quantity: safeQty,
+    note: '',
   });
 
   const createCartAndAdd = async (payload, { isFirstCart = false } = {}) => {
@@ -118,7 +119,7 @@ export default function StoreItemDetails() {
     );
     if (!name || !String(name).trim()) return false;
     const cart = await createCart(String(name).trim());
-    await addToCart(cart.id, payload.productId ?? null, payload.quantity ?? 1, payload.sponsoredAdId ?? null);
+    await addToCart(cart.id, payload.productId ?? null, payload.quantity ?? 1, payload.sponsoredAdId ?? null, payload.note ?? '');
     return true;
   };
 
@@ -140,6 +141,13 @@ export default function StoreItemDetails() {
     setBusy(true);
     try {
       const payload = addPayloadForItem();
+      const noteVal = await showPrompt(
+        'أضف ملاحظة على هذا المنتج داخل السلة (اختياري). اترك الحقل فارغاً إذا لا تريد.',
+        'مثال: بدون بصل / توصيل بعد العصر',
+        'ملاحظة على المنتج',
+        ''
+      );
+      payload.note = noteVal == null ? '' : String(noteVal).trim();
       const carts = await getCarts();
       const list = Array.isArray(carts) ? carts : [];
       if (list.length === 0) {
@@ -163,7 +171,7 @@ export default function StoreItemDetails() {
           const ok = await createCartAndAdd(payload);
           if (!ok) return;
         } else {
-          await addToCart(Number(pick), payload.productId ?? null, payload.quantity ?? 1, payload.sponsoredAdId ?? null);
+          await addToCart(Number(pick), payload.productId ?? null, payload.quantity ?? 1, payload.sponsoredAdId ?? null, payload.note ?? '');
         }
       }
       await showAlert('تمت إضافة العنصر إلى السلة.', 'تم');

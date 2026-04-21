@@ -124,6 +124,21 @@ const CartDetails = () => {
     }
   };
 
+  const saveItemNote = async (item, raw) => {
+    const next = raw ?? '';
+    if ((item.note ?? '') === next) return;
+    setSavingItemId(item.id);
+    try {
+      await updateCartItem(item.id, { note: next });
+      await fetchCart({ silent: true });
+    } catch (e) {
+      showAlert(formatApiError(e, 'تعذر حفظ الملاحظة.'));
+      await fetchCart({ silent: true });
+    } finally {
+      setSavingItemId(null);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="cart-details-page">
@@ -211,6 +226,23 @@ const CartDetails = () => {
                           }
                           return <div className="cart-item-title cart-item-title--static">{label}</div>;
                         })()}
+                        {(() => {
+                          const storeName = (item?.line_store_name || item?.product_details?.store_name || '').trim();
+                          const storeId =
+                            item?.line_store_id ??
+                            item?.product_details?.store ??
+                            item?.product_details?.store_id ??
+                            null;
+                          if (!storeName) return null;
+                          if (storeId && !item.is_expired_line) {
+                            return (
+                              <Link to={`/stores/${storeId}`} className="cart-item-store-link" title="فتح المتجر">
+                                المتجر: {storeName}
+                              </Link>
+                            );
+                          }
+                          return <div className="cart-item-store-label">المتجر: {storeName}</div>;
+                        })()}
                         <div className="cart-item-meta">
                           {item.is_expired_line ? (
                             <div className="cart-item-expired">
@@ -244,6 +276,21 @@ const CartDetails = () => {
                               <span className="cart-item-total">المجموع {linePrice(item).toFixed(2)} ₪</span>
                             </div>
                           )}
+                        </div>
+                        <div className="cart-item-note-wrap">
+                          <label className="cart-item-note-label" htmlFor={`cart-item-note-${item.id}`}>
+                            ملاحظة على المنتج (اختياري)
+                          </label>
+                          <textarea
+                            id={`cart-item-note-${item.id}`}
+                            className="cart-item-note-input"
+                            rows={2}
+                            placeholder="مثال: بدون بصل / أولوية للتوصيل السريع"
+                            defaultValue={item.note || ''}
+                            key={`${item.id}-item-note-${item.note ?? ''}`}
+                            disabled={savingItemId === item.id}
+                            onBlur={(e) => saveItemNote(item, e.target.value)}
+                          />
                         </div>
                       </div>
                       <div className="flex-center cart-item-actions">
@@ -358,9 +405,45 @@ const CartDetails = () => {
           .cart-item-main{
             grid-area: main;
             min-width: 0;
+            display: grid;
+            gap: 8px;
+            justify-items: end;
+            text-align: right;
           }
           .cart-item-actions{
             grid-area: actions;
+          }
+          .cart-item-note-wrap{
+            margin-top: 2px;
+            display: grid;
+            gap: 6px;
+            width: 100%;
+            justify-items: end;
+          }
+          .cart-item-note-label{
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            font-weight: 800;
+            width: 100%;
+            text-align: right;
+          }
+          .cart-item-note-input{
+            width: 100%;
+            min-height: 44px;
+            border-radius: 12px;
+            border: 1px solid rgba(232, 230, 224, 0.95);
+            background: rgba(255,255,255,0.96);
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            box-sizing: border-box;
+            text-align: right;
+          }
+          .cart-item-note-input:focus{
+            outline: none;
+            border-color: rgba(245,192,0,0.65);
+            box-shadow: 0 0 0 3px rgba(245,192,0,0.16);
           }
           .cart-item-title{
             display: block;
@@ -370,15 +453,36 @@ const CartDetails = () => {
             line-height: 1.35;
             overflow-wrap: anywhere;
             word-break: break-word;
+            width: 100%;
+            text-align: right;
           }
           .cart-item-title--static{
             cursor: default;
           }
+          .cart-item-store-link,
+          .cart-item-store-label{
+            width: 100%;
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            text-align: right;
+          }
+          .cart-item-store-link{
+            text-decoration: none;
+            color: var(--secondary);
+          }
+          .cart-item-store-link:hover{
+            text-decoration: underline;
+          }
           .cart-item-meta{
-            margin-top: 8px;
+            margin-top: 0;
             display: grid;
             gap: 6px;
             min-width: 0;
+            width: 100%;
+            justify-items: end;
+            text-align: right;
+            direction: rtl;
           }
           .cart-item-badges{
             display: flex;
@@ -415,6 +519,12 @@ const CartDetails = () => {
             align-items: center;
             line-height: 1.35;
             min-width: 0;
+            justify-content: flex-start;
+            width: 100%;
+            justify-self: end;
+            text-align: right;
+            direction: rtl;
+            unicode-bidi: plaintext;
           }
           .cart-item-dot{
             color: var(--text-light);
@@ -433,6 +543,8 @@ const CartDetails = () => {
             font-weight: 900;
             font-size: 0.86rem;
             line-height: 1.35;
+            text-align: right;
+            width: 100%;
           }
           @media (max-width: 520px){
             .cart-item-row{
@@ -444,7 +556,10 @@ const CartDetails = () => {
               border-radius: 16px !important;
             }
             .cart-item-thumb{ width: 112px; height: 112px; border-radius: 16px; }
-            .cart-item-meta{ margin-top: 6px; gap: 5px; }
+            .cart-item-meta{ margin-top: 6px; gap: 5px; justify-items: end; }
+            .cart-item-main{ justify-items: end; }
+            .cart-item-note-wrap{ justify-items: end; }
+            .cart-item-pricing{ justify-content: flex-start; text-align: right; direction: rtl; }
           }
           .cart-details-head{
             display: flex;

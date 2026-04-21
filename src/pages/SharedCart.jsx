@@ -175,6 +175,28 @@ const SharedCart = () => {
                       ) : (
                         <div style={{ fontWeight: 900, fontSize: '1.05rem' }}>{row.product_name}</div>
                       )}
+                      {(row.store_name || '').trim() ? (
+                        row.store_id ? (
+                          <Link
+                            to={`/stores/${row.store_id}`}
+                            style={{
+                              display: 'inline-block',
+                              marginTop: 4,
+                              fontSize: '0.84rem',
+                              fontWeight: 800,
+                              color: 'var(--secondary)',
+                              textDecoration: 'none',
+                            }}
+                            title="فتح المتجر"
+                          >
+                            المتجر: {row.store_name}
+                          </Link>
+                        ) : (
+                          <div style={{ marginTop: 4, fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-secondary)' }}>
+                            المتجر: {row.store_name}
+                          </div>
+                        )
+                      ) : null}
                       {expired ? (
                         <div
                           style={{
@@ -236,13 +258,17 @@ const SharedCart = () => {
                               سعر المتجر {cat.toFixed(2)} ₪
                             </span>
                           ) : null}
-                          <div style={{ marginTop: 6, fontWeight: 800, color: 'var(--secondary)' }}>
-                            {Number.isFinite(unit) ? unit.toFixed(2) : row.price} ₪ × {row.quantity} = {row.line_total} ₪
+                          <div style={{ marginTop: 8, display: 'grid', gap: 4, color: 'var(--secondary)', fontWeight: 800 }}>
+                            <div>الكمية: {row.quantity}</div>
+                            <div>سعر القطعة: {Number.isFinite(unit) ? unit.toFixed(2) : row.price} ₪</div>
+                            <div>المجموع: {row.line_total} ₪</div>
                           </div>
                         </div>
                       ) : (
-                        <div style={{ marginTop: 8, fontWeight: 800, color: 'var(--secondary)' }}>
-                          {row.price} ₪ × {row.quantity} = {row.line_total} ₪
+                        <div style={{ marginTop: 8, display: 'grid', gap: 4, color: 'var(--secondary)', fontWeight: 800 }}>
+                          <div>الكمية: {row.quantity}</div>
+                          <div>سعر القطعة: {row.price} ₪</div>
+                          <div>المجموع: {row.line_total} ₪</div>
                         </div>
                       )}
                       {row.note ? (

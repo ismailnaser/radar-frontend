@@ -268,8 +268,16 @@ const StoreProfile = () => {
         productId: ad.product ?? null,
         sponsoredAdId: ad.id,
         quantity: 1,
+        note: '',
         success: 'تمت إضافة العرض للسلة.',
       };
+      const noteVal = await showPrompt(
+        'أضف ملاحظة على هذا المنتج داخل السلة (اختياري). اترك الحقل فارغاً إذا لا تريد.',
+        'مثال: بدون بصل / توصيل بعد العصر',
+        'ملاحظة على المنتج',
+        ''
+      );
+      cartPayload.note = noteVal == null ? '' : String(noteVal).trim();
       pendingCartAddRef.current = cartPayload;
       setPendingCartAdd(cartPayload);
       const carts = await getCarts();
@@ -318,7 +326,7 @@ const StoreProfile = () => {
     );
     if (!name || !String(name).trim()) return;
     const cart = await createCart(String(name).trim());
-    await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
+    await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null, p.note ?? '');
     await refreshCartQuantities();
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
     setPendingCartAdd(null);
@@ -331,7 +339,7 @@ const StoreProfile = () => {
       await showAlert('تعذر تحديد المنتج المراد إضافته للسلة. جرّب مرة أخرى.', 'خطأ');
       return;
     }
-    await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null);
+    await addToCart(cart.id, p.productId ?? null, p.quantity ?? 1, p.sponsoredAdId ?? null, p.note ?? '');
     await refreshCartQuantities();
     await showAlert(p.success || 'تمت الإضافة للسلة.', 'تم');
     setPendingCartAdd(null);
@@ -472,8 +480,16 @@ const StoreProfile = () => {
         productId: product.id,
         sponsoredAdId: null,
         quantity: qty,
+        note: '',
         success: `تمت إضافة «${product.name}» للسلة.`,
       };
+      const noteVal = await showPrompt(
+        'أضف ملاحظة على هذا المنتج داخل السلة (اختياري). اترك الحقل فارغاً إذا لا تريد.',
+        'مثال: بدون بصل / توصيل بعد العصر',
+        'ملاحظة على المنتج',
+        ''
+      );
+      cartPayload.note = noteVal == null ? '' : String(noteVal).trim();
       pendingCartAddRef.current = cartPayload;
       setPendingCartAdd(cartPayload);
       const carts = await getCarts();
@@ -550,7 +566,6 @@ const StoreProfile = () => {
         {!loading && store && (
           <>
             <header className="card store-profile-hero">
-              <div className="store-profile-hero-banner" />
               <div className="store-profile-hero-body">
                 <div className="flex-between store-profile-hero-top">
                   <div className="store-profile-hero-logo">
@@ -927,7 +942,6 @@ const StoreProfile = () => {
                           )}
                           <div className="store-profile-product-media-overlay">
                             <div className="store-profile-product-media-name">{p.name}</div>
-                            <div className="store-profile-product-media-price">{p.price} ₪</div>
                           </div>
                           {!store.is_owner ? (
                             <button
@@ -1026,19 +1040,15 @@ const StoreProfile = () => {
           overflow: hidden;
           margin-bottom: 20px;
         }
-        .store-profile-hero-banner{
-          height: 120px;
-          background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 45%, var(--primary-hover) 100%);
-        }
         .store-profile-hero-body{
           padding: 0 1.25rem 1.25rem;
-          margin-top: -48px;
+          margin-top: 0;
         }
         .store-profile-hero-top{ align-items: flex-end; }
         .store-profile-hero-logo{
-          width: 96px;
-          height: 96px;
-          border-radius: 24px;
+          width: 150px;
+          height: 150px;
+          border-radius: 32px;
           border: 4px solid var(--white);
           background: var(--surface);
           overflow: hidden;
@@ -1145,6 +1155,11 @@ const StoreProfile = () => {
         @media (max-width: 520px){
           .store-profile-title{ font-size: 1.45rem; }
           .store-profile-hero-body{ padding: 0 1rem 1.1rem; }
+          .store-profile-hero-logo{
+            width: 128px;
+            height: 128px;
+            border-radius: 28px;
+          }
         }
 
         .store-profile-features{

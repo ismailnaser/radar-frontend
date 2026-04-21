@@ -110,6 +110,9 @@
   padding-inline: 64px;
   box-sizing: border-box;
 }
+.radar-map--market .leaflet-pane.leaflet-popup-pane{
+  z-index: 1200;
+}
 .radar-map--manual-wrap .shopper-map-topbar{
   top: 8px;
 }
