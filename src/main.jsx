@@ -24,6 +24,13 @@ function applyTitleByMode() {
 // تسجيل Service Worker لتفعيل التثبيت + العمل بدون إنترنت (عرض آخر كاش)
 registerSW({ immediate: true })
 
+// التقط حدث التثبيت مبكراً قبل تركيب واجهة React
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault()
+  window.__radarDeferredInstallPrompt = e
+  window.dispatchEvent(new Event('radar:beforeinstallprompt-ready'))
+})
+
 applyTitleByMode()
 window.addEventListener('appinstalled', applyTitleByMode)
 try {

@@ -28,7 +28,6 @@ export default function InstallPwaButton({ className = '' }) {
   const { showAlert } = useAlert();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installed, setInstalled] = useState(false);
-  const [showIOSHelp, setShowIOSHelp] = useState(false);
 
   useEffect(() => {
     setInstalled(isInStandaloneMode());
@@ -40,14 +39,22 @@ export default function InstallPwaButton({ className = '' }) {
   useEffect(() => {
     const cached = typeof window !== 'undefined' ? window.__radarDeferredInstallPrompt : null;
     if (cached) setDeferredPrompt(cached);
+    const onPromptReady = () => {
+      const p = window.__radarDeferredInstallPrompt || null;
+      if (p) setDeferredPrompt(p);
+    };
     const onBeforeInstallPrompt = (e) => {
       // Chromium: امنع البانر الافتراضي وخزّن الحدث لإظهار زرنا
       e.preventDefault();
       setDeferredPrompt(e);
       window.__radarDeferredInstallPrompt = e;
     };
+    window.addEventListener('radar:beforeinstallprompt-ready', onPromptReady);
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('radar:beforeinstallprompt-ready', onPromptReady);
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+    };
   }, []);
 
   const mode = useMemo(() => {
@@ -98,21 +105,6 @@ export default function InstallPwaButton({ className = '' }) {
         </span>
         <span className="pwa-install__btn-txt">تثبيت التطبيق</span>
       </button>
-      {(mode === 'ios' || mode === 'manual') && showIOSHelp ? (
-        <div className="pwa-install__help">
-          {mode === 'ios' ? (
-            <>
-              على iPhone/iPad: افتح الموقع في Safari ثم اضغط زر المشاركة (Share) واختر
-              <strong> “Add to Home Screen”</strong>.
-            </>
-          ) : (
-            <>
-              إن لم يظهر تثبيت تلقائي: افتح قائمة المتصفح ثم اختر
-              <strong> Install app</strong> أو <strong>Add to Home screen</strong>.
-            </>
-          )}
-        </div>
-      ) : null}
     </div>
   );
 }
