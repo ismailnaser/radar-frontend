@@ -102,7 +102,7 @@ import { storeHasWeeklyHoursSchedule } from '../utils/storeHours';
 import { formatApiError } from '../utils/apiErrors';
 import { canUseShoppingCarts } from '../utils/cartAccess';
 import { communityPointHasMapCoords, communityPointLatLng } from '../utils/communityPointCoords';
-import { storeMatchesAnyCategory } from '../utils/storeCategories';
+import { storeCategoryLabel, storeMatchesAnyCategory } from '../utils/storeCategories';
 import FiltersDropdown from '../components/ui/FiltersDropdown';
 
 function haversineKm(a, b) {
@@ -1516,9 +1516,7 @@ const Home = () => {
                           <div className="nearby-card-main">
                             <div className="nearby-card-text">
                               <span className="nearby-card-name">{store.store_name}</span>
-                              {store.category_name ? (
-                                <span className="nearby-card-cat">{store.category_name}</span>
-                              ) : null}
+                              <span className="nearby-card-cat">{storeCategoryLabel(store)}</span>
                               <span className="nearby-card-dist">
                                 {distKm != null ? (
                                   <>

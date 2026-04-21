@@ -18,3 +18,11 @@ export function storeMatchesAnyCategory(store, selectedIds = []) {
   return ids.some((id) => selected.has(id));
 }
 
+export function storeCategoryLabel(store) {
+  const names = Array.isArray(store?.categories_names)
+    ? store.categories_names.map((n) => String(n || '').trim()).filter(Boolean)
+    : [];
+  if (names.length > 0) return names.join('، ');
+  return String(store?.category_name || '').trim() || 'متجر';
+}
+

@@ -5,7 +5,7 @@ import MainLayout from '../components/MainLayout';
 import { getNearbyStores, getCategories } from '../api/data';
 import { useMapExplore } from '../context/MapExploreContext';
 import { getStorePinDisplay } from '../components/maps/storePinDefaults';
-import { storeMatchesAnyCategory } from '../utils/storeCategories';
+import { storeCategoryLabel, storeMatchesAnyCategory } from '../utils/storeCategories';
 import { storeHasWeeklyHoursSchedule } from '../utils/storeHours';
 import FiltersDropdown from '../components/ui/FiltersDropdown';
 
@@ -133,7 +133,7 @@ const SearchPage = () => {
     if (!ql) return base;
     return base.filter((s) => {
       const name = (s.store_name || '').toLowerCase();
-      const cat = (s.category_name || '').toLowerCase();
+      const cat = storeCategoryLabel(s).toLowerCase();
       return name.includes(ql) || cat.includes(ql);
     });
   }, [stores, ql, selectedCategoryIds]);
@@ -226,9 +226,7 @@ const SearchPage = () => {
                     <div className="search-page-card-main">
                       <div className="search-page-card-text">
                         <span className="search-page-card-name">{store.store_name}</span>
-                        {store.category_name ? (
-                          <span className="search-page-card-cat">{store.category_name}</span>
-                        ) : null}
+                        <span className="search-page-card-cat">{storeCategoryLabel(store)}</span>
                         <span className="search-page-card-dist">
                           {distKm != null ? `📍 ${distKm.toFixed(1)} كم` : 'بدون مسافة'}
                         </span>

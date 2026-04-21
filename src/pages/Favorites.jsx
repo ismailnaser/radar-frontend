@@ -20,6 +20,7 @@ import { visualImageUrls } from '../utils/productImages';
 import { ensureCartNamed } from '../utils/cartNaming';
 import { canUseShoppingCarts } from '../utils/cartAccess';
 import { formatApiError } from '../utils/apiErrors';
+import { storeCategoryLabel } from '../utils/storeCategories';
 // اختيار السلة عبر النافذة المنبثقة العامة (CustomModal)
 
 const Favorites = () => {
@@ -482,7 +483,7 @@ const Favorites = () => {
                           <div>
                             <h3 style={{ fontSize: '1.15rem', margin: 0 }}>{s.store_name}</h3>
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-                              {s.category_name || 'متجر'}
+                              {storeCategoryLabel(s)}
                             </div>
                           </div>
                         </div>

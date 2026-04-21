@@ -5,7 +5,7 @@ import { getCategories, getCommunityCategories, getCommunityPoints, getNearbySto
 import { useMapExplore } from '../context/MapExploreContext';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import FiltersDropdown from '../components/ui/FiltersDropdown';
-import { storeMatchesAnyCategory } from '../utils/storeCategories';
+import { storeCategoryLabel, storeMatchesAnyCategory } from '../utils/storeCategories';
 
 const DEFAULT_CENTER = [31.5, 34.4];
 
@@ -142,7 +142,7 @@ export default function MapPage() {
         : base;
     if (!qNorm) return byCat;
     return byCat.filter((s) => {
-      const hay = `${s.store_name || ''} ${s.category_name || ''} ${s.description || ''}`.toLowerCase();
+      const hay = `${s.store_name || ''} ${storeCategoryLabel(s)} ${s.description || ''}`.toLowerCase();
       return hay.includes(qNorm);
     });
   }, [stores, storeCategoryIds, qNorm]);
