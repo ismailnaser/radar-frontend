@@ -14,6 +14,12 @@ function isAndroid() {
   return /android/i.test(ua);
 }
 
+function isCursorBrowser() {
+  if (typeof window === 'undefined') return false;
+  const ua = window.navigator.userAgent || '';
+  return /Cursor|Electron/i.test(ua);
+}
+
 function isInStandaloneMode() {
   if (typeof window === 'undefined') return false;
   // iOS Safari standalone
@@ -59,6 +65,7 @@ export default function InstallPwaButton({ className = '' }) {
 
   const mode = useMemo(() => {
     if (installed) return 'installed';
+    if (isCursorBrowser()) return 'unsupported';
     if (deferredPrompt) return 'prompt';
     if (isIOS()) return 'ios';
     return 'manual';
@@ -67,6 +74,13 @@ export default function InstallPwaButton({ className = '' }) {
   if (mode === 'installed') return null;
 
   const onInstall = async () => {
+    if (mode === 'unsupported') {
+      await showAlert(
+        'متصفح Cursor لا يدعم نافذة التثبيت التلقائي. افتح الموقع في Chrome أو Edge ثم اضغط زر تثبيت التطبيق.',
+        'تنبيه'
+      );
+      return;
+    }
     if (mode === 'ios') {
       await showAlert('التثبيت التلقائي غير مدعوم على iPhone/iPad من هذا الزر.', 'تنبيه');
       return;
@@ -74,6 +88,8 @@ export default function InstallPwaButton({ className = '' }) {
     const promptEvent =
       deferredPrompt || (typeof window !== 'undefined' ? window.__radarDeferredInstallPrompt : null);
     if (promptEvent && typeof promptEvent.prompt === 'function') {
+      const ok = window.confirm('تأكيد تثبيت تطبيق رادار على هذا الجهاز؟');
+      if (!ok) return;
       try {
         promptEvent.prompt();
         const choice = await promptEvent.userChoice;
@@ -103,7 +119,9 @@ export default function InstallPwaButton({ className = '' }) {
         <span className="pwa-install__btn-ico" aria-hidden>
           {mode === 'ios' ? <Share2 size={18} strokeWidth={2} /> : <Download size={18} strokeWidth={2} />}
         </span>
-        <span className="pwa-install__btn-txt">تثبيت التطبيق</span>
+        <span className="pwa-install__btn-txt">
+          {mode === 'unsupported' ? 'التثبيت عبر Chrome/Edge' : 'تثبيت التطبيق'}
+        </span>
       </button>
     </div>
   );
