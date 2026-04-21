@@ -31,7 +31,7 @@ function isInStandaloneMode() {
 }
 
 export default function InstallPwaButton({ className = '' }) {
-  const { showAlert } = useAlert();
+  const { showAlert, showConfirm } = useAlert();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [installed, setInstalled] = useState(false);
 
@@ -88,7 +88,10 @@ export default function InstallPwaButton({ className = '' }) {
     const promptEvent =
       deferredPrompt || (typeof window !== 'undefined' ? window.__radarDeferredInstallPrompt : null);
     if (promptEvent && typeof promptEvent.prompt === 'function') {
-      const ok = window.confirm('تأكيد تثبيت تطبيق رادار على هذا الجهاز؟');
+      const ok = await showConfirm(
+        'هل تريد تثبيت تطبيق رادار على هذا الجهاز الآن؟',
+        'تأكيد التثبيت'
+      );
       if (!ok) return;
       try {
         promptEvent.prompt();
