@@ -247,7 +247,6 @@ const StoreProfile = () => {
         mapPreset: {
           mode: 'stores',
           category: store?.category ?? null,
-          q: store?.store_name ?? '',
         },
       },
     });

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import MainLayout from '../../components/MainLayout';
 import { useAlert } from '../../components/AlertProvider';
-import { adminSearchUsers, adminSetUserActive } from '../../api/data';
+import { adminConvertUserToMerchant, adminSearchUsers, adminSetUserActive } from '../../api/data';
 import { formatApiError } from '../../utils/apiErrors';
 import { adminPanelCss } from './adminPanelCss';
 
@@ -48,6 +48,21 @@ function AdminUsers() {
       await load();
     } catch (e) {
       await showAlert(formatApiError(e, 'تعذر تحديث الحساب.'), 'خطأ');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const convertToMerchant = async (u) => {
+    const ok = await showConfirm(`تحويل المستخدم «${u.username}» إلى حساب تاجر؟`, 'تأكيد');
+    if (!ok) return;
+    setBusyId(u.id);
+    try {
+      await adminConvertUserToMerchant(u.id);
+      await showAlert('تم تحويل الحساب إلى تاجر بنجاح.', 'تم');
+      await load();
+    } catch (e) {
+      await showAlert(formatApiError(e, 'تعذر تحويل الحساب إلى تاجر.'), 'خطأ');
     } finally {
       setBusyId(null);
     }
@@ -114,6 +129,16 @@ function AdminUsers() {
                         >
                           {u.is_active ? 'إيقاف الحساب' : 'تفعيل الحساب'}
                         </button>
+                        {u.user_type !== 'merchant' ? (
+                          <button
+                            type="button"
+                            className="btn-ok"
+                            disabled={busyId === u.id}
+                            onClick={() => convertToMerchant(u)}
+                          >
+                            تحويل إلى تاجر
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                   </article>

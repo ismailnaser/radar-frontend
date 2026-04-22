@@ -119,6 +119,13 @@ export default function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  useEffect(() => {
+    return () => {
+      // عند الخروج من صفحة الخريطة: لا نُبقي نص البحث عالقاً في الهيدر/السياق.
+      setSearchQuery('');
+    };
+  }, [setSearchQuery]);
+
   const setParam = useCallback(
     (key, value) => {
       const next = new URLSearchParams(searchParams);

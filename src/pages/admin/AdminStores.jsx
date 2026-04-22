@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import MainLayout from '../../components/MainLayout';
 import { useAlert } from '../../components/AlertProvider';
-import { getCategories, getPrimaryAdminStores, patchPrimaryAdminStoreSuspend } from '../../api/data';
+import {
+  getCategories,
+  getPrimaryAdminStores,
+  patchPrimaryAdminStoreCategories,
+  patchPrimaryAdminStoreSuspend,
+} from '../../api/data';
 import { adminPanelCss } from './adminPanelCss';
 
 function formatDt(iso) {
@@ -38,6 +43,7 @@ function AdminStores() {
   const [meta, setMeta] = useState({ total_all_stores: 0, total_filtered: 0 });
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const [editCategoriesByStore, setEditCategoriesByStore] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -106,6 +112,40 @@ function AdminStores() {
     } catch (err) {
       console.error(err);
       await showAlert('تعذر تحديث حالة المتجر.', 'خطأ');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const getRowSelectedCategories = (row) => {
+    const edited = editCategoriesByStore[row.id];
+    if (Array.isArray(edited)) return edited;
+    if (Array.isArray(row.categories) && row.categories.length > 0) return row.categories;
+    if (row.category_id != null) return [row.category_id];
+    return [];
+  };
+
+  const toggleStoreCategory = (rowId, categoryValue) => {
+    const cid = Number(categoryValue);
+    if (!Number.isFinite(cid) || cid <= 0) return;
+    setEditCategoriesByStore((prev) => {
+      const current = Array.isArray(prev[rowId]) ? prev[rowId] : [];
+      const exists = current.includes(cid);
+      const next = exists ? current.filter((v) => v !== cid) : [...current, cid];
+      return { ...prev, [rowId]: next };
+    });
+  };
+
+  const saveStoreCategories = async (row) => {
+    const selectedIds = getRowSelectedCategories(row);
+    setBusyId(row.id);
+    try {
+      await patchPrimaryAdminStoreCategories(row.id, selectedIds);
+      await showAlert('تم تحديث أقسام المتجر بنجاح.', 'تم');
+      await load();
+    } catch (err) {
+      console.error(err);
+      await showAlert('تعذر تحديث أقسام المتجر.', 'خطأ');
     } finally {
       setBusyId(null);
     }
@@ -261,11 +301,32 @@ function AdminStores() {
                         )}
                       </td>
                       <td>
-                        {row.category_name ? (
-                          <span className="admin-store-category-cell">{row.category_name}</span>
-                        ) : (
-                          <span className="muted small">— بدون قسم</span>
-                        )}
+                        <div className="admin-store-category-picker">
+                          <div className="admin-store-category-list">
+                            {categories.map((cat) => {
+                              const selected = getRowSelectedCategories(row).includes(cat.id);
+                              return (
+                                <label key={`${row.id}-${cat.id}`} className={`admin-store-cat-item ${selected ? 'is-selected' : ''}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={selected}
+                                    onChange={() => toggleStoreCategory(row.id, cat.id)}
+                                  />
+                                  <span>{cat.name}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-toggle"
+                            disabled={busyId === row.id}
+                            onClick={() => saveStoreCategories(row)}
+                            style={{ marginTop: 8 }}
+                          >
+                            حفظ الأقسام
+                          </button>
+                        </div>
                       </td>
                       <td style={{ maxWidth: '280px', lineHeight: 1.5 }}>
                         {row.location_address?.trim() ? (
@@ -411,6 +472,34 @@ function AdminStores() {
             color: var(--secondary);
             border-color: transparent;
             box-shadow: var(--shadow-gold);
+          }
+          .admin-store-category-picker {
+            min-width: 190px;
+          }
+          .admin-store-category-list {
+            max-height: 132px;
+            overflow-y: auto;
+            padding: 6px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          }
+          .admin-store-cat-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+          }
+          .admin-store-cat-item input {
+            width: 14px;
+            height: 14px;
+          }
+          .admin-store-cat-item.is-selected span {
+            color: var(--secondary);
           }
         `}} />
       </div>

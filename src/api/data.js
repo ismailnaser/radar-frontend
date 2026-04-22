@@ -328,6 +328,11 @@ export const adminSetUserActive = async (id, isActive) => {
   return response.data;
 };
 
+export const adminConvertUserToMerchant = async (id) => {
+  const response = await api.patch(`users/admin/users/${id}/`, { user_type: 'merchant' });
+  return response.data;
+};
+
 /** جميع المتاجر — للمدير الأساسي فقط (?q=&category= مثل الخريطة) */
 export const getPrimaryAdminStores = async (q, categoryId) => {
   const params = {};
@@ -343,6 +348,13 @@ export const getPrimaryAdminStores = async (q, categoryId) => {
 export const patchPrimaryAdminStoreSuspend = async (id, isSuspended) => {
   const response = await api.patch(`stores/admin/stores/${id}/suspend/`, {
     is_suspended_by_admin: isSuspended,
+  });
+  return response.data;
+};
+
+export const patchPrimaryAdminStoreCategories = async (id, categories = []) => {
+  const response = await api.patch(`stores/admin/stores/${id}/categories/`, {
+    categories: Array.isArray(categories) ? categories : [],
   });
   return response.data;
 };

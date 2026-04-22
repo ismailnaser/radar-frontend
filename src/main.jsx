@@ -55,14 +55,11 @@ if (!rootEl) {
   document.body.innerHTML =
     '<p style="font-family:sans-serif;padding:24px;direction:rtl;">عنصر #root غير موجود في الصفحة.</p>'
 } else {
-  const bootDelayMs = 1800
-  window.setTimeout(() => {
-    ReactDOM.createRoot(rootEl).render(
-      <React.StrictMode>
-        <ErrorBoundary>
-          <App />
-        </ErrorBoundary>
-      </React.StrictMode>,
-    )
-  }, bootDelayMs)
+  ReactDOM.createRoot(rootEl).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </React.StrictMode>,
+  )
 }
