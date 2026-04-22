@@ -1498,7 +1498,7 @@ const StoreProfile = () => {
         }
         .store-profile-products-grid{
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(min(136px, 100%), 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
           gap: 12px;
         }
         .store-profile-product-card{

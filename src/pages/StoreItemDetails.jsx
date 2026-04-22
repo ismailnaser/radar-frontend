@@ -227,9 +227,16 @@ export default function StoreItemDetails() {
 
         {!loading && !error && item ? (
           <article className="card" style={{ overflow: 'hidden', padding: 0 }}>
-            <div style={{ background: 'var(--grey-light)', minHeight: 260 }}>
+            <div className="item-details-media-shell">
               {images.length > 0 ? (
-                <ImageCarousel images={images} alt={title} height={360} borderRadius={0} fit="contain" />
+                <ImageCarousel
+                  images={images}
+                  alt={title}
+                  height={340}
+                  borderRadius={12}
+                  fit="contain"
+                  className="item-details-media-carousel"
+                />
               ) : (
                 <div className="flex-center" style={{ minHeight: 260 }}>
                   <ImageIcon size={46} color="var(--text-light)" />
@@ -371,8 +378,22 @@ export default function StoreItemDetails() {
           opacity: .65;
           cursor: not-allowed;
         }
+        .item-details-media-shell{
+          background: var(--grey-light);
+          min-height: 260px;
+          padding: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .item-details-media-carousel{
+          width: min(100%, 620px);
+          margin-inline: auto;
+        }
         @media (max-width: 560px){
           .item-details-actions{ grid-template-columns: 1fr; }
+          .item-details-media-shell{ padding: 8px; }
+          .item-details-media-carousel{ width: 100%; }
         }
       `}</style>
     </MainLayout>
