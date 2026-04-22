@@ -18,7 +18,6 @@ import {
 import { useAlert } from '../components/AlertProvider';
 import { ensureCartNamed } from '../utils/cartNaming';
 import {
-  ArrowLeft,
   ChevronDown,
   ChevronUp,
   Heart,
@@ -534,22 +533,6 @@ const StoreProfile = () => {
           boxSizing: 'border-box',
         }}
       >
-        <Link
-          to="/map"
-          className="flex-center"
-          style={{
-            gap: 8,
-            marginBottom: 16,
-            color: 'var(--text-secondary)',
-            textDecoration: 'none',
-            fontWeight: 700,
-            width: 'fit-content',
-          }}
-        >
-          <ArrowLeft size={18} />
-          رجوع للخريطة
-        </Link>
-
         {loading && (
           <div className="card flex-center" style={{ padding: 48, gap: 12 }}>
             <Loader2 className="spin" size={28} />
