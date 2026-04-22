@@ -272,7 +272,7 @@ function AdminStores() {
                     <th>القسم</th>
                     <th>العنوان التفصيلي</th>
                     <th>صاحب المتجر</th>
-                    <th>الجوال</th>
+                    <th>التواصل</th>
                     <th>الإحداثيات والخريطة</th>
                     <th>ينتهي الاشتراك</th>
                     <th>للعامة</th>
@@ -336,8 +336,15 @@ function AdminStores() {
                         )}
                       </td>
                       <td>{row.merchant_username || '—'}</td>
-                      <td dir="ltr" style={{ textAlign: 'right' }}>
-                        {row.merchant_phone || '—'}
+                      <td style={{ maxWidth: '220px' }}>
+                        <div className="admin-store-contact-cell">
+                          <div dir="ltr" className="admin-store-contact-line">
+                            📞 {row.merchant_phone || 'غير متوفر'}
+                          </div>
+                          <div dir="ltr" className="admin-store-contact-line">
+                            ✉️ {row.merchant_email || 'غير متوفر'}
+                          </div>
+                        </div>
                       </td>
                       <td>
                         {row.latitude != null && row.longitude != null ? (
@@ -475,6 +482,17 @@ function AdminStores() {
           }
           .admin-store-category-picker {
             min-width: 190px;
+          }
+          .admin-store-contact-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+          .admin-store-contact-line {
+            font-size: 0.83rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            word-break: break-all;
           }
           .admin-store-category-list {
             max-height: 132px;

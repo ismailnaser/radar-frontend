@@ -115,7 +115,16 @@ function AdminUsers() {
                     <div className="admin-card-body">
                       <h3 style={{ marginBottom: 6 }}>{u.username}</h3>
                       <p className="muted" style={{ marginTop: 0 }}>
-                        {typeLabel(u.user_type)} · {u.phone_number}
+                        {typeLabel(u.user_type)}
+                      </p>
+                      <p className="muted" style={{ marginTop: 6 }} dir="ltr">
+                        📞 {u.phone_number || 'غير متوفر'}
+                      </p>
+                      <p className="muted" style={{ marginTop: 6 }} dir="ltr">
+                        ✉️ {u.email || 'غير متوفر'}
+                      </p>
+                      <p className="muted" style={{ marginTop: 6 }} dir="ltr">
+                        💬 {u.phone_number || 'غير متوفر'}
                       </p>
                       <p className="muted" style={{ marginTop: 6 }}>
                         الحالة: {u.is_active ? 'نشط' : 'موقوف'} · التحقق: {u.is_whatsapp_verified ? 'تم' : 'لا'}
