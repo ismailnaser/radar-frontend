@@ -34,6 +34,7 @@ import ImageCarousel from '../components/ImageCarousel';
 import { visualImageUrls } from '../utils/productImages';
 import { whatsappMeUrlFromStoredNumber } from '../utils/whatsapp';
 import { storeHasWeeklyHoursSchedule } from '../utils/storeHours';
+import { storeCategoryLabel } from '../utils/storeCategories';
 import { formatApiError } from '../utils/apiErrors';
 import { canUseShoppingCarts } from '../utils/cartAccess';
 // اختيار السلة عبر النافذة المنبثقة العامة (CustomModal)
@@ -604,7 +605,7 @@ const StoreProfile = () => {
                   ) : null}
                 </div>
                 <div className="store-profile-subtitle">
-                  {store.category_name || 'متجر'}
+                  {storeCategoryLabel(store)}
                 </div>
                 <div className="store-profile-contact">
                   <div className="store-profile-contact-head">

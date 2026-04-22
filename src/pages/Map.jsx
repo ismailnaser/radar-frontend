@@ -276,6 +276,9 @@ export default function MapPage() {
 
         <style dangerouslySetInnerHTML={{ __html: `
           .map-page {
+            position: fixed;
+            inset: clamp(6px, 1.2vw, 10px);
+            z-index: 1;
             width: 100%;
             max-width: none;
             margin-inline: 0;
@@ -284,18 +287,21 @@ export default function MapPage() {
             display: flex;
             flex-direction: column;
             flex: 1 1 auto;
+            height: auto;
             min-height: 0;
-            gap: 12px;
+            gap: 0;
+            overflow: hidden;
           }
           .map-page-stage {
-            border-radius: 22px;
+            border-radius: 14px;
             overflow: hidden;
-            border: 1px solid rgba(232, 230, 224, 0.92);
-            box-shadow: 0 10px 30px rgba(26, 29, 38, 0.08);
+            border: none;
+            box-shadow: none;
             background: #dfe8e3;
             position: relative;
             flex: 1 1 auto;
-            min-height: min(100dvh - 200px, 520px);
+            height: 100%;
+            min-height: 0;
           }
 
           .map-topbar{
@@ -385,10 +391,10 @@ export default function MapPage() {
 
           @media (max-width: 720px) {
             .map-page {
-              gap: 10px;
+              gap: 0;
             }
             .map-page-stage {
-              border-radius: 20px;
+              border-radius: 12px;
             }
           }
         `}} />

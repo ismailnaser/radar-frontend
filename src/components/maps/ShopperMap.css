@@ -15,6 +15,13 @@
   border-radius: 18px;
 }
 
+/* مهم: يمنع قاعدة `.card img { max-width:100% }` من تكسير بلاطات Leaflet */
+.radar-map .leaflet-container img.leaflet-tile {
+  max-width: none !important;
+  width: 256px !important;
+  height: 256px !important;
+}
+
 /* إخفاء زر الطبقات (Layers) */
 .radar-map--market .leaflet-control-layers {
   display: none !important;
