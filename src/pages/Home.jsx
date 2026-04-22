@@ -1020,7 +1020,7 @@ const Home = () => {
             <div className="home-hero-backdrop" aria-hidden />
             <div className="home-hero-inner">
               <div className="home-hero-copy">
-                <h1 className="home-hero-title">ماذا تبحث عنه اليوم؟</h1>
+                <h1 className="home-hero-title">ما الذي تبحث عنه اليوم</h1>
                 <p className="home-hero-sub">
                   تصفّح الأقسام، العروض، والمتاجر القريبة، واستخدم الخريطة لمطابقة المواقع بسهولة.
                 </p>

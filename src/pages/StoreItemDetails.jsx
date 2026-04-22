@@ -229,7 +229,7 @@ export default function StoreItemDetails() {
           <article className="card" style={{ overflow: 'hidden', padding: 0 }}>
             <div style={{ background: 'var(--grey-light)', minHeight: 260 }}>
               {images.length > 0 ? (
-                <ImageCarousel images={images} alt={title} height={360} borderRadius={0} />
+                <ImageCarousel images={images} alt={title} height={360} borderRadius={0} fit="contain" />
               ) : (
                 <div className="flex-center" style={{ minHeight: 260 }}>
                   <ImageIcon size={46} color="var(--text-light)" />

@@ -10,6 +10,7 @@ export default function ImageCarousel({
   className = '',
   height = 152,
   borderRadius = 12,
+  fit = 'cover',
   /** يملأ الحاوية الأب (يحتاج ارتفاعاً محدداً للأب، مثل aspect-ratio) */
   fill = false,
 }) {
@@ -44,7 +45,7 @@ export default function ImageCarousel({
   const imgStyle = {
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
+    objectFit: fit === 'contain' ? 'contain' : 'cover',
     display: 'block',
   };
 
