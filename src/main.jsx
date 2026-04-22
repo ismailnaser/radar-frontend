@@ -21,8 +21,19 @@ function applyTitleByMode() {
   document.title = isStandalone() ? 'رادار' : 'رادار-دليلك للمحلات القريبة'
 }
 
-// تسجيل Service Worker لتفعيل التثبيت + العمل بدون إنترنت (عرض آخر كاش)
-registerSW({ immediate: true })
+// تسجيل Service Worker مع حراسة التوافق (يدعم Safari iOS 11.3+)
+if ('serviceWorker' in navigator) {
+  registerSW({
+    immediate: true,
+    onRegistered() {
+      // no-op: just confirm registration path is executed
+    },
+    onRegisterError(error) {
+      // eslint-disable-next-line no-console
+      console.error('SW registration failed:', error)
+    },
+  })
+}
 
 // التقط حدث التثبيت مبكراً قبل تركيب واجهة React
 window.addEventListener('beforeinstallprompt', (e) => {

@@ -60,7 +60,7 @@ function weeklyToApi(lines) {
 
 const MerchantStoreSettings = () => {
   const navigate = useNavigate();
-  const { showAlert, showConfirm } = useAlert();
+  const { showAlert } = useAlert();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -82,6 +82,13 @@ const MerchantStoreSettings = () => {
   const [businessHoursNote, setBusinessHoursNote] = useState('');
   const [weeklyLines, setWeeklyLines] = useState(emptyWeeklyLines);
   const [storeTimezone, setStoreTimezone] = useState('Asia/Gaza');
+  const [featureNotice, setFeatureNotice] = useState('');
+
+  useEffect(() => {
+    if (!featureNotice) return undefined;
+    const t = window.setTimeout(() => setFeatureNotice(''), 1400);
+    return () => window.clearTimeout(t);
+  }, [featureNotice]);
 
   useEffect(() => {
     const load = async () => {
@@ -214,23 +221,19 @@ const MerchantStoreSettings = () => {
   };
 
   const addFeatureRow = async () => {
-    const ok = await showConfirm('إضافة حقل ميزة جديد؟', 'تأكيد');
-    if (!ok) return;
     setFeatures((prev) => {
       if (prev.length >= 10) return prev;
       return [...prev, ''];
     });
-    await showAlert('تمت إضافة حقل جديد.', 'تم');
+    setFeatureNotice('تمت الإضافة بنجاح');
   };
 
-  const removeFeatureRow = async (idx) => {
-    const ok = await showConfirm('حذف هذا السطر من مميزات المتجر؟', 'تأكيد');
-    if (!ok) return;
+  const removeFeatureRow = (idx) => {
     setFeatures((prev) => {
       const next = prev.filter((_, i) => i !== idx);
       return next.length ? next : [''];
     });
-    await showAlert('تم حذف السطر.', 'تم');
+    setFeatureNotice('تم التعديل بنجاح');
   };
 
   return (
@@ -336,6 +339,11 @@ const MerchantStoreSettings = () => {
                 <p style={{ margin: '0 0 10px', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                   تظهر كوسوم صغيرة في البروفايل وقائمة المحال القريبة — للعرض فقط وليس للفلترة.
                 </p>
+                {featureNotice ? (
+                  <div style={{ margin: '0 0 10px', color: '#1b7f3a', fontWeight: 800, fontSize: '0.9rem' }}>
+                    {featureNotice}
+                  </div>
+                ) : null}
                 {features.map((f, idx) => (
                   <div
                     key={idx}

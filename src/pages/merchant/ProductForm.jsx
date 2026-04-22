@@ -56,6 +56,7 @@ const MerchantProductForm = () => {
   const excelImportInputRef = useRef(null);
   const excelImagesInputRef = useRef(null);
   const [excelImportImages, setExcelImportImages] = useState([]);
+  const [featureNotice, setFeatureNotice] = useState('');
 
   const newBlobUrls = useMemo(() => replacementFiles.map((f) => URL.createObjectURL(f)), [replacementFiles]);
 
@@ -64,6 +65,12 @@ const MerchantProductForm = () => {
       newBlobUrls.forEach((u) => URL.revokeObjectURL(u));
     };
   }, [newBlobUrls]);
+
+  useEffect(() => {
+    if (!featureNotice) return undefined;
+    const t = window.setTimeout(() => setFeatureNotice(''), 1400);
+    return () => window.clearTimeout(t);
+  }, [featureNotice]);
 
   const displayUrls = replacementFiles.length > 0 ? newBlobUrls : existingImageUrls;
 
@@ -139,24 +146,20 @@ const MerchantProductForm = () => {
     }
   };
 
-  const addFeatureRow = async () => {
-    const ok = await showConfirm('إضافة سطر تفصيل جديد؟', 'تأكيد');
-    if (!ok) return;
+  const addFeatureRow = () => {
     setFeatures((prev) => {
       if (prev.length >= MAX_PRODUCT_FEATURES) return prev;
       return [...prev, ''];
     });
-    await showAlert('تمت إضافة السطر.', 'تم');
+    setFeatureNotice('تمت الإضافة بنجاح');
   };
 
-  const removeFeatureRow = async (idx) => {
-    const ok = await showConfirm('حذف هذا السطر من تفاصيل المنتج؟', 'تأكيد');
-    if (!ok) return;
+  const removeFeatureRow = (idx) => {
     setFeatures((prev) => {
       const next = prev.filter((_, i) => i !== idx);
       return next.length ? next : [''];
     });
-    await showAlert('تم حذف السطر.', 'تم');
+    setFeatureNotice('تم التعديل بنجاح');
   };
 
   const handleExcelExport = async () => {
@@ -363,6 +366,11 @@ const MerchantProductForm = () => {
               <p style={{ margin: '0 0 10px', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                 اكتب تفاصيل قصيرة تظهر للمتسوّق (مثل: المقاس، اللون، الخامة…). كل سطر = تفصيل واحد.
               </p>
+              {featureNotice ? (
+                <div style={{ margin: '0 0 10px', color: '#1b7f3a', fontWeight: 800, fontSize: '0.9rem' }}>
+                  {featureNotice}
+                </div>
+              ) : null}
               {features.map((f, idx) => (
                 <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
                   <input

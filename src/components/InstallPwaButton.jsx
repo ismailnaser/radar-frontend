@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Download, Share2 } from 'lucide-react';
 import { useAlert } from './AlertProvider';
+import IOSInstallGuide from './IOSInstallGuide';
 
 function isIOS() {
   if (typeof window === 'undefined') return false;
@@ -82,7 +83,6 @@ export default function InstallPwaButton({ className = '' }) {
       return;
     }
     if (mode === 'ios') {
-      await showAlert('التثبيت التلقائي غير مدعوم على iPhone/iPad من هذا الزر.', 'تنبيه');
       return;
     }
     const promptEvent =
@@ -126,6 +126,7 @@ export default function InstallPwaButton({ className = '' }) {
           {mode === 'unsupported' ? 'التثبيت عبر Chrome/Edge' : 'تثبيت التطبيق'}
         </span>
       </button>
+      {mode === 'ios' ? <IOSInstallGuide /> : null}
     </div>
   );
 }
