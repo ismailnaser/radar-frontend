@@ -123,7 +123,7 @@ export default function InstallPwaButton({ className = '' }) {
           {mode === 'ios' ? <Share2 size={18} strokeWidth={2} /> : <Download size={18} strokeWidth={2} />}
         </span>
         <span className="pwa-install__btn-txt">
-          {mode === 'unsupported' ? 'التثبيت عبر Chrome/Edge' : 'تثبيت التطبيق'}
+          تثبيت التطبيق
         </span>
       </button>
       {mode === 'ios' ? <IOSInstallGuide /> : null}

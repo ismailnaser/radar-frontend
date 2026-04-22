@@ -348,22 +348,11 @@ const MainLayout = ({ children }) => {
 
         {/* موبايل: شريط بحث مطابق للصورة (يُخفى في صفحة الخريطة لأن البحث موجود فوق الخريطة) */}
         {!isAdminPanelContext && pathname !== '/map' ? (
-          <div
-            className="header-mobile-search"
-            aria-label="بحث سريع"
-            onClick={() => {
-              navigate('/search');
-            }}
-          >
+          <div className="header-mobile-search" aria-label="بحث سريع">
             <form
               className="header-mobile-search__bar"
               role="search"
               aria-label="بحث"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate('/search');
-              }}
               onSubmit={(e) => {
                 e.preventDefault();
                 const q = (searchQuery || '').trim();
@@ -375,8 +364,7 @@ const MainLayout = ({ children }) => {
                 className="header-mobile-search__input"
                 type="search"
                 value={searchQuery || ''}
-                readOnly
-                onFocus={() => navigate('/search')}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ابحث عن متجر، منتج، أو قسم…"
                 aria-label="اكتب للبحث"
                 enterKeyHint="search"
