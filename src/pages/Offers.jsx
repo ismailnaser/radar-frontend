@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import { getOffers, addFavorite, getFavorites, removeFavorite, getCarts, addToCart, createCart } from '../api/data';
 import { useAlert } from '../components/AlertProvider';
@@ -13,6 +13,7 @@ import { formatApiError } from '../utils/apiErrors';
 const OFFERS_PER_PAGE = 20;
 
 const Offers = () => {
+  const [searchParams] = useSearchParams();
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [offersPage, setOffersPage] = useState(1);
@@ -27,6 +28,13 @@ const Offers = () => {
   const [productFavByProductId, setProductFavByProductId] = useState({});
   const [pendingCartAdd, setPendingCartAdd] = useState(null);
   const pendingCartAddRef = useRef(null);
+  const selectedCategoryId = (() => {
+    const raw = searchParams.get('category');
+    if (raw == null || raw === '') return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  })();
+  const selectedCategoryName = (searchParams.get('category_name') || '').trim();
 
   useEffect(() => {
     if (!canUseOfferFavorites) {
@@ -65,7 +73,7 @@ const Offers = () => {
   useEffect(() => {
     const fetchOffers = async () => {
       try {
-        const data = await getOffers();
+        const data = await getOffers(selectedCategoryId);
         setOffers(data);
       } catch (err) {
         console.error('Error fetching offers:', err);
@@ -74,20 +82,27 @@ const Offers = () => {
       }
     };
     fetchOffers();
-  }, []);
+  }, [selectedCategoryId]);
 
   useEffect(() => {
     setOffersPage(1);
   }, [offers.length]);
 
-  const offersTotalPages = Math.max(1, Math.ceil((offers?.length || 0) / OFFERS_PER_PAGE));
+  const filteredOffers = useMemo(() => {
+    const list = Array.isArray(offers) ? offers : [];
+    if (!selectedCategoryName) return list;
+    const q = selectedCategoryName.toLowerCase();
+    return list.filter((o) => String(o?.store_category_name || '').toLowerCase() === q);
+  }, [offers, selectedCategoryName]);
+
+  const offersTotalPages = Math.max(1, Math.ceil((filteredOffers?.length || 0) / OFFERS_PER_PAGE));
   const safeOffersPage = Math.min(offersPage, offersTotalPages);
 
   const pagedOffers = useMemo(() => {
-    const list = Array.isArray(offers) ? offers : [];
+    const list = Array.isArray(filteredOffers) ? filteredOffers : [];
     const start = (safeOffersPage - 1) * OFFERS_PER_PAGE;
     return list.slice(start, start + OFFERS_PER_PAGE);
-  }, [offers, safeOffersPage]);
+  }, [filteredOffers, safeOffersPage]);
 
   const addSponsoredToFavorites = async (ad) => {
     if (!canUseOfferFavorites) {
@@ -234,13 +249,17 @@ const Offers = () => {
           </div>
           <div className="offers-hero-text">
             <h1 className="offers-hero-title">عروض حصرية</h1>
-            <p className="offers-hero-sub">عروض مُختارة من المتاجر — بطاقات مرتبة لتصفّح مريح على كل الأجهزة</p>
+            <p className="offers-hero-sub">
+              {selectedCategoryId != null || selectedCategoryName
+                ? `كل عروض القسم: ${selectedCategoryName || 'المحدد'}`
+                : 'عروض مُختارة من المتاجر — بطاقات مرتبة لتصفّح مريح على كل الأجهزة'}
+            </p>
           </div>
         </header>
 
         {loading ? (
           <p className="offers-loading">جاري تحميل العروض...</p>
-        ) : offers.length > 0 ? (
+        ) : filteredOffers.length > 0 ? (
           <>
           <div className="offers-grid">
             {pagedOffers.map((offer) => (
@@ -328,7 +347,7 @@ const Offers = () => {
                 السابق
               </button>
               <span className="offers-pager-meta">
-                صفحة {safeOffersPage} من {offersTotalPages} — {offers.length} عرضاً
+                صفحة {safeOffersPage} من {offersTotalPages} — {filteredOffers.length} عرضاً
               </span>
               <button
                 type="button"
@@ -340,7 +359,7 @@ const Offers = () => {
             </div>
           ) : (
             <p className="offers-count-note" aria-live="polite">
-              {offers.length} {offers.length === 1 ? 'عرض' : 'عروض'}
+              {filteredOffers.length} {filteredOffers.length === 1 ? 'عرض' : 'عروض'}
             </p>
           )}
           </>

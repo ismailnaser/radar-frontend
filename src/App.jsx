@@ -38,6 +38,7 @@ const SuggestCommunityService = lazy(() => import('./pages/SuggestCommunityServi
 const Carts = lazy(() => import('./pages/Carts'));
 const CartDetails = lazy(() => import('./pages/CartDetails'));
 const Offers = lazy(() => import('./pages/Offers'));
+const CategoryProducts = lazy(() => import('./pages/CategoryProducts'));
 const Search = lazy(() => import('./pages/Search'));
 const Favorites = lazy(() => import('./pages/Favorites'));
 const Contact = lazy(() => import('./pages/Contact'));
@@ -471,6 +472,12 @@ const router = createBrowserRouter(
           <Route path="/offers" element={
             <VerificationRoute>
               <Offers />
+            </VerificationRoute>
+          } />
+
+          <Route path="/category-products" element={
+            <VerificationRoute>
+              <CategoryProducts />
             </VerificationRoute>
           } />
 

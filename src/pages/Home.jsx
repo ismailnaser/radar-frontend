@@ -83,6 +83,7 @@ import {
   getCommunityPoints,
   getNearbyStores,
   getOffers,
+  getPublicProducts,
   getCarts,
   addToCart,
   createCart,
@@ -360,10 +361,124 @@ function sponsoredOfferBadge(ad) {
 
 const SPONSORED_PER_PAGE = 6;
 /** شبكة الإعلانات الممولة في الرئيسية (مثل صفحة المتاجر) */
-const SPONSORED_GRID_PAGE_SIZE = 12;
 const STORES_PER_PAGE_DESKTOP = 12;
 const STORES_PER_PAGE_MOBILE = 8;
 const SPONSORED_ROTATE_MS = 5 * 60 * 1000;
+const DEMO_SPONSORED_ADS = [
+  {
+    id: 'demo-sponsored-1',
+    is_demo: true,
+    title: 'عرض تجريبي: قهوة + حلى بسعر خاص',
+    store_name: 'متجر تجريبي 1',
+    store_category_name: 'مأكولات',
+    product_price: 18.5,
+    image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80',
+    store: null,
+  },
+  {
+    id: 'demo-sponsored-2',
+    is_demo: true,
+    title: 'عرض تجريبي: خصم 20% على أدوات المنزل',
+    store_name: 'متجر تجريبي 2',
+    store_category_name: 'منزل',
+    product_price: 74.0,
+    image: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=900&q=80',
+    store: null,
+  },
+  {
+    id: 'demo-sponsored-3',
+    is_demo: true,
+    title: 'عرض تجريبي: تشكيلة ملابس الموسم',
+    store_name: 'متجر تجريبي 3',
+    store_category_name: 'أزياء',
+    product_price: 129.0,
+    image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=80',
+    store: null,
+  },
+  {
+    id: 'demo-sponsored-4',
+    is_demo: true,
+    title: 'عرض تجريبي: عطور أصلية بخصم نهاية الأسبوع',
+    store_name: 'متجر تجريبي 4',
+    store_category_name: 'تجميل',
+    product_price: 59.0,
+    image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=900&q=80',
+    store: null,
+  },
+  {
+    id: 'demo-sponsored-5',
+    is_demo: true,
+    title: 'عرض تجريبي: أجهزة كهربائية منزلية',
+    store_name: 'متجر تجريبي 5',
+    store_category_name: 'إلكترونيات',
+    product_price: 199.0,
+    image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=900&q=80',
+    store: null,
+  },
+  {
+    id: 'demo-sponsored-6',
+    is_demo: true,
+    title: 'عرض تجريبي: أدوات مطبخ عملية',
+    store_name: 'متجر تجريبي 6',
+    store_category_name: 'منزل',
+    product_price: 42.0,
+    image: 'https://images.unsplash.com/photo-1506368083636-6defb67639a7?auto=format&fit=crop&w=900&q=80',
+    store: null,
+  },
+  {
+    id: 'demo-sponsored-7',
+    is_demo: true,
+    title: 'عرض تجريبي: مستلزمات أطفال',
+    store_name: 'متجر تجريبي 7',
+    store_category_name: 'أطفال',
+    product_price: 35.0,
+    image: 'https://images.unsplash.com/photo-1515488764276-beab7607c1e6?auto=format&fit=crop&w=900&q=80',
+    store: null,
+  },
+  {
+    id: 'demo-sponsored-8',
+    is_demo: true,
+    title: 'عرض تجريبي: باقة فواكه طازجة',
+    store_name: 'متجر تجريبي 8',
+    store_category_name: 'خضار وفواكه',
+    product_price: 27.0,
+    image: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=900&q=80',
+    store: null,
+  },
+  {
+    id: 'demo-sponsored-9',
+    is_demo: true,
+    title: 'عرض تجريبي: أدوات رياضية منزلية',
+    store_name: 'متجر تجريبي 9',
+    store_category_name: 'رياضة',
+    product_price: 89.0,
+    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=900&q=80',
+    store: null,
+  },
+  {
+    id: 'demo-sponsored-10',
+    is_demo: true,
+    title: 'عرض تجريبي: باقة كتب تعليمية',
+    store_name: 'متجر تجريبي 10',
+    store_category_name: 'كتب',
+    product_price: 49.0,
+    image: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=900&q=80',
+    store: null,
+  },
+];
+
+function shuffledCopy(list, seed = Math.random()) {
+  const arr = [...list];
+  let s = Math.floor(Math.abs(seed) * 1_000_000) + 1;
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    s = (s * 1664525 + 1013904223) % 4294967296;
+    const j = s % (i + 1);
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr;
+}
 
 const Home = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -373,6 +488,18 @@ const Home = () => {
   const storesSectionRef = useRef(null);
   const communityBelowRef = useRef(null);
   const browseScrollRef = useRef(null);
+  const sponsoredRailWrapRef = useRef(null);
+  const sponsoredRailTrackRef = useRef(null);
+  const sponsoredSeekInputRef = useRef(null);
+  const sponsoredPausedRef = useRef(false);
+  const sponsoredSectionHoveredRef = useRef(false);
+  const sponsoredDirectionRef = useRef(-1);
+  const sponsoredPositionRef = useRef(0);
+  const sponsoredMaxTravelRef = useRef(0);
+  const sponsoredDraggingRef = useRef(false);
+  const sponsoredDragLastXRef = useRef(0);
+  const sponsoredWheelResumeTimerRef = useRef(0);
+  const randomRailsRef = useRef(new globalThis.Map());
   const {
     userMapLocation,
     locationFocusNonce,
@@ -410,9 +537,10 @@ const Home = () => {
   );
   const [sponsoredAds, setSponsoredAds] = useState([]);
   const [sponsoredLoading, setSponsoredLoading] = useState(true);
+  const [randomCategoryProducts, setRandomCategoryProducts] = useState([]);
+  const [randomCategorySeed] = useState(() => Math.random());
   /** فلترة إعلانات الصفحة الرئيسية حسب أقسام المتاجر (متعدد) */
   const [exclusiveOfferCategoryIds, setExclusiveOfferCategoryIds] = useState([]);
-  const [sponsoredGridPage, setSponsoredGridPage] = useState(1);
   const [sponsoredFavByAdId, setSponsoredFavByAdId] = useState({});
   const [communityPoints, setCommunityPoints] = useState([]);
   const [communityPointsLoading, setCommunityPointsLoading] = useState(false);
@@ -563,24 +691,256 @@ const Home = () => {
     });
   }, [rotatedSponsoredAds, exclusiveOfferCategoryIds]);
 
-  const sponsoredGridTotalPages = Math.max(
-    1,
-    Math.ceil(filteredExclusiveAds.length / SPONSORED_GRID_PAGE_SIZE),
+  const sponsoredRailAds = useMemo(
+    () => [...filteredExclusiveAds, ...DEMO_SPONSORED_ADS],
+    [filteredExclusiveAds]
   );
-  const safeSponsoredGridPage = Math.min(sponsoredGridPage, sponsoredGridTotalPages);
 
-  const pagedExclusiveAds = useMemo(() => {
-    const start = (safeSponsoredGridPage - 1) * SPONSORED_GRID_PAGE_SIZE;
-    return filteredExclusiveAds.slice(start, start + SPONSORED_GRID_PAGE_SIZE);
-  }, [filteredExclusiveAds, safeSponsoredGridPage]);
+  const randomProductCategoryGroups = useMemo(() => {
+    const productList = (randomCategoryProducts || []).filter((p) => p && p.store != null);
+    if (!productList.length) return [];
+    const grouped = new globalThis.Map();
+    productList.forEach((p) => {
+      const key = p.store_category_id != null ? `id:${p.store_category_id}` : `name:${p.store_category_name || 'other'}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          key,
+          categoryId: p.store_category_id ?? null,
+          categoryName: p.store_category_name || 'قسم متنوع',
+          items: [],
+        });
+      }
+      grouped.get(key).items.push(p);
+    });
+    const withProducts = Array.from(grouped.values()).filter((g) => g.items.length > 0);
+    const picked = shuffledCopy(withProducts, randomCategorySeed).slice(0, 3);
+    return picked.map((group, idx) => ({
+      ...group,
+      items: shuffledCopy(group.items, randomCategorySeed + idx + 0.37).slice(0, 8),
+    }));
+  }, [randomCategoryProducts, randomCategorySeed]);
+
+  const ensureRandomRailState = useCallback((key) => {
+    const map = randomRailsRef.current;
+    if (!map.has(key)) {
+      map.set(key, {
+        wrap: null,
+        track: null,
+        input: null,
+        paused: false,
+        hovered: false,
+        dragging: false,
+        lastX: 0,
+        position: 0,
+        maxTravel: 0,
+        direction: -1,
+        wheelTimer: 0,
+        didInit: false,
+      });
+    }
+    return map.get(key);
+  }, []);
+
+  const setRandomRailNode = useCallback(
+    (key, field, el) => {
+      const st = ensureRandomRailState(key);
+      st[field] = el;
+    },
+    [ensureRandomRailState]
+  );
+
+  const setRandomPaused = useCallback(
+    (key, pause) => {
+      const st = ensureRandomRailState(key);
+      if (pause) {
+        st.paused = true;
+        return;
+      }
+      st.paused = st.hovered || st.dragging;
+    },
+    [ensureRandomRailState]
+  );
+
+  const setRandomPosition = useCallback(
+    (key, nextPos) => {
+      const st = ensureRandomRailState(key);
+      if (!st.track) return 0;
+      const max = Math.max(0, st.maxTravel || 0);
+      const next = Math.max(0, Math.min(max, nextPos));
+      st.position = next;
+      st.track.style.transform = `translate3d(${-next}px, 0, 0)`;
+      if (st.input) {
+        const maxRounded = Math.max(1, Math.round(max));
+        st.input.max = String(maxRounded);
+        st.input.value = String(Math.max(0, maxRounded - Math.round(next)));
+      }
+      return next;
+    },
+    [ensureRandomRailState]
+  );
 
   useEffect(() => {
-    setSponsoredGridPage((p) => Math.min(p, sponsoredGridTotalPages));
-  }, [sponsoredGridTotalPages]);
+    if (filterMode !== 'stores' || sponsoredLoading || randomProductCategoryGroups.length === 0) return undefined;
+    const activeKeys = new Set(randomProductCategoryGroups.map((g) => g.key));
+    Array.from(randomRailsRef.current.keys()).forEach((k) => {
+      if (!activeKeys.has(k)) randomRailsRef.current.delete(k);
+    });
+
+    const cleanups = [];
+    randomProductCategoryGroups.forEach((group) => {
+      const key = group.key;
+      const st = ensureRandomRailState(key);
+      const wrap = st.wrap;
+      const track = st.track;
+      if (!wrap || !track) return;
+      let pxPerSec = 80;
+      const recalc = () => {
+        st.maxTravel = Math.max(0, track.scrollWidth - wrap.clientWidth);
+        const adCount = Math.max(1, group.items.length);
+        const avgAdWidth = Math.max(160, track.scrollWidth / adCount);
+        pxPerSec = avgAdWidth / 1.2;
+        if (!st.didInit) {
+          setRandomPosition(key, st.maxTravel);
+          st.didInit = true;
+        } else {
+          setRandomPosition(key, st.position);
+        }
+      };
+      st.direction = st.direction === 1 ? 1 : -1;
+      recalc();
+      let rafId = 0;
+      let lastTs = 0;
+      const step = (ts) => {
+        if (!track.isConnected) return;
+        if (!lastTs) {
+          lastTs = ts;
+        } else if (!st.paused) {
+          const dt = Math.min(64, ts - lastTs);
+          const delta = (pxPerSec * dt) / 1000;
+          let next = st.position + st.direction * delta;
+          if (next <= 0) {
+            next = 0;
+            st.direction = 1;
+          } else if (next >= st.maxTravel) {
+            next = st.maxTravel;
+            st.direction = -1;
+          }
+          setRandomPosition(key, next);
+        }
+        lastTs = ts;
+        rafId = window.requestAnimationFrame(step);
+      };
+      const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(recalc) : null;
+      if (ro) {
+        ro.observe(wrap);
+        ro.observe(track);
+      }
+      rafId = window.requestAnimationFrame(step);
+      cleanups.push(() => {
+        if (ro) ro.disconnect();
+        if (rafId) window.cancelAnimationFrame(rafId);
+      });
+    });
+    return () => {
+      cleanups.forEach((fn) => fn());
+    };
+  }, [filterMode, sponsoredLoading, randomProductCategoryGroups, ensureRandomRailState, setRandomPosition]);
+
+  const setSponsoredPaused = useCallback((pause) => {
+    if (pause) {
+      sponsoredPausedRef.current = true;
+      return;
+    }
+    if (sponsoredSectionHoveredRef.current || sponsoredDraggingRef.current) {
+      sponsoredPausedRef.current = true;
+      return;
+    }
+    sponsoredPausedRef.current = false;
+  }, []);
+
+  const setSponsoredPosition = useCallback((nextPos) => {
+    const trackEl = sponsoredRailTrackRef.current;
+    const seekInputEl = sponsoredSeekInputRef.current;
+    if (!trackEl) return 0;
+    const maxTravel = Math.max(0, sponsoredMaxTravelRef.current);
+    const next = Math.max(0, Math.min(maxTravel, nextPos));
+    sponsoredPositionRef.current = next;
+    trackEl.style.transform = `translate3d(${-next}px, 0, 0)`;
+    if (seekInputEl) {
+      const maxRounded = Math.max(1, Math.round(maxTravel));
+      seekInputEl.max = String(maxRounded);
+      // السلايدر معكوس بصريًا (RTL): البداية من اليمين.
+      seekInputEl.value = String(Math.max(0, maxRounded - Math.round(next)));
+    }
+    return next;
+  }, []);
 
   useEffect(() => {
-    setSponsoredGridPage(1);
-  }, [exclusiveOfferCategoryIds]);
+    const wrap = sponsoredRailWrapRef.current;
+    const track = sponsoredRailTrackRef.current;
+    if (!wrap || !track || filterMode !== 'stores' || sponsoredLoading || sponsoredRailAds.length <= 1) {
+      return undefined;
+    }
+    let pxPerSec = 90;
+    let didInitPosition = false;
+    const recalc = () => {
+      const maxTravel = Math.max(0, track.scrollWidth - wrap.clientWidth);
+      sponsoredMaxTravelRef.current = maxTravel;
+      const adCount = Math.max(1, sponsoredRailAds.length);
+      const avgAdWidth = Math.max(160, track.scrollWidth / adCount);
+      // سرعة تكيفية حسب حجم الإعلان وعدده: كل إعلان يأخذ وقت عرض قريب من الثابت.
+      const secondsPerAd = 1.2;
+      pxPerSec = avgAdWidth / secondsPerAd;
+      // أول مرة: ابدأ من النهاية اليمنى بصريًا. بعد ذلك حافظ على مكان المستخدم.
+      if (!didInitPosition) {
+        setSponsoredPosition(maxTravel);
+        didInitPosition = true;
+      } else {
+        setSponsoredPosition(sponsoredPositionRef.current);
+      }
+    };
+    sponsoredDirectionRef.current = -1;
+    sponsoredPausedRef.current = false;
+    recalc();
+    let rafId = 0;
+    let lastTs = 0;
+    const step = (ts) => {
+      if (!track.isConnected) return;
+      if (!lastTs) {
+        lastTs = ts;
+      } else if (!sponsoredPausedRef.current) {
+        const dt = Math.min(64, ts - lastTs);
+        const delta = (pxPerSec * dt) / 1000;
+        const maxTravel = Math.max(0, sponsoredMaxTravelRef.current);
+        const current = sponsoredPositionRef.current;
+        let next = current + sponsoredDirectionRef.current * delta;
+        if (next <= 0) {
+          next = 0;
+          sponsoredDirectionRef.current = 1;
+        } else if (next >= maxTravel) {
+          next = maxTravel;
+          sponsoredDirectionRef.current = -1;
+        }
+        setSponsoredPosition(next);
+      }
+      lastTs = ts;
+      rafId = window.requestAnimationFrame(step);
+    };
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(recalc) : null;
+    if (ro) {
+      ro.observe(wrap);
+      ro.observe(track);
+    }
+    rafId = window.requestAnimationFrame(step);
+    return () => {
+      if (ro) ro.disconnect();
+      if (rafId) window.cancelAnimationFrame(rafId);
+      track.style.transform = '';
+      sponsoredPositionRef.current = 0;
+      sponsoredMaxTravelRef.current = 0;
+      sponsoredDraggingRef.current = false;
+    };
+  }, [filterMode, sponsoredLoading, sponsoredRailAds.length, setSponsoredPosition]);
 
   useEffect(() => {
     setSponsoredPage(1);
@@ -716,6 +1076,26 @@ const Home = () => {
         if (!cancelled) setSponsoredAds([]);
       } finally {
         if (!cancelled) setSponsoredLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [filterMode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (filterMode !== 'stores') {
+        if (!cancelled) setRandomCategoryProducts([]);
+        return;
+      }
+      try {
+        const data = await getPublicProducts(null);
+        if (!cancelled) setRandomCategoryProducts(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) setRandomCategoryProducts([]);
       }
     })();
     return () => {
@@ -921,6 +1301,25 @@ const Home = () => {
     }
   };
 
+  const addProductToCart = async (product) => {
+    if (!canUseShoppingCarts()) {
+      await showAlert(
+        'ميزة السلال للأعضاء المسجّلين فقط (متسوّق، تاجر، أو مدير) وليست لوضع الزائر. سجّل الدخول ثم أعد المحاولة.',
+        'تنبيه',
+      );
+      return;
+    }
+    try {
+      await openCartPickerFor({
+        productId: product.id,
+        sponsoredAdId: null,
+        quantity: 1,
+      });
+    } catch (e) {
+      await showAlert(formatApiError(e, 'تعذرت الإضافة للسلة.'), 'خطأ');
+    }
+  };
+
   const goToFilterStores = () => {
     const next = new URLSearchParams(searchParams);
     next.delete('filter');
@@ -963,6 +1362,19 @@ const Home = () => {
         return;
       }
       await addFavorite(ad.product, ad.id);
+      await showAlert('تمت إضافة المنتج للمفضلة.', 'تم');
+    } catch (e) {
+      await showAlert(formatApiError(e, 'تعذرت الإضافة للمفضلة.'), 'خطأ');
+    }
+  };
+
+  const addProductToFavorites = async (product) => {
+    if (!canUseOfferFavorites) {
+      await showAlert('سجّل الدخول لاستخدام المفضلة. وضع الزائر لا يدعمها.', 'تنبيه');
+      return;
+    }
+    try {
+      await addFavorite(product.id, null);
       await showAlert('تمت إضافة المنتج للمفضلة.', 'تم');
     } catch (e) {
       await showAlert(formatApiError(e, 'تعذرت الإضافة للمفضلة.'), 'خطأ');
@@ -1031,7 +1443,18 @@ const Home = () => {
 
         <div className="home-top-grid">
           {filterMode === 'stores' ? (
-            <section className="home-top-grid__exclusive home-sponsored-block" aria-label="إعلانات ممولة">
+            <section
+              className="home-top-grid__exclusive home-sponsored-block"
+              aria-label="إعلانات ممولة"
+              onMouseEnter={() => {
+                sponsoredSectionHoveredRef.current = true;
+                setSponsoredPaused(true);
+              }}
+              onMouseLeave={() => {
+                sponsoredSectionHoveredRef.current = false;
+                setSponsoredPaused(false);
+              }}
+            >
               <div className="home-sponsored-head">
                 <div className="home-sponsored-head-text">
                   <h2 className="home-sponsored-title">إعلانات ممولة من المتاجر</h2>
@@ -1055,18 +1478,78 @@ const Home = () => {
                 </Link>
               </div>
               {sponsoredLoading ? (
-                <div className="home-sponsored-grid" role="list">
-                  {Array.from({ length: 6 }).map((_, i) => (
+                <div className="home-sponsored-rail" role="list">
+                  {Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="home-sponsored-skel" aria-hidden />
                   ))}
                 </div>
-              ) : filteredExclusiveAds.length === 0 ? (
-                <div className="home-sponsored-empty">لا توجد إعلانات ضمن الفلاتر الحالية.</div>
               ) : (
-                <>
-                  <div className="home-sponsored-grid" role="list">
-                    {pagedExclusiveAds.map((ad) => {
+                <div
+                  className="home-sponsored-rail-wrap"
+                  onPointerDown={(e) => {
+                    if (e.button !== 0) return;
+                    const target = e.target;
+                    if (
+                      target instanceof Element &&
+                      target.closest('button, a, input, textarea, select, label, [role="button"]')
+                    ) {
+                      return;
+                    }
+                    sponsoredDraggingRef.current = true;
+                    setSponsoredPaused(true);
+                    sponsoredDragLastXRef.current = e.clientX;
+                    if (typeof e.currentTarget.setPointerCapture === 'function') {
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                    }
+                  }}
+                  onPointerMove={(e) => {
+                    if (!sponsoredDraggingRef.current) return;
+                    const dx = e.clientX - sponsoredDragLastXRef.current;
+                    sponsoredDragLastXRef.current = e.clientX;
+                    const trackEl = sponsoredRailTrackRef.current;
+                    if (!trackEl) return;
+                    const maxTravel = sponsoredMaxTravelRef.current;
+                    const next = Math.max(0, Math.min(maxTravel, sponsoredPositionRef.current - dx));
+                    setSponsoredPosition(next);
+                  }}
+                  onPointerUp={(e) => {
+                    sponsoredDraggingRef.current = false;
+                    setSponsoredPaused(false);
+                    if (typeof e.currentTarget.releasePointerCapture === 'function') {
+                      try {
+                        e.currentTarget.releasePointerCapture(e.pointerId);
+                      } catch (_) {
+                        // no-op
+                      }
+                    }
+                  }}
+                  onPointerCancel={() => {
+                    sponsoredDraggingRef.current = false;
+                    setSponsoredPaused(false);
+                  }}
+                  onWheel={(e) => {
+                    const trackEl = sponsoredRailTrackRef.current;
+                    if (!trackEl) return;
+                    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+                    if (!Number.isFinite(delta) || delta === 0) return;
+                    e.preventDefault();
+                    sponsoredPausedRef.current = true;
+                    const maxTravel = sponsoredMaxTravelRef.current;
+                    const next = Math.max(0, Math.min(maxTravel, sponsoredPositionRef.current + delta));
+                    setSponsoredPosition(next);
+                    if (sponsoredWheelResumeTimerRef.current) {
+                      window.clearTimeout(sponsoredWheelResumeTimerRef.current);
+                    }
+                    sponsoredWheelResumeTimerRef.current = window.setTimeout(() => {
+                      setSponsoredPaused(false);
+                    }, 300);
+                  }}
+                >
+                  <div className="home-sponsored-rail" role="list" ref={sponsoredRailWrapRef}>
+                    <div className="home-sponsored-rail__track" ref={sponsoredRailTrackRef}>
+                    {sponsoredRailAds.map((ad) => {
                       const img = visualImageUrls(ad)[0] || null;
+                      const isDemo = ad.is_demo === true;
                       return (
                         <article key={ad.id} className="home-sponsored-card" role="listitem" aria-label={`${ad.title} — ${ad.store_name}`}>
                           <div className="home-sponsored-card__thumb" aria-hidden>
@@ -1081,9 +1564,13 @@ const Home = () => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                if (isDemo) {
+                                  void showAlert('هذا إعلان تجريبي للمعاينة فقط.');
+                                  return;
+                                }
                                 void addSponsoredToCart(ad);
                               }}
-                              title="إضافة إلى السلة"
+                              title={isDemo ? 'إعلان تجريبي' : 'إضافة إلى السلة'}
                               aria-label="إضافة إلى السلة"
                             >
                               <ShoppingCart size={17} strokeWidth={2} aria-hidden />
@@ -1094,9 +1581,13 @@ const Home = () => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                if (isDemo) {
+                                  void showAlert('هذا إعلان تجريبي للمعاينة فقط.');
+                                  return;
+                                }
                                 void addSponsoredToFavorites(ad);
                               }}
-                              title={ad.product ? '' : 'يُزال من المفضلة عند انتهاء الإعلان'}
+                              title={isDemo ? 'إعلان تجريبي' : ad.product ? '' : 'يُزال من المفضلة عند انتهاء الإعلان'}
                               aria-label={sponsoredIsFavorite(ad) ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
                             >
                               <Heart
@@ -1108,7 +1599,7 @@ const Home = () => {
                             </button>
                           </div>
                           <div className="home-sponsored-card__body">
-                            <div className="home-sponsored-card__badge">إعلان ممول</div>
+                            <div className="home-sponsored-card__badge">{isDemo ? 'إعلان ممول (تجريبي)' : 'إعلان ممول'}</div>
                             <div className="home-sponsored-card__adtitle">{ad.title}</div>
                             <div className="home-sponsored-card__meta">
                               <span className="home-sponsored-card__store">{ad.store_name}</span>
@@ -1124,42 +1615,288 @@ const Home = () => {
                                 {Number(ad.product_price).toFixed(2)} ₪
                               </div>
                             ) : null}
-                            <Link to={`/stores/${ad.store}`} className="home-sponsored-card__storebtn">
-                              عرض المتجر
-                            </Link>
+                            {isDemo ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="home-sponsored-card__detailsbtn home-sponsored-card__detailsbtn--demo"
+                                  onClick={() => {
+                                    void showAlert('لا توجد صفحة تفاصيل لإعلان تجريبي.');
+                                  }}
+                                >
+                                  عرض التفاصيل
+                                </button>
+                                <button
+                                  type="button"
+                                  className="home-sponsored-card__storebtn home-sponsored-card__storebtn--demo"
+                                  onClick={() => {
+                                    void showAlert('لا يوجد متجر مرتبط بالإعلان التجريبي.');
+                                  }}
+                                >
+                                  عرض داخل المتجر
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <Link
+                                  to={`/stores/${ad.store}/item/sponsored/${ad.id}`}
+                                  className="home-sponsored-card__detailsbtn"
+                                >
+                                  عرض التفاصيل
+                                </Link>
+                                <Link
+                                  to={`/stores/${ad.store}#sponsored-ad-${ad.id}`}
+                                  className="home-sponsored-card__storebtn"
+                                >
+                                  عرض داخل المتجر
+                                </Link>
+                              </>
+                            )}
                           </div>
                         </article>
                       );
                     })}
-                  </div>
-                  {sponsoredGridTotalPages > 1 ? (
-                    <div className="home-sponsored-pager" aria-label="تصفح الإعلانات">
-                      <button
-                        type="button"
-                        onClick={() => setSponsoredGridPage((p) => Math.max(1, p - 1))}
-                        disabled={safeSponsoredGridPage <= 1}
-                      >
-                        السابق
-                      </button>
-                      <span>
-                        {safeSponsoredGridPage} / {sponsoredGridTotalPages}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSponsoredGridPage((p) => Math.min(sponsoredGridTotalPages, p + 1))
-                        }
-                        disabled={safeSponsoredGridPage >= sponsoredGridTotalPages}
-                      >
-                        التالي
-                      </button>
                     </div>
-                  ) : null}
-                </>
+                  </div>
+                  <input
+                    ref={sponsoredSeekInputRef}
+                    type="range"
+                    className="home-sponsored-seek-input"
+                    min="0"
+                    max={Math.max(1, Math.round(sponsoredMaxTravelRef.current))}
+                    defaultValue="0"
+                    aria-label="تحريك سكرول الإعلانات الممولة"
+                    onMouseDown={() => {
+                      setSponsoredPaused(true);
+                    }}
+                    onTouchStart={() => {
+                      setSponsoredPaused(true);
+                    }}
+                    onInput={(e) => {
+                      const raw = Number(e.currentTarget.value);
+                      const max = Number(e.currentTarget.max);
+                      if (Number.isFinite(raw) && Number.isFinite(max)) {
+                        setSponsoredPosition(Math.max(0, max - raw));
+                      }
+                    }}
+                    onMouseUp={() => {
+                      setSponsoredPaused(false);
+                    }}
+                    onTouchEnd={() => {
+                      setSponsoredPaused(false);
+                    }}
+                    onBlur={() => {
+                      setSponsoredPaused(false);
+                    }}
+                  />
+                </div>
               )}
             </section>
           ) : null}
         </div>
+
+        {filterMode === 'stores' && randomProductCategoryGroups.length > 0 ? (
+          <div className="home-random-cats">
+            {randomProductCategoryGroups.map((group) => (
+              <section
+                key={group.key}
+                className="home-random-cat-block home-sponsored-block"
+                aria-label={`منتجات ${group.categoryName}`}
+                onMouseEnter={() => {
+                  const st = ensureRandomRailState(group.key);
+                  st.hovered = true;
+                  setRandomPaused(group.key, true);
+                }}
+                onMouseLeave={() => {
+                  const st = ensureRandomRailState(group.key);
+                  st.hovered = false;
+                  setRandomPaused(group.key, false);
+                }}
+              >
+                <div className="home-sponsored-head">
+                  <div className="home-sponsored-head-text">
+                    <h3 className="home-sponsored-title">{group.categoryName}</h3>
+                    <p className="home-sponsored-sub">منتجات من قسم متاجر عشوائي (يتغير مع كل تحديث)</p>
+                  </div>
+                  <Link
+                    to={
+                      group.categoryId != null
+                        ? `/category-products?category=${encodeURIComponent(String(group.categoryId))}`
+                        : `/category-products?category_name=${encodeURIComponent(group.categoryName)}`
+                    }
+                    className="home-sponsored-more"
+                  >
+                    عرض المزيد
+                    <ChevronLeft size={18} aria-hidden />
+                  </Link>
+                </div>
+                <div
+                  className="home-sponsored-rail-wrap"
+                  onPointerDown={(e) => {
+                    if (e.button !== 0) return;
+                    const target = e.target;
+                    if (
+                      target instanceof Element &&
+                      target.closest('button, a, input, textarea, select, label, [role="button"]')
+                    ) {
+                      return;
+                    }
+                    const st = ensureRandomRailState(group.key);
+                    st.dragging = true;
+                    setRandomPaused(group.key, true);
+                    st.lastX = e.clientX;
+                    if (typeof e.currentTarget.setPointerCapture === 'function') {
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                    }
+                  }}
+                  onPointerMove={(e) => {
+                    const st = ensureRandomRailState(group.key);
+                    if (!st.dragging) return;
+                    const dx = e.clientX - st.lastX;
+                    st.lastX = e.clientX;
+                    setRandomPosition(group.key, st.position - dx);
+                  }}
+                  onPointerUp={(e) => {
+                    const st = ensureRandomRailState(group.key);
+                    st.dragging = false;
+                    setRandomPaused(group.key, false);
+                    if (typeof e.currentTarget.releasePointerCapture === 'function') {
+                      try {
+                        e.currentTarget.releasePointerCapture(e.pointerId);
+                      } catch (_) {
+                        // no-op
+                      }
+                    }
+                  }}
+                  onPointerCancel={() => {
+                    const st = ensureRandomRailState(group.key);
+                    st.dragging = false;
+                    setRandomPaused(group.key, false);
+                  }}
+                  onWheel={(e) => {
+                    const st = ensureRandomRailState(group.key);
+                    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+                    if (!Number.isFinite(delta) || delta === 0) return;
+                    e.preventDefault();
+                    setRandomPaused(group.key, true);
+                    setRandomPosition(group.key, st.position + delta);
+                    if (st.wheelTimer) window.clearTimeout(st.wheelTimer);
+                    st.wheelTimer = window.setTimeout(() => {
+                      setRandomPaused(group.key, false);
+                    }, 300);
+                  }}
+                >
+                  <div className="home-sponsored-rail" role="list" ref={(el) => setRandomRailNode(group.key, 'wrap', el)}>
+                    <div className="home-sponsored-rail__track" ref={(el) => setRandomRailNode(group.key, 'track', el)}>
+                      {group.items.map((p) => {
+                        const img = visualImageUrls(p)[0] || null;
+                        return (
+                          <article
+                            key={`rand-cat-${group.key}-${p.id}`}
+                            className="home-sponsored-card"
+                            role="listitem"
+                            aria-label={`${p.name} — ${p.store_name}`}
+                          >
+                            <div className="home-sponsored-card__thumb" aria-hidden>
+                              {img ? (
+                                <img className="home-sponsored-card__img" src={img} alt="" loading="lazy" width="800" height="800" />
+                              ) : (
+                                <span className="home-sponsored-card__ph">📣</span>
+                              )}
+                              <button
+                                type="button"
+                                className={`home-sponsored-card__cartbtn${canUseCarts ? '' : ' home-sponsored-card__cartbtn--muted'}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  void addProductToCart(p);
+                                }}
+                                title="إضافة إلى السلة"
+                                aria-label="إضافة إلى السلة"
+                              >
+                                <ShoppingCart size={17} strokeWidth={2} aria-hidden />
+                              </button>
+                              <button
+                                type="button"
+                                className={`home-sponsored-card__favbtn${canUseOfferFavorites ? '' : ' home-sponsored-card__favbtn--muted'}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  void addProductToFavorites(p);
+                                }}
+                                title="إضافة للمفضلة"
+                                aria-label="إضافة للمفضلة"
+                              >
+                                <Heart
+                                  size={18}
+                                  strokeWidth={2}
+                                  color="#e91e63"
+                                  fill="none"
+                                />
+                              </button>
+                            </div>
+                            <div className="home-sponsored-card__body">
+                              <div className="home-sponsored-card__adtitle">{p.name}</div>
+                              <div className="home-sponsored-card__meta">
+                                <span className="home-sponsored-card__store">{p.store_name}</span>
+                                {p.store_category_name ? (
+                                  <>
+                                    <span className="home-sponsored-card__dot" aria-hidden />
+                                    <span>{p.store_category_name}</span>
+                                  </>
+                                ) : null}
+                              </div>
+                              {Number(p.price) > 0 ? (
+                                <div className="home-sponsored-card__price">{Number(p.price).toFixed(2)} ₪</div>
+                              ) : null}
+                              <Link to={`/stores/${p.store}/item/product/${p.id}`} className="home-sponsored-card__detailsbtn">
+                                عرض التفاصيل
+                              </Link>
+                              <Link to={`/stores/${p.store}#product-${p.id}`} className="home-sponsored-card__storebtn">
+                                عرض داخل المتجر
+                              </Link>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <input
+                    ref={(el) => setRandomRailNode(group.key, 'input', el)}
+                    type="range"
+                    className="home-sponsored-seek-input"
+                    min="0"
+                    max="1"
+                    defaultValue="0"
+                    aria-label={`تحريك سكرول منتجات ${group.categoryName}`}
+                    onMouseDown={() => {
+                      setRandomPaused(group.key, true);
+                    }}
+                    onTouchStart={() => {
+                      setRandomPaused(group.key, true);
+                    }}
+                    onInput={(e) => {
+                      const raw = Number(e.currentTarget.value);
+                      const max = Number(e.currentTarget.max);
+                      if (Number.isFinite(raw) && Number.isFinite(max)) {
+                        setRandomPosition(group.key, Math.max(0, max - raw));
+                      }
+                    }}
+                    onMouseUp={() => {
+                      setRandomPaused(group.key, false);
+                    }}
+                    onTouchEnd={() => {
+                      setRandomPaused(group.key, false);
+                    }}
+                    onBlur={() => {
+                      setRandomPaused(group.key, false);
+                    }}
+                  />
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : null}
 
         <div style={{ display: 'none' }}>
         <div className="home-mode-strip" role="presentation">
@@ -2079,19 +2816,103 @@ const Home = () => {
           .home-sponsored-more:hover {
             filter: brightness(1.03);
           }
-          .home-sponsored-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+          .home-random-cats {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 0 0 12px;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+          }
+          .home-random-cat-block {
+            padding: 14px 12px 16px;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            position: relative;
+            left: auto !important;
+            inset-inline-start: auto !important;
+            transform: none !important;
+            overflow: hidden;
+            box-sizing: border-box;
+          }
+          .home-sponsored-rail-wrap {
+            overflow: hidden;
+            width: 100%;
+            cursor: grab;
+            touch-action: pan-y;
+            user-select: none;
+          }
+          .home-sponsored-rail-wrap:active {
+            cursor: grabbing;
+          }
+          .home-sponsored-rail {
+            overflow: hidden;
+            width: 100%;
+            padding-bottom: 2px;
+            direction: ltr;
+          }
+          .home-sponsored-rail__track {
+            display: flex;
             gap: 10px;
+            width: max-content;
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+            direction: ltr;
           }
-          @media (min-width: 720px) {
-            .home-sponsored-grid {
-              grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
+          .home-sponsored-seek-input {
+            margin-top: 8px;
+            width: 100%;
+            height: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            cursor: grab;
+            direction: rtl;
           }
-          @media (min-width: 1100px) {
-            .home-sponsored-grid {
-              grid-template-columns: repeat(4, minmax(0, 1fr));
+          .home-sponsored-seek-input:active { cursor: grabbing; }
+          .home-sponsored-seek-input:focus {
+            outline: none;
+          }
+          .home-sponsored-seek-input::-webkit-slider-runnable-track {
+            height: 8px;
+            border-radius: 999px;
+            background: #f0f0f0;
+            border: 0;
+          }
+          .home-sponsored-seek-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f3c800;
+            border: 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            margin-top: -6px;
+            cursor: grab;
+          }
+          .home-sponsored-seek-input::-moz-range-track {
+            height: 8px;
+            border-radius: 999px;
+            background: #f0f0f0;
+            border: 0;
+          }
+          .home-sponsored-seek-input::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f3c800;
+            border: 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            cursor: grab;
+          }
+          @media (max-width: 640px) {
+            .home-sponsored-seek-input {
+              display: none;
             }
           }
           .home-sponsored-card {
@@ -2106,6 +2927,9 @@ const Home = () => {
             box-shadow: 0 10px 26px rgba(26, 29, 38, 0.05);
             overflow: hidden;
             min-width: 0;
+            flex: 0 0 clamp(210px, 26vw, 280px);
+            direction: rtl;
+            cursor: default;
           }
           .home-sponsored-card:hover {
             border-color: rgba(245, 192, 0, 0.45);
@@ -2148,8 +2972,19 @@ const Home = () => {
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.16s ease, filter 0.16s ease;
           }
           .home-sponsored-card__cartbtn--muted { opacity: 0.88; }
+          .home-sponsored-card__cartbtn:hover:not(:disabled) {
+            transform: translateY(-1px) scale(1.04);
+            box-shadow: 0 8px 18px rgba(26, 29, 38, 0.16);
+            filter: brightness(1.02);
+          }
+          .home-sponsored-card__cartbtn:active {
+            transform: scale(0.9);
+            filter: brightness(0.98);
+            box-shadow: 0 3px 10px rgba(26, 29, 38, 0.12);
+          }
           .home-sponsored-card__favbtn{
             position: absolute;
             top: 8px;
@@ -2166,8 +3001,19 @@ const Home = () => {
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.16s ease, filter 0.16s ease;
           }
           .home-sponsored-card__favbtn--muted { opacity: 0.88; }
+          .home-sponsored-card__favbtn:hover:not(:disabled) {
+            transform: translateY(-1px) scale(1.04);
+            box-shadow: 0 8px 18px rgba(26, 29, 38, 0.16);
+            filter: brightness(1.02);
+          }
+          .home-sponsored-card__favbtn:active {
+            transform: scale(0.9);
+            filter: brightness(0.98);
+            box-shadow: 0 3px 10px rgba(26, 29, 38, 0.12);
+          }
           .home-sponsored-card__body {
             padding: 10px 10px 12px;
             display: flex;
@@ -2241,10 +3087,53 @@ const Home = () => {
             font-size: 0.76rem;
             padding: 8px 10px;
             box-sizing: border-box;
+            cursor: pointer;
+          }
+          .home-sponsored-card__detailsbtn{
+            margin-top: auto;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 12px;
+            border: 1.5px solid rgba(245, 192, 0, 0.52);
+            background: var(--primary-light);
+            color: var(--secondary);
+            font-weight: 900;
+            font-size: 0.76rem;
+            padding: 8px 10px;
+            box-sizing: border-box;
+            display: inline-block;
+            cursor: pointer;
+          }
+          .home-sponsored-card__detailsbtn:hover{
+            transform: translateY(-1px) scale(1.01);
+            filter: brightness(1.01);
+            box-shadow: 0 8px 16px rgba(245, 192, 0, 0.2);
+          }
+          .home-sponsored-card__detailsbtn:active{
+            transform: scale(0.97);
+          }
+          .home-sponsored-card__storebtn:hover{
+            transform: translateY(-1px) scale(1.01);
+            filter: brightness(1.01);
+            box-shadow: 0 8px 16px rgba(245, 192, 0, 0.2);
+          }
+          .home-sponsored-card__storebtn:active{
+            transform: scale(0.97);
+          }
+          .home-sponsored-card__storebtn--demo {
+            border-style: dashed;
+            opacity: 0.86;
+          }
+          .home-sponsored-card__detailsbtn--demo {
+            border-style: dashed;
+            opacity: 0.86;
+            cursor: pointer;
           }
           .home-sponsored-skel {
             border-radius: 16px;
             min-height: 200px;
+            flex: 0 0 clamp(210px, 26vw, 280px);
             background: linear-gradient(
               90deg,
               rgba(232, 230, 224, 0.65),
@@ -2264,33 +3153,6 @@ const Home = () => {
             font-weight: 800;
             font-size: 0.88rem;
           }
-          .home-sponsored-pager {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 12px;
-          }
-          .home-sponsored-pager button {
-            border-radius: 12px;
-            border: 1px solid rgba(232, 230, 224, 0.95);
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-            color: var(--secondary);
-            font-weight: 900;
-            padding: 9px 14px;
-            cursor: pointer;
-            font-family: inherit;
-          }
-          .home-sponsored-pager button:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-          }
-          .home-sponsored-pager span {
-            font-weight: 900;
-            color: var(--text-secondary);
-            font-size: 0.88rem;
-          }
-
           .home-offers-section--split {
             margin-bottom: 0;
             flex: 1;

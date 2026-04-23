@@ -512,6 +512,17 @@ export const getOffers = async (categoryId = null) => {
   return response.data;
 };
 
+export const getPublicProducts = async (categoryId = null) => {
+  const params = new URLSearchParams();
+  if (categoryId != null && categoryId !== '') {
+    const n = Number(categoryId);
+    if (Number.isFinite(n) && n > 0) params.set('category', String(n));
+  }
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+  const response = await api.get(`products/public/products/${suffix}`);
+  return response.data;
+};
+
 // Favorites
 export const getFavorites = async () => {
   const response = await api.get('products/user/favorites/');

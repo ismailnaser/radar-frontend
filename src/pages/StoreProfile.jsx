@@ -74,6 +74,8 @@ const StoreProfile = () => {
   const [pendingCartAdd, setPendingCartAdd] = useState(null);
   const pendingCartAddRef = useRef(null);
   const [flashProductId, setFlashProductId] = useState(null);
+  const sponsoredRailRef = useRef(null);
+  const [sponsoredHasOverflow, setSponsoredHasOverflow] = useState(false);
 
   const isGuest = localStorage.getItem('isGuest') === 'true';
   const authed = !!localStorage.getItem('token') && !isGuest;
@@ -186,8 +188,47 @@ const StoreProfile = () => {
   }, [location.state, storeId]);
 
   useEffect(() => {
+    const rawHash = location.hash || '';
+    if (!rawHash || rawHash === '#') return;
+    if (!rawHash.startsWith('#sponsored-ad-') && !rawHash.startsWith('#product-')) return;
+    if (loading || !store) return;
+    const targetId = decodeURIComponent(rawHash.slice(1));
+    const tryScroll = () => {
+      const el = document.getElementById(targetId);
+      if (!el || typeof el.scrollIntoView !== 'function') return false;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return true;
+    };
+    if (tryScroll()) return;
+    const t = window.setTimeout(() => {
+      tryScroll();
+    }, 260);
+    return () => window.clearTimeout(t);
+  }, [location.hash, loading, store, storeId]);
+
+  useEffect(() => {
     refreshCartQuantities();
   }, [refreshCartQuantities, storeId]);
+
+  useEffect(() => {
+    const rail = sponsoredRailRef.current;
+    if (!rail) {
+      setSponsoredHasOverflow(false);
+      return undefined;
+    }
+    const recalc = () => {
+      const overflow = rail.scrollWidth - rail.clientWidth > 6;
+      setSponsoredHasOverflow(overflow);
+    };
+    recalc();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(recalc) : null;
+    if (ro) ro.observe(rail);
+    window.addEventListener('resize', recalc);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', recalc);
+    };
+  }, [store?.sponsored_ads?.length, loading]);
 
   useEffect(() => {
     if (!authed || !store?.id) {
@@ -773,11 +814,13 @@ const StoreProfile = () => {
             {Array.isArray(store.sponsored_ads) && store.sponsored_ads.length > 0 && (
               <section className="store-profile-sponsored">
                 <h2 className="store-profile-section-title">عروض وإعلانات</h2>
-                <div className="store-profile-sponsored-rail">
-                  {store.sponsored_ads.map((ad) => (
+                <div className={`store-profile-sponsored-rail-wrap${sponsoredHasOverflow ? ' store-profile-sponsored-rail-wrap--hint' : ''}`}>
+                  <div className="store-profile-sponsored-rail" ref={sponsoredRailRef}>
+                    {store.sponsored_ads.map((ad) => (
                     <div
                       key={ad.id}
-                      className="card store-profile-sponsored-card"
+                      id={`sponsored-ad-${ad.id}`}
+                      className="store-profile-sponsored-card"
                     >
                       <div className="store-profile-sponsored-media">
                         {visualImageUrls(ad).length > 0 ? (
@@ -837,36 +880,52 @@ const StoreProfile = () => {
                           </>
                         ) : null}
                       </div>
-                      <div className="store-profile-sponsored-title">{ad.title}</div>
-                      {Number(ad.product_price) > 0 ? (
-                        <div className="store-profile-sponsored-price-row">
-                          {ad.catalog_product_price != null &&
-                          ad.catalog_product_price !== '' &&
-                          Math.abs(Number(ad.catalog_product_price) - Number(ad.product_price)) > 1e-9 ? (
+                      <div className="store-profile-sponsored-body">
+                        <div className="store-profile-sponsored-pill">إعلان ممول</div>
+                        <div className="store-profile-sponsored-title">{ad.title}</div>
+                        <div className="store-profile-sponsored-meta">
+                          <span className="store-profile-sponsored-store">{store.store_name}</span>
+                          {storeCategoryLabel(store) ? (
                             <>
-                              <span className="store-profile-sponsored-old">
-                                {Number(ad.catalog_product_price).toFixed(2)} ₪
-                              </span>
-                              <span className="store-profile-sponsored-badge">
-                                سعر العرض
-                              </span>
+                              <span className="store-profile-sponsored-dot" aria-hidden />
+                              <span>{storeCategoryLabel(store)}</span>
                             </>
                           ) : null}
-                          <span className="store-profile-sponsored-now">{Number(ad.product_price).toFixed(2)} ₪</span>
                         </div>
-                      ) : null}
-                      <div className="store-profile-sponsored-desc">
-                        {ad.description}
+                        {Number(ad.product_price) > 0 ? (
+                          <div className="store-profile-sponsored-price-row">
+                            {ad.catalog_product_price != null &&
+                            ad.catalog_product_price !== '' &&
+                            Math.abs(Number(ad.catalog_product_price) - Number(ad.product_price)) > 1e-9 ? (
+                              <>
+                                <span className="store-profile-sponsored-old">
+                                  {Number(ad.catalog_product_price).toFixed(2)} ₪
+                                </span>
+                                <span className="store-profile-sponsored-badge">
+                                  سعر العرض
+                                </span>
+                              </>
+                            ) : null}
+                            <span className="store-profile-sponsored-now">{Number(ad.product_price).toFixed(2)} ₪</span>
+                          </div>
+                        ) : null}
+                        <div className="store-profile-sponsored-desc">
+                          {ad.description}
+                        </div>
+                        <button
+                          type="button"
+                          className="store-profile-open-details-btn"
+                          onClick={() => navigate(`/stores/${storeId}/item/sponsored/${ad.id}`)}
+                        >
+                          عرض التفاصيل
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        className="store-profile-open-details-btn"
-                        onClick={() => navigate(`/stores/${storeId}/item/sponsored/${ad.id}`)}
-                      >
-                        عرض التفاصيل
-                      </button>
                     </div>
-                  ))}
+                    ))}
+                  </div>
+                  {sponsoredHasOverflow ? (
+                    <div className="store-profile-sponsored-scroll-hint">اسحب لعرض المزيد</div>
+                  ) : null}
                 </div>
               </section>
             )}
@@ -889,6 +948,7 @@ const StoreProfile = () => {
                     return (
                       <article
                         key={p.id}
+                        id={`product-${p.id}`}
                         className="card store-profile-product-card"
                         data-store-product-id={p.id}
                         data-flash={flashProductId != null && String(flashProductId) === String(p.id) ? 'true' : 'false'}
@@ -1380,25 +1440,76 @@ const StoreProfile = () => {
           margin-bottom: 14px;
         }
         .store-profile-sponsored{ margin-bottom: 22px; }
+        .store-profile-sponsored-rail-wrap{
+          position: relative;
+        }
+        .store-profile-sponsored-rail-wrap--hint::before{
+          content: '';
+          position: absolute;
+          inset-inline-start: 0;
+          top: 0;
+          bottom: 24px;
+          width: 28px;
+          pointer-events: none;
+          background: linear-gradient(90deg, rgba(245,246,248,0.92), rgba(245,246,248,0));
+          z-index: 3;
+        }
         .store-profile-sponsored-rail{
           display: flex;
           gap: 12px;
           overflow-x: auto;
-          padding-bottom: 6px;
-          scrollbar-width: none;
+          padding-bottom: 8px;
+          scrollbar-width: thin;
+          scrollbar-color: var(--primary) var(--primary-light);
+          cursor: grab;
         }
-        .store-profile-sponsored-rail::-webkit-scrollbar{ height: 0; }
+        .store-profile-sponsored-rail:active{ cursor: grabbing; }
+        .store-profile-sponsored-scroll-hint{
+          margin-top: 4px;
+          font-size: 0.76rem;
+          font-weight: 800;
+          color: var(--text-secondary);
+          text-align: center;
+        }
+        .store-profile-sponsored-rail::-webkit-scrollbar{ height: 11px; }
+        .store-profile-sponsored-rail::-webkit-scrollbar-track{
+          background: var(--primary-light);
+          border-radius: 999px;
+        }
+        .store-profile-sponsored-rail::-webkit-scrollbar-thumb{
+          background: linear-gradient(180deg, var(--primary) 0%, var(--primary-hover) 100%);
+          border-radius: 999px;
+          border: 2px solid var(--primary-light);
+        }
+        .store-profile-sponsored-rail::-webkit-scrollbar-thumb:hover{
+          background: linear-gradient(180deg, var(--primary-muted) 0%, var(--primary) 100%);
+        }
         .store-profile-sponsored-card{
-          min-width: 188px;
-          max-width: 228px;
-          padding: 10px;
+          min-width: 210px;
+          max-width: 280px;
+          border-radius: 16px;
+          border: 1px solid rgba(232, 230, 224, 0.95);
+          background: rgba(255, 255, 255, 0.92);
+          box-shadow: 0 10px 26px rgba(26, 29, 38, 0.05);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
           flex-shrink: 0;
+        }
+        .store-profile-sponsored-card:hover{
+          border-color: rgba(245, 192, 0, 0.45);
+          box-shadow: 0 16px 40px rgba(245, 192, 0, 0.14);
         }
         .store-profile-sponsored-media{
           position: relative;
-          margin-bottom: 8px;
-          border-radius: 12px;
+          order: -1;
+          width: 100%;
+          aspect-ratio: 4 / 3;
+          max-height: 140px;
+          margin-bottom: 0;
+          border-radius: 0;
           overflow: hidden;
+          border-bottom: 1px solid rgba(232, 230, 224, 0.85);
         }
         .store-profile-sponsored-media-fallback{
           height: 100px;
@@ -1447,9 +1558,57 @@ const StoreProfile = () => {
         .store-profile-sponsored-fab--muted{
           opacity: 0.88;
         }
-        .store-profile-sponsored-title{ font-weight: 900; color: var(--secondary); }
+        .store-profile-sponsored-body{
+          padding: 10px 10px 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .store-profile-sponsored-pill{
+          align-self: flex-start;
+          font-size: .68rem;
+          font-weight: 900;
+          padding: 3px 8px;
+          border-radius: 999px;
+          background: rgba(255, 204, 0, 0.88);
+          color: #111;
+          border: 1px solid rgba(255, 255, 255, 0.35);
+        }
+        .store-profile-sponsored-title{
+          font-weight: 950;
+          color: var(--secondary);
+          font-size: .88rem;
+          line-height: 1.25;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .store-profile-sponsored-meta{
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+          font-size: .78rem;
+          font-weight: 800;
+          color: var(--text-secondary);
+        }
+        .store-profile-sponsored-store{
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          min-width: 0;
+          max-width: 100%;
+        }
+        .store-profile-sponsored-dot{
+          width: 4px;
+          height: 4px;
+          border-radius: 999px;
+          background: rgba(26, 29, 38, 0.25);
+          flex-shrink: 0;
+        }
         .store-profile-sponsored-price-row{
-          margin-top: 6px;
+          margin-top: 2px;
           display: flex;
           flex-wrap: wrap;
           align-items: baseline;
@@ -1474,26 +1633,32 @@ const StoreProfile = () => {
         }
         .store-profile-sponsored-now{ color: var(--secondary); }
         .store-profile-sponsored-desc{
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           color: var(--text-secondary);
-          margin-top: 4px;
+          margin-top: 0;
           line-height: 1.55;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
         .store-profile-open-details-btn{
           width: 100%;
-          margin-top: 10px;
-          border: 1px solid var(--border);
+          margin-top: auto;
+          border: 1.5px solid var(--primary);
           background: var(--white);
           color: var(--secondary);
-          border-radius: 10px;
-          padding: 9px 12px;
-          font-weight: 800;
+          border-radius: 12px;
+          padding: 8px 10px;
+          font-weight: 900;
+          font-size: 0.76rem;
           cursor: pointer;
-          transition: background .15s ease, border-color .15s ease;
+          transition: background .15s ease, border-color .15s ease, transform .12s ease;
         }
         .store-profile-open-details-btn:hover{
           border-color: rgba(255, 204, 0, 0.6);
           background: var(--primary-light);
+          transform: translateY(-1px);
         }
         .store-profile-products-grid{
           display: grid;

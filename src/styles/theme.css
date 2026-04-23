@@ -303,6 +303,36 @@ input::placeholder {
   background: var(--primary-light);
 }
 
+/* تأثير خفيف موحّد لأزرار السلة والمفضلة عبر المشروع */
+:where(
+  button[class*='cart'],
+  button[class*='fav'],
+  button[class*='favorite'],
+  button[aria-label*='السلة'],
+  button[aria-label*='المفضلة'],
+  button[aria-label*='مفضلة'],
+  button[title*='السلة'],
+  button[title*='المفضلة'],
+  button[title*='مفضلة']
+):not(:disabled) {
+  transition: transform 0.12s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+
+:where(
+  button[class*='cart'],
+  button[class*='fav'],
+  button[class*='favorite'],
+  button[aria-label*='السلة'],
+  button[aria-label*='المفضلة'],
+  button[aria-label*='مفضلة'],
+  button[title*='السلة'],
+  button[title*='المفضلة'],
+  button[title*='مفضلة']
+):not(:disabled):active {
+  transform: scale(0.94);
+  filter: brightness(0.98);
+}
+
 .badge {
   background: var(--primary);
   color: var(--secondary);

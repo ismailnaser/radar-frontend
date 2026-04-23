@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronUp, Heart, Image as ImageIcon, ShoppingCart } from 'lucide-react';
+import { ChevronDown, ChevronUp, Heart, Image as ImageIcon, ShoppingCart } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import {
   addFavorite,
@@ -209,11 +209,6 @@ export default function StoreItemDetails() {
   return (
     <MainLayout>
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '12px clamp(10px, 2vw, 20px) 34px' }}>
-        <button type="button" className="item-details-back-btn" onClick={() => navigate(`/stores/${storeId}`)}>
-          <ArrowLeft size={18} />
-          العودة إلى المتجر
-        </button>
-
         {loading ? <div className="card">جاري التحميل…</div> : null}
         {!loading && error ? <div className="card" style={{ color: '#c62828' }}>{error}</div> : null}
         {!loading && !error && !item ? (
@@ -311,20 +306,6 @@ export default function StoreItemDetails() {
         ) : null}
       </div>
       <style>{`
-        .item-details-back-btn{
-          width: auto;
-          margin-bottom: 12px;
-          border: 1px solid var(--border);
-          background: var(--white);
-          color: var(--secondary);
-          border-radius: 12px;
-          padding: 10px 14px;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          font-weight: 800;
-          cursor: pointer;
-        }
         .item-details-actions{
           margin-top: 14px;
           display: grid;
