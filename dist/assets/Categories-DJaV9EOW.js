@@ -1,75 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { LayoutGrid, ChevronLeft } from 'lucide-react';
-import MainLayout from '../components/MainLayout';
-import { getCategories } from '../api/data';
-import { getCategoryPinMeta } from '../components/maps/storePinDefaults';
-
-const Categories = () => {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCats = async () => {
-      try {
-        const data = await getCategories();
-        setCategories(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('Error fetching categories:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCats();
-  }, []);
-
-  return (
-    <MainLayout>
-      <div className="categories-page">
-        <header className="categories-hero">
-          <div className="categories-hero-icon" aria-hidden>
-            <LayoutGrid size={28} strokeWidth={2} />
-          </div>
-          <h1 className="categories-hero-title">أقسام رادار</h1>
-          <p className="categories-hero-sub">اختر قسماً للانتقال إلى المتاجر القريبة في هذا النوع.</p>
-        </header>
-
-        {loading ? (
-          <div className="categories-loading card">جاري تحميل الأقسام…</div>
-        ) : categories.length > 0 ? (
-          <div className="categories-grid">
-            {categories.map((cat) => {
-              const pin = getCategoryPinMeta(cat.name);
-              return (
-                <Link key={cat.id} to={`/stores?category=${cat.id}`} className="categories-card">
-                  {cat.image ? (
-                    <span className="categories-card-photo-wrap">
-                      <img className="categories-card-photo" src={cat.image} alt="" loading="lazy" width="320" height="220" />
-                    </span>
-                  ) : (
-                    <span className="categories-card-emoji" style={{ background: pin.bg }}>
-                      {pin.emoji}
-                    </span>
-                  )}
-                  <div className="categories-card-body">
-                    <h2 className="categories-card-name">{cat.name}</h2>
-                    <p className="categories-card-desc">
-                      {cat.description || 'عرض المحلات القريبة في هذا القسم'}
-                    </p>
-                    <span className="categories-card-cta">
-                      استكشف
-                      <ChevronLeft size={16} aria-hidden />
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="categories-empty">لا توجد أقسام مسجلة حالياً.</p>
-        )}
-
-        <style dangerouslySetInnerHTML={{ __html: `
+import{r as i,j as e,L as n,p as c}from"./index-DVNEsh7E.js";import{M as g,L as l}from"./MainLayout-Dpgyv96E.js";import{a as p}from"./storePinDefaults-BR9yF6Rx.js";import{C as m}from"./chevron-left-DnXr0OF-.js";const f=()=>{const[o,t]=i.useState([]),[s,d]=i.useState(!0);return i.useEffect(()=>{(async()=>{try{const a=await c();t(Array.isArray(a)?a:[])}catch(a){console.error("Error fetching categories:",a)}finally{d(!1)}})()},[]),e.jsx(g,{children:e.jsxs("div",{className:"categories-page",children:[e.jsxs("header",{className:"categories-hero",children:[e.jsx("div",{className:"categories-hero-icon","aria-hidden":!0,children:e.jsx(l,{size:28,strokeWidth:2})}),e.jsx("h1",{className:"categories-hero-title",children:"أقسام رادار"}),e.jsx("p",{className:"categories-hero-sub",children:"اختر قسماً للانتقال إلى المتاجر القريبة في هذا النوع."})]}),s?e.jsx("div",{className:"categories-loading card",children:"جاري تحميل الأقسام…"}):o.length>0?e.jsx("div",{className:"categories-grid",children:o.map(r=>{const a=p(r.name);return e.jsxs(n,{to:`/stores?category=${r.id}`,className:"categories-card",children:[r.image?e.jsx("span",{className:"categories-card-photo-wrap",children:e.jsx("img",{className:"categories-card-photo",src:r.image,alt:"",loading:"lazy",width:"320",height:"220"})}):e.jsx("span",{className:"categories-card-emoji",style:{background:a.bg},children:a.emoji}),e.jsxs("div",{className:"categories-card-body",children:[e.jsx("h2",{className:"categories-card-name",children:r.name}),e.jsx("p",{className:"categories-card-desc",children:r.description||"عرض المحلات القريبة في هذا القسم"}),e.jsxs("span",{className:"categories-card-cta",children:["استكشف",e.jsx(m,{size:16,"aria-hidden":!0})]})]})]},r.id)})}):e.jsx("p",{className:"categories-empty",children:"لا توجد أقسام مسجلة حالياً."}),e.jsx("style",{dangerouslySetInnerHTML:{__html:`
           .categories-page {
             max-width: 1240px;
             margin-inline: auto;
@@ -221,10 +150,4 @@ const Categories = () => {
             font-weight: 700;
             padding: 32px 16px;
           }
-        `}} />
-      </div>
-    </MainLayout>
-  );
-};
-
-export default Categories;
+        `}})]})})};export{f as default};
