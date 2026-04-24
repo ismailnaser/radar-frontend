@@ -19,6 +19,7 @@ const CategoryProducts = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [expandedDescByProductId, setExpandedDescByProductId] = useState({});
   const [productFavById, setProductFavById] = useState({});
   const [pendingCartAdd, setPendingCartAdd] = useState(null);
   const pendingCartAddRef = useRef(null);
@@ -84,6 +85,10 @@ const CategoryProducts = () => {
     return visibleItems.slice(start, start + PAGE_SIZE);
   }, [visibleItems, safePage]);
 
+  useEffect(() => {
+    setExpandedDescByProductId({});
+  }, [visibleItems.length, safePage]);
+
   const openCartPickerFor = async (payload) => {
     if (!canUseShoppingCarts()) {
       await showAlert('ميزة السلال متاحة للأعضاء المسجلين فقط.', 'تنبيه');
@@ -146,6 +151,13 @@ const CategoryProducts = () => {
     }
   };
 
+  const toggleDescription = (productId) => {
+    setExpandedDescByProductId((prev) => ({
+      ...prev,
+      [productId]: !prev[productId],
+    }));
+  };
+
   return (
     <MainLayout>
       <div className="offers-page-wrap">
@@ -202,7 +214,23 @@ const CategoryProducts = () => {
                     <span className="offers-card-store">{p.store_name}</span>
                     <h2 className="offers-card-title">{p.name}</h2>
                     {Number(p.price) > 0 ? <span className="offers-price-now">{Number(p.price).toFixed(2)} ₪</span> : null}
-                    {p.description ? <p className="offers-card-desc">{p.description}</p> : null}
+                    {p.description ? (
+                      <div className="offers-card-desc-wrap">
+                        <p className={`offers-card-desc${expandedDescByProductId[p.id] ? ' offers-card-desc--expanded' : ''}`}>
+                          {p.description}
+                        </p>
+                        {String(p.description).length > 150 ? (
+                          <button
+                            type="button"
+                            className="offers-card-desc-toggle"
+                            onClick={() => toggleDescription(p.id)}
+                            aria-expanded={expandedDescByProductId[p.id] ? 'true' : 'false'}
+                          >
+                            {expandedDescByProductId[p.id] ? 'عرض أقل' : 'عرض المزيد'}
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <div className="offers-card-actions">
                       <Link to={`/stores/${p.store}/item/product/${p.id}`} className="offers-detailsbtn">
                         عرض التفاصيل
@@ -235,10 +263,12 @@ const CategoryProducts = () => {
           .offers-hero-icon{flex-shrink:0;width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-hover) 100%);color:var(--secondary);}
           .offers-hero-title{margin:0;font-size:clamp(1.25rem,3.5vw,1.55rem);font-weight:900;color:var(--secondary);}
           .offers-hero-sub{margin:8px 0 0;font-size:.88rem;font-weight:600;color:var(--text-secondary);}
-          .offers-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+          .offers-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch;}
           @media (min-width:900px){.offers-grid{grid-template-columns:repeat(4,minmax(0,1fr));}}
-          .offers-card{border:1px solid rgba(232,230,224,.95);border-radius:14px;background:#fff;overflow:hidden;display:flex;flex-direction:column;}
-          .offers-card-media{position:relative;aspect-ratio:4/2.7;background:#f3f3f3;}
+          .offers-card{border:1px solid rgba(232,230,224,.95);border-radius:14px;background:#fff;overflow:hidden;display:flex;flex-direction:column;height:100%;}
+          .offers-card-media{position:relative;aspect-ratio:4/2.7;background:#f3f3f3;display:flex;min-height:0;}
+          .offers-card-media > .radar-image-carousel,.offers-card-media > .offers-card-media-fallback{flex:1 1 auto;width:100%;min-height:0;}
+          .offers-card-media img{display:block;width:100%;height:100%;object-fit:cover;}
           .offers-card-media-fallback{height:100%;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text-secondary);}
           .offers-card-media-cartbtn{
             position:absolute;
@@ -302,7 +332,11 @@ const CategoryProducts = () => {
           .offers-card-title{margin:0;font-size:.88rem;color:var(--secondary);}
           .offers-card-store{font-size:.78rem;color:var(--text-secondary);font-weight:800;}
           .offers-price-now{font-size:.9rem;font-weight:900;color:var(--secondary);}
-          .offers-card-desc{margin:0;font-size:.76rem;color:var(--text-secondary);line-height:1.45;}
+          .offers-card-desc-wrap{margin:0 0 4px;}
+          .offers-card-desc{margin:0;font-size:.76rem;color:var(--text-secondary);line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+          .offers-card-desc--expanded{display:block;-webkit-line-clamp:unset;overflow:visible;}
+          .offers-card-desc-toggle{margin-top:4px;border:none;background:transparent;color:var(--secondary);font-weight:800;font-size:.7rem;cursor:pointer;padding:0;}
+          .offers-card-desc-toggle:hover{text-decoration:underline;}
           .offers-card-actions{margin-top:auto;display:flex;flex-direction:column;gap:8px;}
           .offers-detailsbtn{
             width:100%;

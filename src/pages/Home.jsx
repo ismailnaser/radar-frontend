@@ -539,6 +539,9 @@ const Home = () => {
   const [sponsoredLoading, setSponsoredLoading] = useState(true);
   const [randomCategoryProducts, setRandomCategoryProducts] = useState([]);
   const [randomCategorySeed] = useState(() => Math.random());
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1024
+  );
   /** فلترة إعلانات الصفحة الرئيسية حسب أقسام المتاجر (متعدد) */
   const [exclusiveOfferCategoryIds, setExclusiveOfferCategoryIds] = useState([]);
   const [sponsoredFavByAdId, setSponsoredFavByAdId] = useState({});
@@ -560,6 +563,14 @@ const Home = () => {
       if (typeof mq.removeEventListener === 'function') mq.removeEventListener('change', onChange);
       else mq.removeListener(onChange);
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const onResize = () => setViewportWidth(window.innerWidth || 1024);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   const [browseDotsCount, setBrowseDotsCount] = useState(0);
@@ -699,6 +710,10 @@ const Home = () => {
   const randomProductCategoryGroups = useMemo(() => {
     const productList = (randomCategoryProducts || []).filter((p) => p && p.store != null);
     if (!productList.length) return [];
+    const minItemsPerSection =
+      viewportWidth <= 640 ? 2 :
+      viewportWidth <= 900 ? 3 :
+      4;
     const grouped = new globalThis.Map();
     productList.forEach((p) => {
       const key = p.store_category_id != null ? `id:${p.store_category_id}` : `name:${p.store_category_name || 'other'}`;
@@ -712,13 +727,13 @@ const Home = () => {
       }
       grouped.get(key).items.push(p);
     });
-    const withProducts = Array.from(grouped.values()).filter((g) => g.items.length > 0);
+    const withProducts = Array.from(grouped.values()).filter((g) => g.items.length >= minItemsPerSection);
     const picked = shuffledCopy(withProducts, randomCategorySeed).slice(0, 3);
     return picked.map((group, idx) => ({
       ...group,
       items: shuffledCopy(group.items, randomCategorySeed + idx + 0.37).slice(0, 8),
     }));
-  }, [randomCategoryProducts, randomCategorySeed]);
+  }, [randomCategoryProducts, randomCategorySeed, viewportWidth]);
 
   const ensureRandomRailState = useCallback((key) => {
     const map = randomRailsRef.current;
@@ -2845,6 +2860,12 @@ const Home = () => {
             transform: none !important;
             overflow: hidden;
             box-sizing: border-box;
+          }
+          .home-random-cat-block .home-sponsored-rail {
+            direction: rtl;
+          }
+          .home-random-cat-block .home-sponsored-rail__track {
+            direction: rtl;
           }
           .home-sponsored-rail-wrap {
             overflow: hidden;

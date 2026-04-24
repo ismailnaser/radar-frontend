@@ -17,6 +17,7 @@ const Offers = () => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [offersPage, setOffersPage] = useState(1);
+  const [expandedDescByOfferId, setExpandedDescByOfferId] = useState({});
   const { showAlert, showSelect, showPrompt } = useAlert();
 
   const isGuestVisitor = localStorage.getItem('isGuest') === 'true';
@@ -86,6 +87,7 @@ const Offers = () => {
 
   useEffect(() => {
     setOffersPage(1);
+    setExpandedDescByOfferId({});
   }, [offers.length]);
 
   const filteredOffers = useMemo(() => {
@@ -240,6 +242,13 @@ const Offers = () => {
     }
   };
 
+  const toggleOfferDescription = (offerId) => {
+    setExpandedDescByOfferId((prev) => ({
+      ...prev,
+      [offerId]: !prev[offerId],
+    }));
+  };
+
   return (
     <MainLayout>
       <div className="offers-page-wrap">
@@ -328,7 +337,21 @@ const Offers = () => {
                     </div>
                   ) : null}
                   {offer.description ? (
-                    <p className="offers-card-desc">{offer.description}</p>
+                    <div className="offers-card-desc-wrap">
+                      <p className={`offers-card-desc${expandedDescByOfferId[offer.id] ? ' offers-card-desc--expanded' : ''}`}>
+                        {offer.description}
+                      </p>
+                      {offer.description.length > 150 ? (
+                        <button
+                          type="button"
+                          className="offers-card-desc-toggle"
+                          onClick={() => toggleOfferDescription(offer.id)}
+                          aria-expanded={expandedDescByOfferId[offer.id] ? 'true' : 'false'}
+                        >
+                          {expandedDescByOfferId[offer.id] ? 'عرض أقل' : 'عرض المزيد'}
+                        </button>
+                      ) : null}
+                    </div>
                   ) : null}
                   <Link to={`/stores/${offer.store}`} className="offers-btn offers-btn--block">
                     عرض المتجر
@@ -463,7 +486,7 @@ const Offers = () => {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 14px;
-            align-items: start;
+            align-items: stretch;
           }
           @media (max-width: 720px) {
             .offers-page-wrap {
@@ -556,8 +579,15 @@ const Offers = () => {
             .offers-card-desc {
               font-size: 0.68rem;
               line-height: 1.4;
-              margin: 0 0 6px;
+              margin: 0;
               -webkit-line-clamp: 2;
+            }
+            .offers-card-desc-wrap {
+              margin: 0 0 6px;
+            }
+            .offers-card-desc-toggle {
+              margin-top: 4px;
+              font-size: 0.66rem;
             }
             .offers-btn {
               font-size: 0.68rem;
@@ -598,6 +628,7 @@ const Offers = () => {
             display: flex;
             flex-direction: column;
             min-height: 0;
+            height: 100%;
           }
           .offers-card:hover {
             transform: translateY(-3px);
@@ -701,7 +732,7 @@ const Offers = () => {
             min-height: 0;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 6px;
           }
           .offers-card-store {
             display: inline-block;
@@ -754,8 +785,11 @@ const Offers = () => {
             background: rgba(245, 192, 0, 0.35);
             color: var(--secondary);
           }
+          .offers-card-desc-wrap {
+            margin: 0 0 8px;
+          }
           .offers-card-desc {
-            margin: 0 0 14px;
+            margin: 0;
             font-size: 0.88rem;
             color: var(--text-secondary);
             line-height: 1.55;
@@ -763,6 +797,24 @@ const Offers = () => {
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+          }
+          .offers-card-desc--expanded {
+            display: block;
+            -webkit-line-clamp: unset;
+            overflow: visible;
+          }
+          .offers-card-desc-toggle {
+            margin-top: 6px;
+            border: none;
+            background: transparent;
+            color: var(--secondary);
+            font-weight: 800;
+            font-size: 0.78rem;
+            cursor: pointer;
+            padding: 0;
+          }
+          .offers-card-desc-toggle:hover {
+            text-decoration: underline;
           }
           .offers-btn {
             font-family: inherit;

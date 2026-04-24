@@ -76,6 +76,8 @@ const StoreProfile = () => {
   const [flashProductId, setFlashProductId] = useState(null);
   const sponsoredRailRef = useRef(null);
   const [sponsoredHasOverflow, setSponsoredHasOverflow] = useState(false);
+  const [expandedSponsoredDescById, setExpandedSponsoredDescById] = useState({});
+  const [expandedProductDescById, setExpandedProductDescById] = useState({});
 
   const isGuest = localStorage.getItem('isGuest') === 'true';
   const authed = !!localStorage.getItem('token') && !isGuest;
@@ -231,6 +233,11 @@ const StoreProfile = () => {
   }, [store?.sponsored_ads?.length, loading]);
 
   useEffect(() => {
+    setExpandedSponsoredDescById({});
+    setExpandedProductDescById({});
+  }, [store?.id, store?.sponsored_ads?.length, store?.products?.length]);
+
+  useEffect(() => {
     if (!authed || !store?.id) {
       setStoreFavoriteRecordId(null);
       setProductFavByProductId({});
@@ -291,6 +298,20 @@ const StoreProfile = () => {
         },
       },
     });
+  };
+
+  const toggleSponsoredDescription = (adId) => {
+    setExpandedSponsoredDescById((prev) => ({
+      ...prev,
+      [adId]: !prev[adId],
+    }));
+  };
+
+  const toggleProductDescription = (productId) => {
+    setExpandedProductDescById((prev) => ({
+      ...prev,
+      [productId]: !prev[productId],
+    }));
   };
 
   const sponsoredCartBusyKey = (ad) => (ad.product ? `p-${ad.product}` : `ad-${ad.id}`);
@@ -909,8 +930,20 @@ const StoreProfile = () => {
                             <span className="store-profile-sponsored-now">{Number(ad.product_price).toFixed(2)} ₪</span>
                           </div>
                         ) : null}
-                        <div className="store-profile-sponsored-desc">
-                          {ad.description}
+                        <div className="store-profile-sponsored-desc-wrap">
+                          <div className={`store-profile-sponsored-desc${expandedSponsoredDescById[ad.id] ? ' store-profile-sponsored-desc--expanded' : ''}`}>
+                            {ad.description}
+                          </div>
+                          {String(ad.description || '').length > 120 ? (
+                            <button
+                              type="button"
+                              className="store-profile-desc-toggle"
+                              onClick={() => toggleSponsoredDescription(ad.id)}
+                              aria-expanded={expandedSponsoredDescById[ad.id] ? 'true' : 'false'}
+                            >
+                              {expandedSponsoredDescById[ad.id] ? 'عرض أقل' : 'عرض المزيد'}
+                            </button>
+                          ) : null}
                         </div>
                         <button
                           type="button"
@@ -1004,8 +1037,20 @@ const StoreProfile = () => {
                         </div>
                         <div className="store-profile-product-body">
                           {p.description ? (
-                            <div className="store-profile-product-desc">
-                              {p.description}
+                            <div className="store-profile-product-desc-wrap">
+                              <div className={`store-profile-product-desc${expandedProductDescById[p.id] ? ' store-profile-product-desc--expanded' : ''}`}>
+                                {p.description}
+                              </div>
+                              {String(p.description || '').length > 120 ? (
+                                <button
+                                  type="button"
+                                  className="store-profile-desc-toggle"
+                                  onClick={() => toggleProductDescription(p.id)}
+                                  aria-expanded={expandedProductDescById[p.id] ? 'true' : 'false'}
+                                >
+                                  {expandedProductDescById[p.id] ? 'عرض أقل' : 'عرض المزيد'}
+                                </button>
+                              ) : null}
                             </div>
                           ) : null}
                           {Array.isArray(p.product_features) && p.product_features.filter(Boolean).length > 0 ? (
@@ -1632,6 +1677,9 @@ const StoreProfile = () => {
           border: 1px solid rgba(245,192,0,0.45);
         }
         .store-profile-sponsored-now{ color: var(--secondary); }
+        .store-profile-sponsored-desc-wrap{
+          margin-top: 0;
+        }
         .store-profile-sponsored-desc{
           font-size: 0.8rem;
           color: var(--text-secondary);
@@ -1641,6 +1689,11 @@ const StoreProfile = () => {
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
+        }
+        .store-profile-sponsored-desc--expanded{
+          display: block;
+          -webkit-line-clamp: unset;
+          overflow: visible;
         }
         .store-profile-open-details-btn{
           width: 100%;
@@ -1794,6 +1847,9 @@ const StoreProfile = () => {
           gap: 8px;
           min-height: 0;
         }
+        .store-profile-product-desc-wrap{
+          margin: 0;
+        }
         .store-profile-product-desc{
           font-size: 0.8rem;
           color: var(--text-secondary);
@@ -1802,6 +1858,24 @@ const StoreProfile = () => {
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
+        }
+        .store-profile-product-desc--expanded{
+          display: block;
+          -webkit-line-clamp: unset;
+          overflow: visible;
+        }
+        .store-profile-desc-toggle{
+          margin-top: 4px;
+          border: none;
+          background: transparent;
+          color: var(--secondary);
+          font-weight: 800;
+          font-size: 0.72rem;
+          cursor: pointer;
+          padding: 0;
+        }
+        .store-profile-desc-toggle:hover{
+          text-decoration: underline;
         }
         .store-profile-product-feats{
           display: flex;
