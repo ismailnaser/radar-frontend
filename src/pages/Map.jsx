@@ -286,7 +286,7 @@ export default function MapPage() {
             position: fixed;
             inset: clamp(6px, 1.2vw, 10px);
             z-index: 1;
-            width: 100%;
+            width: auto;
             max-width: none;
             margin-inline: 0;
             padding-inline: 0;

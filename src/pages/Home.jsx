@@ -798,7 +798,7 @@ const Home = () => {
         st.maxTravel = Math.max(0, track.scrollWidth - wrap.clientWidth);
         const adCount = Math.max(1, group.items.length);
         const avgAdWidth = Math.max(160, track.scrollWidth / adCount);
-        pxPerSec = avgAdWidth / 1.2;
+        pxPerSec = avgAdWidth / 1.5;
         if (!st.didInit) {
           setRandomPosition(key, st.maxTravel);
           st.didInit = true;
@@ -889,7 +889,7 @@ const Home = () => {
       const adCount = Math.max(1, sponsoredRailAds.length);
       const avgAdWidth = Math.max(160, track.scrollWidth / adCount);
       // سرعة تكيفية حسب حجم الإعلان وعدده: كل إعلان يأخذ وقت عرض قريب من الثابت.
-      const secondsPerAd = 1.2;
+      const secondsPerAd = 1.5;
       pxPerSec = avgAdWidth / secondsPerAd;
       // أول مرة: ابدأ من النهاية اليمنى بصريًا. بعد ذلك حافظ على مكان المستخدم.
       if (!didInitPosition) {
@@ -1458,7 +1458,6 @@ const Home = () => {
               <div className="home-sponsored-head">
                 <div className="home-sponsored-head-text">
                   <h2 className="home-sponsored-title">إعلانات ممولة من المتاجر</h2>
-                  <p className="home-sponsored-sub">اضغط البطاقة لفتح صفحة المتجر</p>
                   <div className="home-sponsored-controls">
                     <FiltersDropdown
                       buttonLabel="فلاتر"
@@ -1616,7 +1615,7 @@ const Home = () => {
                               </div>
                             ) : null}
                             {isDemo ? (
-                              <>
+                              <div className="home-sponsored-card__actions">
                                 <button
                                   type="button"
                                   className="home-sponsored-card__detailsbtn home-sponsored-card__detailsbtn--demo"
@@ -1635,9 +1634,9 @@ const Home = () => {
                                 >
                                   عرض داخل المتجر
                                 </button>
-                              </>
+                              </div>
                             ) : (
-                              <>
+                              <div className="home-sponsored-card__actions">
                                 <Link
                                   to={`/stores/${ad.store}/item/sponsored/${ad.id}`}
                                   className="home-sponsored-card__detailsbtn"
@@ -1650,7 +1649,7 @@ const Home = () => {
                                 >
                                   عرض داخل المتجر
                                 </Link>
-                              </>
+                              </div>
                             )}
                           </div>
                         </article>
@@ -1716,7 +1715,6 @@ const Home = () => {
                 <div className="home-sponsored-head">
                   <div className="home-sponsored-head-text">
                     <h3 className="home-sponsored-title">{group.categoryName}</h3>
-                    <p className="home-sponsored-sub">منتجات من قسم متاجر عشوائي (يتغير مع كل تحديث)</p>
                   </div>
                   <Link
                     to={
@@ -1849,12 +1847,14 @@ const Home = () => {
                               {Number(p.price) > 0 ? (
                                 <div className="home-sponsored-card__price">{Number(p.price).toFixed(2)} ₪</div>
                               ) : null}
-                              <Link to={`/stores/${p.store}/item/product/${p.id}`} className="home-sponsored-card__detailsbtn">
-                                عرض التفاصيل
-                              </Link>
-                              <Link to={`/stores/${p.store}#product-${p.id}`} className="home-sponsored-card__storebtn">
-                                عرض داخل المتجر
-                              </Link>
+                              <div className="home-sponsored-card__actions">
+                                <Link to={`/stores/${p.store}/item/product/${p.id}`} className="home-sponsored-card__detailsbtn">
+                                  عرض التفاصيل
+                                </Link>
+                                <Link to={`/stores/${p.store}#product-${p.id}`} className="home-sponsored-card__storebtn">
+                                  عرض داخل المتجر
+                                </Link>
+                              </div>
                             </div>
                           </article>
                         );
@@ -2770,14 +2770,14 @@ const Home = () => {
           .home-sponsored-head {
             display: flex;
             align-items: flex-start;
-            justify-content: space-between;
+            justify-content: flex-start;
             gap: 12px;
             margin-bottom: 12px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
           }
           .home-sponsored-head-text {
-            flex: 1;
-            min-width: min(100%, 280px);
+            flex: 1 1 auto;
+            min-width: 0;
           }
           .home-sponsored-title {
             margin: 0 0 6px;
@@ -2812,9 +2812,18 @@ const Home = () => {
             background: var(--primary-light);
             border: 1px solid rgba(245, 192, 0, 0.45);
             flex-shrink: 0;
+            margin-inline-start: auto;
           }
           .home-sponsored-more:hover {
             filter: brightness(1.03);
+          }
+          @media (max-width: 640px) {
+            .home-sponsored-head {
+              flex-wrap: wrap;
+            }
+            .home-sponsored-more {
+              margin-inline-start: 0;
+            }
           }
           .home-random-cats {
             display: flex;
@@ -3075,7 +3084,7 @@ const Home = () => {
             align-self: flex-start;
           }
           .home-sponsored-card__storebtn{
-            margin-top: auto;
+            margin-top: 0;
             width: 100%;
             text-align: center;
             text-decoration: none;
@@ -3090,7 +3099,7 @@ const Home = () => {
             cursor: pointer;
           }
           .home-sponsored-card__detailsbtn{
-            margin-top: auto;
+            margin-top: 0;
             width: 100%;
             text-align: center;
             text-decoration: none;
@@ -3104,6 +3113,12 @@ const Home = () => {
             box-sizing: border-box;
             display: inline-block;
             cursor: pointer;
+          }
+          .home-sponsored-card__actions{
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
           }
           .home-sponsored-card__detailsbtn:hover{
             transform: translateY(-1px) scale(1.01);
