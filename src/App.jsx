@@ -7,6 +7,7 @@ import {
   Navigate,
   Outlet,
   useLocation,
+  useNavigationType,
   useParams,
 } from 'react-router-dom'
 import { AlertProvider } from './components/AlertProvider'
@@ -177,10 +178,13 @@ const ShopperOrMerchantRoute = ({ children }) => {
 
 function ScrollToTopOnRouteChange() {
   const { pathname, search, hash } = useLocation();
+  const navigationType = useNavigationType();
 
   useEffect(() => {
     // Keep native anchor behavior when navigating to a hash target.
     if (hash) return;
+    // عند الرجوع للخلف/الأمام (POP) نحافظ على موضع السكرول السابق.
+    if (navigationType === 'POP') return;
 
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -192,7 +196,7 @@ function ScrollToTopOnRouteChange() {
         contentEl.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       }
     }
-  }, [pathname, search, hash]);
+  }, [pathname, search, hash, navigationType]);
 
   return null;
 }

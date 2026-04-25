@@ -521,8 +521,8 @@ const Offers = () => {
               min-width: 0;
             }
             .offers-card-media {
-              aspect-ratio: 3 / 2;
-              min-height: 110px;
+              height: 140px;
+              min-height: 140px;
               max-height: 140px;
             }
             .offers-card-media-cartbtn {
@@ -638,9 +638,9 @@ const Offers = () => {
           .offers-card-media {
             flex: 0 0 auto;
             width: 100%;
-            aspect-ratio: 3 / 2;
-            min-height: 120px;
-            max-height: 210px;
+            height: clamp(180px, 22vw, 220px);
+            min-height: clamp(180px, 22vw, 220px);
+            max-height: clamp(180px, 22vw, 220px);
             background: linear-gradient(180deg, var(--grey-light), #f0efe8);
             position: relative;
             display: flex;

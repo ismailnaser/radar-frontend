@@ -710,10 +710,10 @@ const Home = () => {
   const randomProductCategoryGroups = useMemo(() => {
     const productList = (randomCategoryProducts || []).filter((p) => p && p.store != null);
     if (!productList.length) return [];
-    const minItemsPerSection =
-      viewportWidth <= 640 ? 2 :
-      viewportWidth <= 900 ? 3 :
-      4;
+    const railWidthEstimate = Math.max(320, viewportWidth - (viewportWidth <= 640 ? 24 : 44));
+    const cardWidthEstimate = Math.min(280, Math.max(210, viewportWidth * 0.26));
+    const cardsFit = Math.max(1, Math.floor((railWidthEstimate + 10) / (cardWidthEstimate + 10)));
+    const minItemsPerSection = cardsFit + 1;
     const grouped = new globalThis.Map();
     productList.forEach((p) => {
       const key = p.store_category_id != null ? `id:${p.store_category_id}` : `name:${p.store_category_name || 'other'}`;
@@ -815,13 +815,14 @@ const Home = () => {
         const avgAdWidth = Math.max(160, track.scrollWidth / adCount);
         pxPerSec = avgAdWidth / 1.5;
         if (!st.didInit) {
-          setRandomPosition(key, st.maxTravel);
+          // بداية من اليمين ثم الحركة باتجاه اليسار
+          setRandomPosition(key, 0);
           st.didInit = true;
         } else {
           setRandomPosition(key, st.position);
         }
       };
-      st.direction = st.direction === 1 ? 1 : -1;
+      st.direction = st.direction === -1 ? -1 : 1;
       recalc();
       let rafId = 0;
       let lastTs = 0;
