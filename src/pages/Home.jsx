@@ -1504,6 +1504,10 @@ const Home = () => {
                     <div key={i} className="home-sponsored-skel" aria-hidden />
                   ))}
                 </div>
+              ) : sponsoredRailAds.length === 0 ? (
+                <div className="home-sponsored-empty" role="status" aria-live="polite">
+                  لا يوجد اعلانات ممولة اليوم
+                </div>
               ) : (
                 <div
                   className="home-sponsored-rail-wrap"

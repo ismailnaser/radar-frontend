@@ -359,6 +359,11 @@ export const patchPrimaryAdminStoreCategories = async (id, categories = []) => {
   return response.data;
 };
 
+export const renewPrimaryAdminStoreSubscription = async (id, days = 30) => {
+  const response = await api.post(`stores/admin/stores/${id}/renew-subscription/`, { days });
+  return response.data;
+};
+
 // إدارة الأقسام (مدير أساسي)
 export const getPrimaryAdminStoreCategories = async () => {
   const response = await api.get('stores/admin/categories/');

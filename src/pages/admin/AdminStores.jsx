@@ -5,6 +5,7 @@ import {
   getCategories,
   getPrimaryAdminStores,
   patchPrimaryAdminStoreCategories,
+  renewPrimaryAdminStoreSubscription,
   patchPrimaryAdminStoreSuspend,
 } from '../../api/data';
 import { adminPanelCss } from './adminPanelCss';
@@ -112,6 +113,22 @@ function AdminStores() {
     } catch (err) {
       console.error(err);
       await showAlert('تعذر تحديث حالة المتجر.', 'خطأ');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleRenewSubscription = async (row) => {
+    const ok = await showConfirm(`تأكيد تجديد اشتراك متجر «${row.store_name}» لمدة 30 يوم؟`, 'تأكيد التجديد');
+    if (!ok) return;
+    setBusyId(row.id);
+    try {
+      await renewPrimaryAdminStoreSubscription(row.id, 30);
+      await showAlert('تم تجديد الاشتراك بنجاح لمدة 30 يوم.', 'تم');
+      await load();
+    } catch (err) {
+      console.error(err);
+      await showAlert('تعذر تجديد الاشتراك لهذا المتجر.', 'خطأ');
     } finally {
       setBusyId(null);
     }
@@ -386,6 +403,16 @@ function AdminStores() {
                         )}
                       </td>
                       <td>
+                        <button
+                          type="button"
+                          className="btn-ok"
+                          disabled={busyId === row.id}
+                          onClick={() => handleRenewSubscription(row)}
+                          style={{ marginBottom: 8 }}
+                        >
+                          تجديد 30 يوم
+                        </button>
+                        <br />
                         <button
                           type="button"
                           className="btn-toggle"
