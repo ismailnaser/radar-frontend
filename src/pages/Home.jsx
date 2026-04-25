@@ -815,14 +815,15 @@ const Home = () => {
         const avgAdWidth = Math.max(160, track.scrollWidth / adCount);
         pxPerSec = avgAdWidth / 1.5;
         if (!st.didInit) {
-          // بداية من اليمين ثم الحركة باتجاه اليسار
-          setRandomPosition(key, 0);
+          // ابدأ من أقصى اليمين بصريًا
+          setRandomPosition(key, st.maxTravel);
           st.didInit = true;
         } else {
           setRandomPosition(key, st.position);
         }
       };
-      st.direction = st.direction === -1 ? -1 : 1;
+      // التحريك الافتراضي: بصريًا من اليسار لليمين
+      st.direction = st.direction === 1 ? 1 : -1;
       recalc();
       let rafId = 0;
       let lastTs = 0;

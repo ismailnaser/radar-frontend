@@ -328,7 +328,7 @@ const CategoryProducts = () => {
             filter:brightness(.98);
             box-shadow:0 3px 10px rgba(26,29,38,0.12);
           }
-          .offers-card-body{padding:8px;display:flex;flex-direction:column;gap:5px}
+          .offers-card-body{padding:8px;display:flex;flex-direction:column;gap:5px;flex:1 1 auto;min-height:0;}
           .offers-card-title{margin:0;font-size:.88rem;color:var(--secondary);}
           .offers-card-store{font-size:.78rem;color:var(--text-secondary);font-weight:800;}
           .offers-price-now{font-size:.9rem;font-weight:900;color:var(--secondary);}
@@ -337,7 +337,7 @@ const CategoryProducts = () => {
           .offers-card-desc--expanded{display:block;-webkit-line-clamp:unset;overflow:visible;}
           .offers-card-desc-toggle{margin-top:4px;border:none;background:transparent;color:var(--secondary);font-weight:800;font-size:.7rem;cursor:pointer;padding:0;}
           .offers-card-desc-toggle:hover{text-decoration:underline;}
-          .offers-card-actions{margin-top:auto;display:flex;flex-direction:column;gap:8px;}
+          .offers-card-actions{margin-top:auto;padding-top:6px;display:flex;flex-direction:column;gap:8px;}
           .offers-detailsbtn{
             width:100%;
             text-align:center;
