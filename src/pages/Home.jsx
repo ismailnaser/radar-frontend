@@ -2863,12 +2863,6 @@ const Home = () => {
             overflow: hidden;
             box-sizing: border-box;
           }
-          .home-random-cat-block .home-sponsored-rail {
-            direction: rtl;
-          }
-          .home-random-cat-block .home-sponsored-rail__track {
-            direction: rtl;
-          }
           .home-sponsored-rail-wrap {
             overflow: hidden;
             width: 100%;
