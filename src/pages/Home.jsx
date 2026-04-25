@@ -702,9 +702,14 @@ const Home = () => {
     });
   }, [rotatedSponsoredAds, exclusiveOfferCategoryIds]);
 
+  const showDemoSponsoredAds =
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
   const sponsoredRailAds = useMemo(
-    () => [...filteredExclusiveAds, ...DEMO_SPONSORED_ADS],
-    [filteredExclusiveAds]
+    () => (showDemoSponsoredAds ? [...filteredExclusiveAds, ...DEMO_SPONSORED_ADS] : filteredExclusiveAds),
+    [filteredExclusiveAds, showDemoSponsoredAds]
   );
 
   const randomProductCategoryGroups = useMemo(() => {
