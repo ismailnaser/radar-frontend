@@ -10,10 +10,15 @@ const Services = () => {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const isGuest = localStorage.getItem('isGuest') === 'true';
-  const authed = !!localStorage.getItem('token') && !isGuest;
-  const userType = localStorage.getItem('user_type') || 'shopper';
-  const canPropose = authed && (userType === 'shopper' || userType === 'merchant');
+  const isGuestVisitor = localStorage.getItem('isGuest') === 'true';
+  const canOpenSuggestCommunityPage =
+    !!localStorage.getItem('token') &&
+    !isGuestVisitor &&
+    (localStorage.getItem('user_type') === 'shopper' ||
+      localStorage.getItem('user_type') === 'merchant' ||
+      localStorage.getItem('user_type') === 'admin');
+  const suggestRegisterFlash =
+    'يجب إنشاء حساب وتسجيل الدخول كمتسوّق أو تاجر (وليس زائراً) لتتمكن من اقتراح نقطة خدمة مجتمعية.';
 
   useEffect(() => {
     let cancelled = false;
@@ -61,13 +66,20 @@ const Services = () => {
           <p className="services-hero-sub">
             نقاط طبية وتعليمية وتوزيع طعام ومياه ومؤسسات مجتمعية — تظهر على الخريطة بعد موافقة الإدارة.
           </p>
-          {canPropose ? (
+          {canOpenSuggestCommunityPage ? (
             <Link to="/services/suggest" className="services-cta">
               <PlusCircle size={20} aria-hidden />
               اقترح نقطة خدمة
             </Link>
           ) : (
-            <p className="services-guest-note">لتقديم اقتراح: سجّل الدخول كمتسوّق أو كتاجر (وليس زائراً).</p>
+            <Link
+              to={`/register?next=${encodeURIComponent('/services/suggest')}`}
+              state={{ flash: suggestRegisterFlash }}
+              className="services-cta"
+            >
+              <PlusCircle size={20} aria-hidden />
+              اقترح نقطة خدمة
+            </Link>
           )}
         </header>
 
@@ -168,12 +180,6 @@ const Services = () => {
           }
           .services-cta:hover {
             filter: brightness(1.03);
-          }
-          .services-guest-note {
-            margin: 0;
-            font-size: 0.88rem;
-            color: var(--text-secondary);
-            font-weight: 600;
           }
           .services-loading {
             padding: 20px;

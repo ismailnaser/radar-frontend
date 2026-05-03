@@ -74,6 +74,7 @@ import {
   Tag,
   MapPin,
   Sun,
+  PlusCircle,
 } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import { HomeBackGuard } from '../components/HomeBackGuard';
@@ -1292,6 +1293,42 @@ const Home = () => {
   const isGuestVisitor = localStorage.getItem('isGuest') === 'true';
   const isMerchantOnHome =
     !!localStorage.getItem('token') && !isGuestVisitor && localStorage.getItem('user_type') === 'merchant';
+  /** متسوّق/تاجر/أدمن مسجّل (غير وضع الزائر) — يفتح نموذج الاقتراح مباشرة */
+  const canOpenSuggestCommunityPage =
+    !!localStorage.getItem('token') &&
+    !isGuestVisitor &&
+    (localStorage.getItem('user_type') === 'shopper' ||
+      localStorage.getItem('user_type') === 'merchant' ||
+      localStorage.getItem('user_type') === 'admin');
+  const suggestRegisterFlash =
+    'يجب إنشاء حساب وتسجيل الدخول كمتسوّق أو تاجر (وليس زائراً) لتتمكن من اقتراح نقطة خدمة مجتمعية.';
+
+  const communitySuggestPanel = (
+    <div className="home-community-ads-footnote card home-community-suggest-panel">
+      <p className="home-community-ads-footnote-text">
+        لتفاصيل أكثر أو تصفّح كل الأقسام:{' '}
+        <Link to="/services" className="home-community-ads-footnote-link">
+          صفحة الخدمات المجتمعية
+        </Link>
+      </p>
+      {canOpenSuggestCommunityPage ? (
+        <Link to="/services/suggest" className="home-community-suggest-cta">
+          <PlusCircle size={20} strokeWidth={2} aria-hidden />
+          اقترح نقطة خدمة
+        </Link>
+      ) : (
+        <Link
+          to={`/register?next=${encodeURIComponent('/services/suggest')}`}
+          state={{ flash: suggestRegisterFlash }}
+          className="home-community-suggest-cta"
+        >
+          <PlusCircle size={20} strokeWidth={2} aria-hidden />
+          اقترح نقطة خدمة
+        </Link>
+      )}
+    </div>
+  );
+
   const canUseOfferFavorites =
     !!localStorage.getItem('token') && !isGuestVisitor;
   const canUseCarts = canUseShoppingCarts();
@@ -1490,6 +1527,8 @@ const Home = () => {
             </div>
           </section>
         ) : null}
+
+        {!isMerchantOnHome ? communitySuggestPanel : null}
 
         <div className="home-top-grid">
           {filterMode === 'stores' ? (
@@ -2250,16 +2289,8 @@ const Home = () => {
           className={`ads-section${filterMode === 'stores' ? ' ads-section--panel' : ''}`}
           ref={storesSectionRef}
         >
-          {filterMode === 'community' ? (
-            <div className="home-community-ads-footnote card">
-              <p className="home-community-ads-footnote-text">
-                لتفاصيل أكثر أو اقتراح نقطة جديدة:{' '}
-                <Link to="/services" className="home-community-ads-footnote-link">
-                  صفحة الخدمات المجتمعية
-                </Link>
-              </p>
-            </div>
-          ) : (
+          {isMerchantOnHome ? communitySuggestPanel : null}
+          {filterMode === 'stores' ? (
             <>
               <div className="nearby-head flex-between">
                 <h3 className="nearby-title">
@@ -2381,7 +2412,7 @@ const Home = () => {
                 </p>
               )}
             </>
-          )}
+          ) : null}
         </div>
         </div>
 
@@ -3702,12 +3733,36 @@ const Home = () => {
             transform: scale(0.98);
           }
 
+          .home-community-suggest-panel {
+            margin-bottom: 14px;
+          }
           .home-community-ads-footnote {
-            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
             margin-bottom: 12px;
             border-radius: 14px;
             border: 1px dashed rgba(232, 230, 224, 0.95);
             background: rgba(255, 255, 255, 0.72);
+          }
+          .home-community-suggest-cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 22px;
+            border-radius: var(--radius-pill);
+            font-weight: 900;
+            font-size: 0.92rem;
+            text-decoration: none;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: var(--secondary);
+            box-shadow: var(--shadow-gold);
+          }
+          .home-community-suggest-cta:hover {
+            filter: brightness(1.03);
           }
           .home-community-ads-footnote-text {
             margin: 0;
