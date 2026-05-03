@@ -6,6 +6,7 @@ import { useMapExplore } from '../context/MapExploreContext';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import FiltersDropdown from '../components/ui/FiltersDropdown';
 import { storeCategoryLabel, storeMatchesAnyCategory } from '../utils/storeCategories';
+import { isCommunityOnlyPublicUi } from '../config/publicUiMode';
 
 const DEFAULT_CENTER = [31.5, 34.4];
 
@@ -37,6 +38,7 @@ function toggleId(list, id) {
 }
 
 export default function MapPage() {
+  const communityOnlyUi = isCommunityOnlyPublicUi();
   const {
     userMapLocation,
     setManualMapLocation,
@@ -68,7 +70,7 @@ export default function MapPage() {
       getCategories().catch(() => []),
       getCommunityCategories().catch(() => []),
       getCommunityPoints(null).catch(() => []),
-      getNearbyStores(userLocation[0], userLocation[1], null).catch(() => []),
+      communityOnlyUi ? Promise.resolve([]) : getNearbyStores(userLocation[0], userLocation[1], null).catch(() => []),
     ])
       .then(([cats, cCats, pts, st]) => {
         if (!mounted) return;
@@ -85,7 +87,7 @@ export default function MapPage() {
     return () => {
       mounted = false;
     };
-  }, [userLocation[0], userLocation[1]]);
+  }, [userLocation[0], userLocation[1], communityOnlyUi]);
 
   useEffect(() => {
     const mf = location.state?.mapFocus;
@@ -126,6 +128,22 @@ export default function MapPage() {
     };
   }, [setSearchQuery]);
 
+  useEffect(() => {
+    if (!communityOnlyUi) return;
+    const modeRaw = searchParams.get('mode');
+    const next = new URLSearchParams(searchParams);
+    let changed = false;
+    if (modeRaw !== 'community') {
+      next.set('mode', 'community');
+      changed = true;
+    }
+    if (next.get('category')) {
+      next.delete('category');
+      changed = true;
+    }
+    if (changed) setSearchParams(next, { replace: true });
+  }, [communityOnlyUi, searchParams, setSearchParams]);
+
   const setParam = useCallback(
     (key, value) => {
       const next = new URLSearchParams(searchParams);
@@ -136,7 +154,8 @@ export default function MapPage() {
     [searchParams, setSearchParams]
   );
 
-  const mode = (searchParams.get('mode') === 'community') ? 'community' : 'stores';
+  const mode =
+    communityOnlyUi || searchParams.get('mode') === 'community' ? 'community' : 'stores';
   const storeCategoryIds = parseCsvIds(searchParams.get('category'));
   const communityCategoryIds = parseCsvIds(searchParams.get('cc'));
   const qNorm = normalizeQ(searchQuery);
@@ -236,17 +255,22 @@ export default function MapPage() {
             topControls={
               <div className="map-topbar" onClick={(e) => e.stopPropagation()}>
                 <div className="map-topbar-row">
-                  <button
-                    type="button"
-                    className={`map-topbar-chip ${mode === 'stores' ? 'map-topbar-chip--active' : ''}`}
-                    onClick={() => setParam('mode', 'stores')}
-                  >
-                    المتاجر
-                  </button>
+                  {!communityOnlyUi ? (
+                    <button
+                      type="button"
+                      className={`map-topbar-chip ${mode === 'stores' ? 'map-topbar-chip--active' : ''}`}
+                      onClick={() => setParam('mode', 'stores')}
+                    >
+                      المتاجر
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className={`map-topbar-chip ${mode === 'community' ? 'map-topbar-chip--active' : ''}`}
-                    onClick={() => setParam('mode', 'community')}
+                    onClick={() => {
+                      if (!communityOnlyUi) setParam('mode', 'community');
+                    }}
+                    disabled={communityOnlyUi}
                   >
                     الخدمات
                   </button>

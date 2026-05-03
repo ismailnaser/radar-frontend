@@ -105,6 +105,7 @@ import { canUseShoppingCarts } from '../utils/cartAccess';
 import { communityPointHasMapCoords, communityPointLatLng } from '../utils/communityPointCoords';
 import { storeCategoryLabel, storeMatchesAnyCategory } from '../utils/storeCategories';
 import FiltersDropdown from '../components/ui/FiltersDropdown';
+import { isCommunityOnlyPublicUi } from '../config/publicUiMode';
 
 function haversineKm(a, b) {
   const R = 6371;
@@ -481,6 +482,7 @@ function shuffledCopy(list, seed = Math.random()) {
 }
 
 const Home = () => {
+  const communityOnlyUi = isCommunityOnlyPublicUi();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -521,9 +523,11 @@ const Home = () => {
   const [error, setError] = useState('');
   const [userLocation, setUserLocation] = useState(null);
   const [hideNoLocation, setHideNoLocation] = useState(true);
-  const [filterMode, setFilterMode] = useState(() =>
-    typeof window !== 'undefined' ? parseFilterMode(window.location.search) : 'stores'
-  );
+  const [filterMode, setFilterMode] = useState(() => {
+    if (typeof window === 'undefined') return 'stores';
+    if (isCommunityOnlyPublicUi()) return 'community';
+    return parseFilterMode(window.location.search);
+  });
   const [selectedCategoryId, setSelectedCategoryId] = useState(() =>
     typeof window !== 'undefined' ? parseStoreCategoryId(window.location.search) : null
   );
@@ -639,6 +643,21 @@ const Home = () => {
       setSelectedCommunityCategoryId(Number.isFinite(n) ? n : null);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!communityOnlyUi) return;
+    const next = new URLSearchParams(searchParams);
+    let changed = false;
+    if (next.get('filter') !== 'community') {
+      next.set('filter', 'community');
+      changed = true;
+    }
+    if (next.get('category')) {
+      next.delete('category');
+      changed = true;
+    }
+    if (changed) setSearchParams(next, { replace: true });
+  }, [communityOnlyUi, searchParams, setSearchParams]);
 
   useEffect(() => {
     const mf = location.state?.mapFocus;
@@ -1154,6 +1173,12 @@ const Home = () => {
     let cancelled = false;
 
     const load = async () => {
+      if (communityOnlyUi) {
+        setStores([]);
+        setLoading(false);
+        setError('');
+        return;
+      }
       try {
         setLoading(true);
         setError('');
@@ -1202,7 +1227,7 @@ const Home = () => {
     return () => {
       cancelled = true;
     };
-  }, [userMapLocation]);
+  }, [userMapLocation, communityOnlyUi]);
 
   const filteredStores = useMemo(() => {
     if (filterMode !== 'stores') return [];
@@ -1343,6 +1368,7 @@ const Home = () => {
   };
 
   const goToFilterStores = () => {
+    if (communityOnlyUi) return;
     const next = new URLSearchParams(searchParams);
     next.delete('filter');
     next.delete('cc');
@@ -1407,7 +1433,7 @@ const Home = () => {
     <MainLayout>
       <HomeBackGuard />
       <div className="home-container">
-        {isMerchantOnHome ? (
+        {isMerchantOnHome && !communityOnlyUi ? (
           <div
             className="card home-merchant-banner"
             role="status"
@@ -1456,7 +1482,9 @@ const Home = () => {
               <div className="home-hero-copy">
                 <h1 className="home-hero-title">ما الذي تبحث عنه اليوم</h1>
                 <p className="home-hero-sub">
-                  تصفّح الأقسام، العروض، والمتاجر القريبة، واستخدم الخريطة لمطابقة المواقع بسهولة.
+                  {communityOnlyUi
+                    ? 'اكتشف الخدمات المجتمعية القريبة واستخدم الخريطة لمطابقة المواقع بسهولة.'
+                    : 'تصفّح الأقسام، العروض، والمتاجر القريبة، واستخدم الخريطة لمطابقة المواقع بسهولة.'}
                 </p>
               </div>
             </div>

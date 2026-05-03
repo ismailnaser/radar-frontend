@@ -15,6 +15,7 @@ import { MapExploreProvider } from './context/MapExploreContext'
 import { AdminPendingCountsProvider } from './context/AdminPendingCountsContext'
 import { AdminNotificationsProvider } from './context/AdminNotificationsContext'
 import { InAppBrowserPrompt } from './components/InAppBrowserPrompt'
+import CommunityOnlyPublicGate from './components/CommunityOnlyPublicGate'
 import { pingAppOpen } from './api/data'
 
 const Login = lazy(() => import('./pages/Login'));
@@ -213,6 +214,7 @@ function AppLayout() {
         <AdminNotificationsProvider>
         <ScrollToTopOnRouteChange />
         <InAppBrowserPrompt />
+        <CommunityOnlyPublicGate />
         <Suspense fallback={null}>
           <Outlet />
         </Suspense>

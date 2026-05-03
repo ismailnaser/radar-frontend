@@ -9,6 +9,7 @@ import { useAlert } from '../components/AlertProvider';
 import { formatApiError } from '../utils/apiErrors';
 import { loadRememberedLogin, saveRememberedLogin } from '../utils/rememberLogin';
 import GoogleLoginButton from '../components/GoogleLoginButton';
+import { isCommunityOnlyPublicUi } from '../config/publicUiMode';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -115,19 +116,25 @@ const Login = () => {
     }
   };
 
+  const communityOnlyUi = isCommunityOnlyPublicUi();
+
   return (
     <MainLayout>
       <div className="auth-page">
         <div className="auth-card" style={{ maxWidth: 420 }}>
           <div className="auth-chip">
             <MapPin size={18} strokeWidth={2.25} aria-hidden />
-            رادار — محلاتك القريبة على الخريطة
+            {communityOnlyUi ? 'رادار — الخدمات المجتمعية على الخريطة' : 'رادار — محلاتك القريبة على الخريطة'}
           </div>
 
           <img className="auth-logo" src="/logo.png" alt="رادار" loading="lazy" width="160" height="160" />
 
           <h1 className="auth-title">مرحباً بعودتك</h1>
-          <p className="auth-sub">سجّل الدخول لمزامنة سلتك والعروض والمفضلة.</p>
+          <p className="auth-sub">
+            {communityOnlyUi
+              ? 'سجّل الدخول لمتابعة الخدمات المجتمعية واقتراحاتك.'
+              : 'سجّل الدخول لمزامنة سلتك والعروض والمفضلة.'}
+          </p>
 
           {error && (
             <p style={{ color: '#c62828', fontSize: '0.85rem', marginBottom: '12px', fontWeight: 700 }}>{error}</p>

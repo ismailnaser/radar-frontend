@@ -25,6 +25,7 @@ import {
 import { logout } from '../api/auth';
 import { useAlert } from './AlertProvider';
 import { useAdminPendingCounts } from '../context/AdminPendingCountsContext';
+import { isCommunityOnlyPublicUi } from '../config/publicUiMode';
 
 function backendBaseUrl() {
   const raw = (import.meta && import.meta.env && import.meta.env.VITE_PROXY_TARGET) || 'http://127.0.0.1:8000';
@@ -72,7 +73,7 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
   const isAuthenticated = hasToken && !isGuestUser;
   const userType = localStorage.getItem('user_type') || 'shopper';
 
-  const shopperMenuItems = [
+  const shopperMenuItemsBase = [
     { icon: <Home size={20} />, label: 'الرئيسية', path: '/' },
     { icon: <Tag size={20} />, label: 'عروض حصرية', path: '/offers' },
     { icon: <Heart size={20} />, label: 'المفضلة', path: '/favorites', protected: true },
@@ -84,6 +85,11 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
     { kind: 'section', label: 'الإعدادات' },
     { icon: <Settings size={20} />, label: 'إعدادات الحساب', path: '/settings', protected: true },
   ];
+
+  const commercePaths = new Set(['/offers', '/favorites', '/carts', '/categories']);
+  const shopperMenuItems = isCommunityOnlyPublicUi()
+    ? shopperMenuItemsBase.filter((it) => !it.path || !commercePaths.has(it.path))
+    : shopperMenuItemsBase;
 
   /** بعد عناصر المتسوق — لوحة الإدارة (أساسي يشمل المدراء والمتاجر) */
   const adminMenuExtraPrimary = [
@@ -150,7 +156,9 @@ const Sidebar = ({ isOpen, toggleSidebar, variant = 'shopper' }) => {
     resolvedVariant === 'admin'
       ? [...shopperMenuItems, ...(isPrimaryAdmin ? adminMenuExtraPrimary : adminMenuExtraSecondary)]
       : resolvedVariant === 'merchant'
-        ? [...shopperMenuItems, ...merchantMenuExtra]
+        ? isCommunityOnlyPublicUi()
+          ? [...shopperMenuItems]
+          : [...shopperMenuItems, ...merchantMenuExtra]
         : shopperMenuItems;
 
   const handleAuthAction = async () => {

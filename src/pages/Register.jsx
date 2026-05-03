@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Lock, Eye, EyeOff, User, Store } from 'lucide-react';
+import { Lock, Eye, EyeOff, User } from 'lucide-react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { register, login, loginWithGoogleIdToken } from '../api/auth';
 import MainLayout from '../components/MainLayout';
@@ -11,7 +11,6 @@ import { loadRememberedLogin, saveRememberedLogin } from '../utils/rememberLogin
 import GoogleLoginButton from '../components/GoogleLoginButton';
 
 const Register = () => {
-  const [accountType, setAccountType] = useState('shopper');
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -97,25 +96,17 @@ const Register = () => {
     try {
       const payload = {
         username: uNorm,
-        user_type: accountType,
+        user_type: 'shopper',
         password,
       };
-      const regData = await register(payload);
-      if (accountType === 'merchant' && regData?.merchant_subscription_notice) {
-        await showAlert(regData.merchant_subscription_notice, 'ملاحظة الاشتراك');
-      }
+      await register(payload);
       await login(username.trim(), password);
       saveRememberedLogin({
         username: username.trim(),
         password,
         rememberMe,
       });
-      await showAlert(
-        accountType === 'merchant'
-          ? 'تم إنشاء حساب التاجر. أكمل الآن بيانات متجرك.'
-          : 'تم إنشاء الحساب وتسجيل الدخول بنجاح.',
-        'تم'
-      );
+      await showAlert('تم إنشاء الحساب وتسجيل الدخول بنجاح.', 'تم');
       navigateAfterAuth();
     } catch (err) {
       if (err?.response?.status === 429) {
@@ -138,7 +129,7 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      await loginWithGoogleIdToken(credential, { registerAsMerchant: accountType === 'merchant' });
+      await loginWithGoogleIdToken(credential, { registerAsMerchant: false });
       saveRememberedLogin({
         username: '',
         password: '',
@@ -179,52 +170,8 @@ const Register = () => {
             إنشاء حساب
           </h1>
           <p className="auth-sub" style={{ marginBottom: '1rem' }}>
-            انضم كمتسوق أو افتح متجرك على رادار.
+            أنشئ حساباً للمشاركة في الخدمات المجتمعية والتصفّح على رادار.
           </p>
-
-          <div className="type-toggle" role="tablist" aria-label="نوع الحساب">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={accountType === 'shopper'}
-              className={`type-item ${accountType === 'shopper' ? 'active' : ''}`}
-              onClick={() => setAccountType('shopper')}
-            >
-              <span className="type-item__icon" aria-hidden>
-                <User size={22} strokeWidth={2} />
-              </span>
-              <span className="type-item__label">متسوق</span>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={accountType === 'merchant'}
-              className={`type-item ${accountType === 'merchant' ? 'active' : ''}`}
-              onClick={() => setAccountType('merchant')}
-            >
-              <span className="type-item__icon" aria-hidden>
-                <Store size={22} strokeWidth={2} />
-              </span>
-              <span className="type-item__label">تاجر</span>
-            </button>
-          </div>
-
-          {accountType === 'merchant' ? (
-            <p
-              style={{
-                fontSize: '0.88rem',
-                lineHeight: 1.65,
-                color: 'var(--text-secondary)',
-                fontWeight: 800,
-                textAlign: 'right',
-                marginTop: 0,
-                marginBottom: 12,
-              }}
-            >
-              أنشئ حسابك باسم مستخدم وكلمة مرور أو عبر Google، ثم أكمل في الصفحة التالية اسم المتجر والعنوان
-              والأقسام وموقع الخريطة.
-            </p>
-          ) : null}
 
           {error && (
             <p style={{ color: '#c62828', fontSize: '0.85rem', marginBottom: '12px', fontWeight: 700 }}>{error}</p>
