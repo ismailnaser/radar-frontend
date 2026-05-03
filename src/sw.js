@@ -2,7 +2,7 @@
 import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { NetworkFirst, CacheFirst } from 'workbox-strategies';
+import { NetworkFirst, NetworkOnly, CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 
 self.skipWaiting();
@@ -11,6 +11,12 @@ clientsClaim();
 // Precache assets injected by VitePWA
 precacheAndRoute(self.__WB_MANIFEST || []);
 cleanupOutdatedCaches();
+
+// إعدادات واجهة عامة: دائماً من الشبكة حتى يُحدَّث السلوك بدون إعادة بناء كاملة
+registerRoute(
+  ({ url }) => url.pathname === '/radar-public-config.json',
+  new NetworkOnly(),
+);
 
 // SPA navigation fallback
 registerRoute(

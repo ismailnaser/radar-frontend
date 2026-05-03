@@ -1,6 +1,10 @@
 # Netlify: اربط المستودع واضبط Base directory = frontend إن كان الجذر هو المونوريبو.
 # في Site settings → Environment variables → أضف قبل البناء:
 #   VITE_API_BASE_URL = https://اسم-خدمة-الباك.onrender.com/api
+#
+# وضع «خدمات مجتمعية فقط» إن تعذّر VITE_PUBLIC_COMMUNITY_ONLY_UI:
+# انسخ public/radar-public-config.example.json إلى public/radar-public-config.json
+# واضبط communityOnlyPublicUi ثم ابنِ من جديد (أو ارفع الملف لجذر الموقع بعد النشر).
 
 [build]
   command = "npm run build"

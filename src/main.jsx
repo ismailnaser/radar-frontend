@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { resolvePublicUiMode } from './config/publicUiMode'
 import { registerSW } from 'virtual:pwa-register'
 
 function isStandalone() {
@@ -55,11 +56,15 @@ if (!rootEl) {
   document.body.innerHTML =
     '<p style="font-family:sans-serif;padding:24px;direction:rtl;">عنصر #root غير موجود في الصفحة.</p>'
 } else {
-  ReactDOM.createRoot(rootEl).render(
-    <React.StrictMode>
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
-    </React.StrictMode>,
-  )
+  void resolvePublicUiMode()
+    .catch(() => {})
+    .finally(() => {
+      ReactDOM.createRoot(rootEl).render(
+        <React.StrictMode>
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
+        </React.StrictMode>,
+      )
+    })
 }

@@ -69,6 +69,7 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
+          globIgnores: ['**/radar-public-config.json'],
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff,woff2,ttf,eot,json}'],
           navigateFallback: '/index.html',
           runtimeCaching: [
