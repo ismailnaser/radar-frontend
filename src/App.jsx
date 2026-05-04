@@ -171,7 +171,7 @@ const ShopperOrMerchantRoute = ({ children }) => {
     );
   }
   const t = localStorage.getItem('user_type');
-  if (t !== 'shopper' && t !== 'merchant') {
+  if (t !== 'shopper' && t !== 'merchant' && t !== 'admin') {
     return <Navigate to="/services" replace />;
   }
   return children;
